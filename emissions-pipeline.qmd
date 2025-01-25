@@ -22,7 +22,6 @@ library(here)
 library(gghighlight)
 ```
 
-
 Load data
 ```{r}
 #| code-summary: Expand code
@@ -38,9 +37,11 @@ for (i in seq_along(file_names)) {
         table <- read_csv(file_names[i], show_col_types = FALSE)
          } else {
            table <- read_excel(file_names[i])
-    }
+         }
+  
   table <- table %>%
-  clean_names() 
+  clean_names()
+  
   if(str_detect(file_names[i], "non")) {
     table_name <- substr(file_names[i], 64, 79)
   } else {
@@ -51,8 +52,65 @@ for (i in seq_along(file_names)) {
 ```
 
 Clean data
+- filter for fishing == TRUE
+  Some "passenger" say fishing == TRUE?
+- add flag to non-broadcasting
 ```{r}
+#| code-summary: Expand code
+# Filter for fishing vessels
 broadcasting <- ais_emissions %>%
   filter(fishing == TRUE)
+
+# Add flag to non-broadcasting fleet
+non_broadcasting <- non_broadcasting %>%
+  mutate(flag = "nb-fleet")
 ```
+
+Join data
+- left join could eliminate non-broadcasting vessels that don't everlap with known pixels, would add to existing rows and we wanted new rows
+- bind_rows
+- need to standardize column names first
+```{r}
+#| code-summary: Expand code
+# Rename columns in non_broadcasting to match broadcasting
+non_broadcasting <- non_broadcasting %>%
+  rename(emissions_co2_mt = emissions_co2_non_broadcasting_mt,
+         emissions_ch4_mt = emissions_ch4_non_broadcasting_mt,
+         emissions_n2o_mt = emissions_n2o_non_broadcasting_mt,
+         emissions_nox_mt = emissions_nox_non_broadcasting_mt,
+         emissions_sox_mt = emissions_sox_non_broadcasting_mt,
+         emissions_pm_mt = emissions_pm_non_broadcasting_mt, 
+         emissions_co_mt = emissions_co_non_broadcasting_mt)
+
+# Combine datasets
+emissions <- bind_rows(broadcasting, non_broadcasting) %>%
+  # Remove unwanted columns
+  select(!c("fishing", "hours")) %>%
+  # Create lat_long column
+  mutate(lat_long = paste0(lat_bin, "_", lon_bin)) %>%
+  # Create year_month column
+  mutate(date = lubridate::ymd(time)) %>%
+  mutate(year_month = format(date, '%Y-%m'))
+
+emissions_by_pixel <- emissions %>%
+  group_by(lat_long, year_month, flag, vessel_class) %>% 
+  summarize(number_vessels = n(),
+            co2 = sum(emissions_co2_mt))
+  
+pixel_example <- emissions_by_pixel %>%
+  filter(lat_long == "-10_-140") 
+```
+
+Visualize (maps, time series plots)
+
+
+
+
+
+
+
+
+
+
+
 
