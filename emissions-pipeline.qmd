@@ -13,7 +13,11 @@ editor_options:
   chunk_output_type: console
 ---
 
-Load packages
+# About
+
+This repository hosts the code to create the open source data processing pipeline. 
+
+## Load packages
 ```{r}
 #| code-summary: Expand code
 library(tidyverse)
@@ -22,7 +26,7 @@ library(here)
 library(gghighlight)
 ```
 
-Load data
+## Load data
 ```{r}
 #| code-summary: Expand code
 # Set file path to data folder
@@ -51,10 +55,10 @@ for (i in seq_along(file_names)) {
 }
 ```
 
-Clean data
-- filter for fishing == TRUE
+## Clean data
+- Filter for fishing == TRUE
   Some "passenger" say fishing == TRUE?
-- add flag to non-broadcasting
+- Add "flag" column to non-broadcasting, "nb-fleet" to keep independent from flag "unknown"
 ```{r}
 #| code-summary: Expand code
 # Filter for fishing vessels
@@ -66,10 +70,10 @@ non_broadcasting <- non_broadcasting %>%
   mutate(flag = "nb-fleet")
 ```
 
-Join data
-- left join could eliminate non-broadcasting vessels that don't everlap with known pixels, would add to existing rows and we wanted new rows
-- bind_rows
-- need to standardize column names first
+## Join data
+- Left join could eliminate non-broadcasting vessels that don't overlap with known pixels, would add to existing rows and we wanted new rows.
+- Used bind_rows instead.
+- We need to standardize column names first.
 ```{r}
 #| code-summary: Expand code
 # Rename columns in non_broadcasting to match broadcasting
@@ -92,22 +96,21 @@ emissions <- bind_rows(broadcasting, non_broadcasting) %>%
   mutate(date = lubridate::ymd(time)) %>%
   mutate(year_month = format(date, '%Y-%m'))
 
+# Group dataset by pixel
 emissions_by_pixel <- emissions %>%
   group_by(lat_long, year_month, flag, vessel_class) %>% 
   summarize(number_vessels = n(),
             co2 = sum(emissions_co2_mt))
-  
+
+# Look at one pixel as an example
 pixel_example <- emissions_by_pixel %>%
   filter(lat_long == "-10_-140") 
 ```
 
-Decision points:
+## Decision points:
 For a given month, distribute dark fleet data by proximity to known flags (within pixel).
 - If only dark fleet in a pixel, how do we distribute emissions? Next closest month or next closest pixel?
 - add +/-1 to lat_long?
-
-
-
 
 
 Visualize (maps, time series plots)
