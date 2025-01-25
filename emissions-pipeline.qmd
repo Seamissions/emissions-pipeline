@@ -101,6 +101,15 @@ pixel_example <- emissions_by_pixel %>%
   filter(lat_long == "-10_-140") 
 ```
 
+Decision points:
+For a given month, distribute dark fleet data by proximity to known flags (within pixel).
+- If only dark fleet in a pixel, how do we distribute emissions? Next closest month or next closest pixel?
+- add +/-1 to lat_long?
+
+
+
+
+
 Visualize (maps, time series plots)
 
 
