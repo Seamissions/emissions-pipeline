@@ -1,0 +1,58 @@
+---
+title: "Emissions Pipeline"
+date: last-modified
+format:
+  html:
+      toc: true
+      code-fold: true
+editor: visual
+execute:
+  warning: false
+  messages: false
+editor_options: 
+  chunk_output_type: console
+---
+
+Load packages
+```{r}
+#| code-summary: Expand code
+library(tidyverse)
+library(janitor)
+library(here)
+library(gghighlight)
+```
+
+
+Load data
+```{r}
+#| code-summary: Expand code
+# Set file path to data folder
+pathway <- "/capstone/seamissions/data/meds_capstone_project"
+
+# Set up import for .csv or .xlsx files
+file_names <- list.files(here(pathway), pattern=paste0(c("*.xlsx","*.csv"), collapse="|"), full.names=TRUE)
+
+# Read in data files
+for (i in seq_along(file_names)) {
+  if(grepl('.*\\.csv', file_names[i])) {
+        table <- read_csv(file_names[i], show_col_types = FALSE)
+         } else {
+           table <- read_excel(file_names[i])
+    }
+  table <- table %>%
+  clean_names() 
+  if(str_detect(file_names[i], "non")) {
+    table_name <- substr(file_names[i], 64, 79)
+  } else {
+    table_name <- substr(file_names[i], 64, 76)
+  }
+  assign(table_name, table)
+}
+```
+
+Clean data
+```{r}
+broadcasting <- ais_emissions %>%
+  filter(fishing == TRUE)
+```
+
