@@ -18,7 +18,6 @@ editor_options:
 This repository hosts the code to create the open source data processing pipeline.
 
 ## Load packages
-
 ```{r}
 #| code-summary: Expand code
 library(tidyverse)
@@ -29,9 +28,12 @@ library(lubridate)
 ```
 
 ## Load data
-
 ```{r}
 #| code-summary: Expand code
+
+# Turn off scientific notation
+options(scipen=999)
+
 # Set file path to data folder
 pathway <- "/capstone/seamissions/data/meds_capstone_project"
 
@@ -40,15 +42,17 @@ file_names <- list.files(here(pathway), pattern=paste0(c("*.xlsx","*.csv"), coll
 
 # Read in data files
 for (i in seq_along(file_names)) {
+  # If .csv, read_csv
   if(grepl('.*\\.csv', file_names[i])) {
-        table <- read_csv(file_names[i], show_col_types = FALSE)
+        table <- read_csv(file_names[i], show_col_types = FALSE) %>%
+          clean_names()
          } else {
-           table <- read_excel(file_names[i])
+           # If .xslx, read_excel
+           table <- read_excel(file_names[i]) %>%
+             clean_names()
          }
   
-  table <- table %>%
-  clean_names()
-  
+  # Rename files truncated names
   if(str_detect(file_names[i], "non")) {
     table_name <- substr(file_names[i], 64, 79)
   } else {
@@ -59,90 +63,89 @@ for (i in seq_along(file_names)) {
 ```
 
 ## Clean data
-
--   Filter for fishing == TRUE Some "passenger" say fishing == TRUE?
--   Add "flag" column to non-broadcasting, "nb-fleet" to keep independent from flag "unknown"
-
 ```{r}
 #| code-summary: Expand code
-# Filter for fishing vessels
-#broadcasting <- ais_emissions %>%
-  #filter(fishing == TRUE)
+# Create `year_month` column
 broadcasting <- ais_emissions %>%
   mutate(date = lubridate::ymd(time)) %>%
   mutate(year_month = format(date, '%Y-%m'))
   
-# Add flag to non-broadcasting fleet
+# Create `year_month` column
 non_broadcasting <- non_broadcasting %>%
-  #mutate(flag = "nb-fleet") %>%
   mutate(date = lubridate::ymd(time)) %>%
   mutate(year_month = format(date, '%Y-%m'))
 ```
-
-```{r}
-emissions <- left_join(broadcasting, non_broadcasting, by = c("year_month", "lat_bin", "lon_bin", "length_size_class_percentile"))
-
-test <- emissions %>%
-  filter(year_month == "2015-01") %>%
-  mutate(lat_long = paste0(lat_bin, "_", lon_bin)) %>%
-  group_by(year_month, lat_long, flag, vessel_class, length_size_class_percentile) %>%
-  summarise(total_hours_by_flag = sum(hours)) %>%
-  ungroup()
-
-total_hour_key <- emissions %>%
-  filter(year_month == "2015-01") %>%
-  mutate(lat_long = paste0(lat_bin, "_", lon_bin)) %>%
-  group_by(year_month, lat_long) %>%
-  mutate(total_hours = sum(hours)) %>%
-  select(year_month, lat_long, total_hours) %>%
-  ungroup()
-
-test_factor <- left_join(test, total_hour_key, by = c("year_month", "lat_long"))
-
-#test_factor <- test_factor[!duplicate(test_factor)]
-```
-
-## Join data
-
--   Left join could eliminate non-broadcasting vessels that don't overlap with known pixels, would add to existing rows and we wanted new rows.
--   Used bind_rows instead.
--   We need to standardize column names first.
 
 ```{r}
 #| code-summary: Expand code
-# Rename columns in non_broadcasting to match broadcasting
-non_broadcasting <- non_broadcasting %>%
-  rename(emissions_co2_mt = emissions_co2_non_broadcasting_mt,
-         emissions_ch4_mt = emissions_ch4_non_broadcasting_mt,
-         emissions_n2o_mt = emissions_n2o_non_broadcasting_mt,
-         emissions_nox_mt = emissions_nox_non_broadcasting_mt,
-         emissions_sox_mt = emissions_sox_non_broadcasting_mt,
-         emissions_pm_mt = emissions_pm_non_broadcasting_mt,
-         emissions_co_mt = emissions_co_non_broadcasting_mt)
-
-# Combine datasets
-emissions <- bind_rows(ais_emissions, non_broadcasting) %>%
-  # Remove unwanted columns
-  select(!c("fishing", "hours")) %>%
-  # Create lat_long column
+# Merge broadcasting and non-broadcasting datasets
+emissions <- left_join(broadcasting, non_broadcasting, by = c("year_month", "lat_bin", "lon_bin", "length_size_class_percentile")) %>%
+  
+  # Create lat_long bin to group by pixel
   mutate(lat_long = paste0(lat_bin, "_", lon_bin)) %>%
-  # Create year_month column
-  mutate(date = lubridate::ymd(time)) %>%
-  mutate(year_month = format(date, '%Y-%m'))
+  
+  # Select columns to keep
+  select(year_month, 
+         lat_long, 
+         flag, 
+         vessel_class, 
+         length_size_class_percentile, 
+         fishing, 
+         hours, 
+         emissions_co2_mt, 
+         emissions_ch4_mt, 
+         emissions_n2o_mt, 
+         emissions_nox_mt, 
+         emissions_sox_mt, 
+         emissions_pm_mt, 
+         emissions_co_mt,
+         emissions_co2_non_broadcasting_mt,
+         emissions_ch4_non_broadcasting_mt,
+         emissions_n2o_non_broadcasting_mt,
+         emissions_nox_non_broadcasting_mt,
+         emissions_sox_non_broadcasting_mt,
+         emissions_pm_non_broadcasting_mt,
+         emissions_co_non_broadcasting_mt)
 
-# Group dataset by pixel
-emissions_by_pixel <- emissions %>%
-  group_by(lat_long, year_month, flag, vessel_class) %>% 
-  summarize(number_vessels = n(),
-            co2 = sum(emissions_co2_mt))
+# Subset data for test
+emissions_2017 <- emissions %>%
+  filter(year_month == "2017-11")
 
-# Look at one pixel as an example
-pixel_example <- emissions_by_pixel %>%
-  filter(lat_long == "-10_-140") 
+# Partition emissions for test data 
+key <- emissions_2017 %>%
+  group_by(year_month, lat_long, flag) %>%
+  mutate(total_hours_by_flag = sum(hours)) %>%
+  group_by(year_month, lat_long) %>%
+  mutate(total_hours = sum(hours)) %>%
+  ungroup() %>%
+  mutate(factor = total_hours_by_flag/total_hours) %>%
+  mutate(total_co2 = emissions_co2_mt + (factor * emissions_co2_non_broadcasting_mt),
+         total_ch4 = emissions_ch4_mt + (factor * emissions_ch4_non_broadcasting_mt),
+         total_n2o = emissions_n2o_mt + (factor * emissions_n2o_non_broadcasting_mt),
+         total_nox = emissions_nox_mt + (factor * emissions_nox_non_broadcasting_mt),
+         total_sox = emissions_sox_mt + (factor * emissions_sox_non_broadcasting_mt),
+         total_pm = emissions_pm_mt + (factor * emissions_pm_non_broadcasting_mt),
+         total_co = emissions_co_mt + (factor * emissions_co_non_broadcasting_mt)) %>%
+   select(year_month, 
+         lat_long, 
+         flag, 
+         vessel_class, 
+         length_size_class_percentile, 
+         fishing, 
+         total_co2, 
+         total_ch4, 
+         total_n2o, 
+         total_nox, 
+         total_sox, 
+         total_pm, 
+         total_co)
+
+# Adapt this code to full dataset
 ```
 
 ## Decision points:
 
-For a given month, distribute dark fleet data by proximity to known flags (within pixel). - If only dark fleet in a pixel, how do we distribute emissions? Next closest month or next closest pixel? - add +/-1 to lat_long?
+- If only dark fleet in a pixel, how do we distribute emissions? Next closest month or next closest pixel? - add +/-1 to lat_long?
 
-Visualize (maps, time series plots)
+## Visualize (maps, time series plots)
+
