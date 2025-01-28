@@ -80,24 +80,62 @@ non_broadcasting <- non_broadcasting %>%
 ```
 
 ```{r}
-emissions <- left_join(broadcasting, non_broadcasting, by = c("year_month", "lat_bin", "lon_bin", "length_size_class_percentile"))
-
-test <- emissions %>%
-  filter(year_month == "2015-01") %>%
+emissions <- left_join(broadcasting, non_broadcasting, by = c("year_month", "lat_bin", "lon_bin", "length_size_class_percentile")) %>%
   mutate(lat_long = paste0(lat_bin, "_", lon_bin)) %>%
-  group_by(year_month, lat_long, flag, vessel_class, length_size_class_percentile) %>%
-  summarise(total_hours_by_flag = sum(hours)) %>%
-  ungroup()
+  select(year_month, 
+         lat_long, 
+         flag, 
+         vessel_class, 
+         length_size_class_percentile, 
+         fishing, 
+         hours, 
+         emissions_co2_mt, 
+         emissions_ch4_mt, 
+         emissions_n2o_mt, 
+         emissions_nox_mt, 
+         emissions_sox_mt, 
+         emissions_pm_mt, 
+         emissions_co_mt,
+         emissions_co2_non_broadcasting_mt,
+         emissions_ch4_non_broadcasting_mt,
+         emissions_n2o_non_broadcasting_mt,
+         emissions_nox_non_broadcasting_mt,
+         emissions_sox_non_broadcasting_mt,
+         emissions_pm_non_broadcasting_mt,
+         emissions_co_non_broadcasting_mt)
+  
+emissions_2017 <- emissions %>%
+  filter(year_month == "2017-11")
 
-total_hour_key <- emissions %>%
-  filter(year_month == "2015-01") %>%
-  mutate(lat_long = paste0(lat_bin, "_", lon_bin)) %>%
+key <- emissions_2015 %>%
   group_by(year_month, lat_long) %>%
-  mutate(total_hours = sum(hours)) %>%
-  select(year_month, lat_long, total_hours) %>%
-  ungroup()
+  mutate(total_hours_by_flag = sum(hours))
 
-test_factor <- left_join(test, total_hour_key, by = c("year_month", "lat_long"))
+          #  emissions_co2_ais = sum(emissions_co2_mt),
+            # emissions_co2_non = sum(emissions_co2_non_broadcasting_mt)) %>% # add other polutants
+  ungroup() %>%
+  group_by(year_month, lat_long) %>%
+  mutate(total_hours = sum(total_hours_by_flag)) %>%
+  ungroup() %>%
+  mutate(factor = total_hours_by_flag/total_hours) %>%
+  mutate(co2 = emissions_co2_ais + factor*emissions_co2_non)
+
+# key <- test %>%
+#   group_by(year_month, lat_long) %>%
+#   mutate(total_hours = sum(total_hours_by_flag)) %>%
+#   ungroup()
+
+test_factor <- left_join(key, emissions, by = c("year_month", "lat_long"))
+
+# total_hour_key <- emissions %>%
+#   filter(year_month == "2015-01") %>%
+#   mutate(lat_long = paste0(lat_bin, "_", lon_bin)) %>%
+#   group_by(year_month, lat_long) %>%
+#   mutate(total_hours = sum(hours)) %>%
+#   select(year_month, lat_long, total_hours) %>%
+#   ungroup()
+# 
+# test_factor <- left_join(test, total_hour_key, by = c("year_month", "lat_long"))
 
 #test_factor <- test_factor[!duplicate(test_factor)]
 ```
