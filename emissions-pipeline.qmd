@@ -103,14 +103,16 @@ emissions <- left_join(broadcasting, non_broadcasting, by = c("year_month", "lat
          emissions_sox_non_broadcasting_mt,
          emissions_pm_non_broadcasting_mt,
          emissions_co_non_broadcasting_mt)
+  
+emissions_2017 <- emissions %>%
+  filter(year_month == "2017-11")
 
+key <- emissions_2015 %>%
+  group_by(year_month, lat_long) %>%
+  mutate(total_hours_by_flag = sum(hours))
 
-key <- emissions %>%
-  filter(year_month == "2015-01") %>% # a manageable subset
-  group_by(year_month, lat_long, flag, vessel_class, length_size_class_percentile, fishing) %>%
-  summarise(total_hours_by_flag = sum(hours),
-            emissions_co2_ais = sum(emissions_co2_mt),
-            emissions_co2_non = sum(emissions_co2_non_broadcasting_mt)) %>% # add other polutants
+          #  emissions_co2_ais = sum(emissions_co2_mt),
+            # emissions_co2_non = sum(emissions_co2_non_broadcasting_mt)) %>% # add other polutants
   ungroup() %>%
   group_by(year_month, lat_long) %>%
   mutate(total_hours = sum(total_hours_by_flag)) %>%
