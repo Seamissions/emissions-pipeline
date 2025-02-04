@@ -117,11 +117,11 @@ emissions_2017_11 <- emissions %>%
 # ---- Partition emissions for test data ----
 
 key <- emissions_2017_11 %>%
-  # Calculate total hours per flag
-  group_by(year_month, lon_bin, lat_bin, flag, vessel_class, length_size_class_percentile, hours, kw_hours) %>%
+  # Calculate total kw hours per grouped "ship"
+  group_by(year_month, lon_bin, lat_bin, flag, vessel_class, length_size_class_percentile, hours, kw_hours) %>% # `hours` and `kw_hours`?
   mutate(kw_hours_by_ship = sum(kw_hours, na.rm = TRUE)) %>%
   
-  # Calculate total hours per pixel 
+  # Calculate total `kw_hours` per pixel 
   group_by(year_month, lon_bin, lat_bin) %>%
   mutate(total_kw_hours = sum(kw_hours, na.rm = TRUE)) %>%
   ungroup() %>%
@@ -157,12 +157,35 @@ key <- emissions_2017_11 %>%
          total_co)
 
 # Adapt this code to full dataset
+```
 
-emissions_total <- sum(emissions_2017_11$emissions_co2_mt, na.rm = TRUE) + sum(emissions_2017_11$emissions_co2_non_broadcasting_mt, na.rm = TRUE)
+So, in theory, the sum of the co2 from the broadcasting dataset (filtered for 2017-11) and the sum of the co2 from the non_broadcasting dataset (filtered for 2017-11) should equal the sum of the co2 from the processed dataset (key).
 
+We didn't use the sum of the co2 columns in the emissions_2017_11 dataset because non-broadcasting co2 is printed multiple times for each pixel.
+```{r}
+# Check to see that all pixel `factor` sum to 1
+test <- key %>%
+  group_by(year_month, lon_bin, lat_bin) %>%
+  summarise(sum = sum(factor))
+
+# Only 1s
+unique(test$sum)
+max(test$sum)
+min(test$sum)
+
+# Sum of broadcasting co2
+broad_emissions <- broadcasting %>%
+  filter(year_month == "2017-11") %>%
+  summarise(emissions = sum(emissions_co2_mt, na.rm = TRUE))
+
+non_broad_emissions <- non_broadcasting %>%
+  filter(year_month == "2017-11") %>%
+  summarise(emissions = sum(emissions_co2_non_broadcasting_mt, na.rm =TRUE))
+
+emissions_total <- broad_emissions[1] + non_broad_emissions[1]
 emissions_total_factored <- sum(key$total_co2, na.rm = TRUE)
 
-colSums(is.na(emissions_2017_11))
+diff <- emissions_total_factored - emissions_total
 ```
 
 ## Decision points:
