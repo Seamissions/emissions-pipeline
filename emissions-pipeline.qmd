@@ -70,12 +70,12 @@ for (i in seq_along(file_names)) {
 #| code-summary: Expand code
 # Create `year_month` column
 broadcasting <- ais_emissions %>%
-  mutate(date = lubridate::ymd(time)) %>%
+  mutate(date = lubridate::ymd(month)) %>%
   mutate(year_month = format(date, '%Y-%m'))
   
 # Create `year_month` column
 non_broadcasting <- non_broadcasting %>%
-  mutate(date = lubridate::ymd(time)) %>%
+  mutate(date = lubridate::ymd(month)) %>%
   mutate(year_month = format(date, '%Y-%m'))
 ```
 
@@ -85,17 +85,16 @@ non_broadcasting <- non_broadcasting %>%
 #  ---- Left join broadcasting and non-broadcasting datasets ----
 emissions <- left_join(broadcasting, non_broadcasting, by = c("year_month", "lat_bin", "lon_bin", "length_size_class_percentile")) %>%
   
-  # Create lat_long bin to group by pixel
-  mutate(lat_long = paste0(lat_bin, "_", lon_bin)) %>%
-  
   # Select columns to keep
   select(year_month, 
-         lat_long, 
+         lon_bin,
+         lat_bin,
          flag, 
          vessel_class, 
          length_size_class_percentile, 
-         fishing, 
+         fishing_activity, 
          hours, 
+         kw_hours,
          emissions_co2_mt, 
          emissions_ch4_mt, 
          emissions_n2o_mt, 
@@ -112,23 +111,23 @@ emissions <- left_join(broadcasting, non_broadcasting, by = c("year_month", "lat
          emissions_co_non_broadcasting_mt)
 
 # Subset data to 2017 for test
-emissions_2017 <- emissions %>%
+emissions_2017_11 <- emissions %>%
   filter(year_month == "2017-11")
 
 # ---- Partition emissions for test data ----
 
-key <- emissions_2017 %>%
-  # Calculate total hours per falg
-  group_by(year_month, lat_long, flag) %>% # `vessel_class` & `length_size_class percentile`
-  mutate(total_hours_by_flag = sum(hours)) %>%
+key <- emissions_2017_11 %>%
+  # Calculate total hours per flag
+  group_by(year_month, lon_bin, lat_bin, flag, vessel_class, length_size_class_percentile, hours, kw_hours) %>%
+  mutate(kw_hours_by_ship = sum(kw_hours, na.rm = TRUE)) %>%
   
   # Calculate total hours per pixel 
-  group_by(year_month, lat_long) %>%
-  mutate(total_hours = sum(hours)) %>%
+  group_by(year_month, lon_bin, lat_bin) %>%
+  mutate(total_kw_hours = sum(kw_hours, na.rm = TRUE)) %>%
   ungroup() %>%
   
   # Define a factor for the proportion of hours per flag/total hours 
-  mutate(factor = total_hours_by_flag/total_hours) %>%
+  mutate(factor = kw_hours_by_ship/total_kw_hours) %>%
   
   # Apply factor to emissions columns to partition nb data
   mutate(total_co2 = emissions_co2_mt + (factor * emissions_co2_non_broadcasting_mt),
@@ -141,11 +140,14 @@ key <- emissions_2017 %>%
 
     # Select columns of interest
    select(year_month, 
-         lat_long, 
+         lon_bin,
+         lat_bin,
          flag, 
          vessel_class, 
          length_size_class_percentile, 
-         fishing, 
+         fishing_activity, 
+         hours, 
+         kw_hours,
          total_co2, 
          total_ch4, 
          total_n2o, 
@@ -155,6 +157,12 @@ key <- emissions_2017 %>%
          total_co)
 
 # Adapt this code to full dataset
+
+emissions_total <- sum(emissions_2017_11$emissions_co2_mt, na.rm = TRUE) + sum(emissions_2017_11$emissions_co2_non_broadcasting_mt, na.rm = TRUE)
+
+emissions_total_factored <- sum(key$total_co2, na.rm = TRUE)
+
+colSums(is.na(emissions_2017_11))
 ```
 
 ## Decision points:
@@ -162,3 +170,7 @@ key <- emissions_2017 %>%
 -   If only dark fleet in a pixel, how do we distribute emissions? Next closest month or next closest pixel? - add +/-1 to lat_long?
 
 ## Visualize (maps, time series plots)
+
+
+
+- group by `hours` *and* `kw_hours`?
