@@ -52,17 +52,15 @@ fao_country_groups_clean <- fao_country_groups |>
 fao_species_groups_clean <- fao_species_groups |>
   select(x3a_code, taxonomic_code, identifier, scientific_name, contains("_en"))
 
-fao_capture_join <- left_join(fao_capture_quantity, fao_country_groups_clean, by = join_by(country_un_code == un_code)) 
-
-
-fao_capture_join <- left_join(fao_capture_join, )
-
-
-
-
+fao_waterarea_clean <- fao_waterarea |>
+  select(code, contains("_en"))
 
 # ---- Left join capture and country groups ----
 
+fao_capture_join <- left_join(fao_capture_quantity, fao_country_groups_clean, by = join_by(country_un_code == un_code)) 
+
+
+fao_capture_join <- left_join(fao_capture_join, fao_species_groups_clean, by = join_by(iso3_code == x3a_code))
 
 
 
