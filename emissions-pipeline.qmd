@@ -81,7 +81,8 @@ non_broadcasting <- non_broadcasting %>%
 
 ```{r}
 #| code-summary: Expand code
-# Merge broadcasting and non-broadcasting datasets
+
+#  ---- Left join broadcasting and non-broadcasting datasets ----
 emissions <- left_join(broadcasting, non_broadcasting, by = c("year_month", "lat_bin", "lon_bin", "length_size_class_percentile")) %>%
   
   # Create lat_long bin to group by pixel
@@ -110,18 +111,26 @@ emissions <- left_join(broadcasting, non_broadcasting, by = c("year_month", "lat
          emissions_pm_non_broadcasting_mt,
          emissions_co_non_broadcasting_mt)
 
-# Subset data for test
+# Subset data to 2017 for test
 emissions_2017 <- emissions %>%
   filter(year_month == "2017-11")
 
-# Partition emissions for test data 
+# ---- Partition emissions for test data ----
+
 key <- emissions_2017 %>%
-  group_by(year_month, lat_long, flag) %>%
+  # Calculate total hours per falg
+  group_by(year_month, lat_long, flag) %>% # `vessel_class` & `length_size_class percentile`
   mutate(total_hours_by_flag = sum(hours)) %>%
+  
+  # Calculate total hours per pixel 
   group_by(year_month, lat_long) %>%
   mutate(total_hours = sum(hours)) %>%
   ungroup() %>%
+  
+  # Define a factor for the proportion of hours per flag/total hours 
   mutate(factor = total_hours_by_flag/total_hours) %>%
+  
+  # Apply factor to emissions columns to partition nb data
   mutate(total_co2 = emissions_co2_mt + (factor * emissions_co2_non_broadcasting_mt),
          total_ch4 = emissions_ch4_mt + (factor * emissions_ch4_non_broadcasting_mt),
          total_n2o = emissions_n2o_mt + (factor * emissions_n2o_non_broadcasting_mt),
@@ -129,6 +138,8 @@ key <- emissions_2017 %>%
          total_sox = emissions_sox_mt + (factor * emissions_sox_non_broadcasting_mt),
          total_pm = emissions_pm_mt + (factor * emissions_pm_non_broadcasting_mt),
          total_co = emissions_co_mt + (factor * emissions_co_non_broadcasting_mt)) %>%
+
+    # Select columns of interest
    select(year_month, 
          lat_long, 
          flag, 
