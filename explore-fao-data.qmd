@@ -1,0 +1,48 @@
+---
+title: "Emissions Pipeline"
+date: last-modified
+format:
+  html:
+      toc: true
+      code-fold: true
+editor: visual
+execute:
+  warning: false
+  messages: false
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r}
+#| code-summary: Load Libraries
+
+library(tidyverse)
+library(janitor)
+library(here)
+library(gghighlight)
+library(lubridate)
+library(reprex)
+library(sf)
+```
+
+
+```{r}
+#| code-summary: Load Project Data
+
+# ---- FAO Region Shapefile ----
+fao_shapefile <- st_read(here::here("capstone/seamissions/data/fao_region_shapefile/World_FAO_Zones.shp"))
+
+# ---- FAO seafood production data ---
+fao_capture_quantity <- read_csv(here::here("capstone/seamissions/data/fao_seafood_production/Capture_Quantity.csv"))
+
+fao_country_groups <- read_csv(here::here("capstone/seamissions/data/fao_seafood_production/CL_FI_COUNTRY_GROUPS.csv"))
+
+fao_species_groups <- read_csv(here::here("capstone/seamissions/data/fao_seafood_production/CL_FI_SPECIES_GROUPS.csv"))
+
+fao_symbol <- read_csv(here::here("capstone/seamissions/data/fao_seafood_production/CL_FI_SYMBOL_SDMX.csv"))
+
+fao_waterarea <- read_csv(here::here("capstone/seamissions/data/fao_seafood_production/CL_FI_WATERAREA_GROUPS.csv"))
+
+```
+
