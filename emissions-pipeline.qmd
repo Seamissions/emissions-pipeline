@@ -26,6 +26,7 @@ library(janitor)
 library(here)
 library(gghighlight)
 library(lubridate)
+library(reprex)
 ```
 
 ## Load data
@@ -64,38 +65,51 @@ for (i in seq_along(file_names)) {
 }
 ```
 
-## Clean data
+# Merge Emissions Datasets
+
+## Clean Data
 
 ```{r}
 #| code-summary: Expand code
+
 # Create `year_month` column
 broadcasting <- ais_emissions %>%
-  mutate(date = lubridate::ymd(time)) %>%
+  mutate(date = lubridate::ymd(month)) %>%
   mutate(year_month = format(date, '%Y-%m'))
   
 # Create `year_month` column
 non_broadcasting <- non_broadcasting %>%
-  mutate(date = lubridate::ymd(time)) %>%
+  mutate(date = lubridate::ymd(month)) %>%
   mutate(year_month = format(date, '%Y-%m'))
 ```
+
+## Join Data
 
 ```{r}
 #| code-summary: Expand code
 
 #  ---- Left join broadcasting and non-broadcasting datasets ----
-emissions <- left_join(broadcasting, non_broadcasting, by = c("year_month", "lat_bin", "lon_bin", "length_size_class_percentile")) %>%
+emissions_joined <- left_join(broadcasting, non_broadcasting, by = c("year_month", "lat_bin", "lon_bin", "length_size_class_percentile")) %>%
   
-  # Create lat_long bin to group by pixel
-  mutate(lat_long = paste0(lat_bin, "_", lon_bin)) %>%
-  
+  # Replace non-broadcasting NA values with 0 (see decision point below)
+  mutate(emissions_co2_non_broadcasting_mt = ifelse(is.na(emissions_co2_non_broadcasting_mt), 0, emissions_co2_non_broadcasting_mt),
+         emissions_ch4_non_broadcasting_mt = ifelse(is.na(emissions_ch4_non_broadcasting_mt), 0, emissions_ch4_non_broadcasting_mt),
+         emissions_n2o_non_broadcasting_mt = ifelse(is.na(emissions_n2o_non_broadcasting_mt), 0, emissions_n2o_non_broadcasting_mt),
+         emissions_nox_non_broadcasting_mt = ifelse(is.na(emissions_nox_non_broadcasting_mt), 0, emissions_nox_non_broadcasting_mt),
+         emissions_sox_non_broadcasting_mt = ifelse(is.na(emissions_sox_non_broadcasting_mt), 0, emissions_sox_non_broadcasting_mt),
+         emissions_pm_non_broadcasting_mt = ifelse(is.na(emissions_pm_non_broadcasting_mt), 0, emissions_pm_non_broadcasting_mt),
+         emissions_co_non_broadcasting_mt = ifelse(is.na(emissions_co_non_broadcasting_mt), 0, emissions_co_non_broadcasting_mt)) %>%
+
   # Select columns to keep
   select(year_month, 
-         lat_long, 
+         lon_bin,
+         lat_bin,
          flag, 
          vessel_class, 
          length_size_class_percentile, 
-         fishing, 
+         fishing_activity, 
          hours, 
+         kw_hours,
          emissions_co2_mt, 
          emissions_ch4_mt, 
          emissions_n2o_mt, 
@@ -110,25 +124,29 @@ emissions <- left_join(broadcasting, non_broadcasting, by = c("year_month", "lat
          emissions_sox_non_broadcasting_mt,
          emissions_pm_non_broadcasting_mt,
          emissions_co_non_broadcasting_mt)
+```
 
-# Subset data to 2017 for test
-emissions_2017 <- emissions %>%
-  filter(year_month == "2017-11")
+**Decision point:** NA values in `emissions_non_broadcasting` are giving NA in the totals after factoring.
 
-# ---- Partition emissions for test data ----
+- Solution: replaced NA with 0
 
-key <- emissions_2017 %>%
-  # Calculate total hours per falg
-  group_by(year_month, lat_long, flag) %>% # `vessel_class` & `length_size_class percentile`
-  mutate(total_hours_by_flag = sum(hours)) %>%
+## Factor Emissions
+
+```{r}
+#| code-summary: Expand code
+# Factor non-broadcasting emissions
+emissions <- emissions_joined %>%
+  # Calculate total kw hours per grouped "ship"
+  group_by(year_month, lon_bin, lat_bin, flag, vessel_class, length_size_class_percentile, hours, kw_hours) %>% 
+  mutate(kw_hours_by_ship = sum(kw_hours, na.rm = TRUE)) %>%
   
-  # Calculate total hours per pixel 
-  group_by(year_month, lat_long) %>%
-  mutate(total_hours = sum(hours)) %>%
+  # Calculate total `kw_hours` per pixel and length size class
+  group_by(year_month, lon_bin, lat_bin, length_size_class_percentile) %>%
+  mutate(total_kw_hours = sum(kw_hours, na.rm = TRUE)) %>%
   ungroup() %>%
   
   # Define a factor for the proportion of hours per flag/total hours 
-  mutate(factor = total_hours_by_flag/total_hours) %>%
+  mutate(factor = kw_hours_by_ship/total_kw_hours) %>%
   
   # Apply factor to emissions columns to partition nb data
   mutate(total_co2 = emissions_co2_mt + (factor * emissions_co2_non_broadcasting_mt),
@@ -141,11 +159,14 @@ key <- emissions_2017 %>%
 
     # Select columns of interest
    select(year_month, 
-         lat_long, 
+         lon_bin,
+         lat_bin,
          flag, 
          vessel_class, 
          length_size_class_percentile, 
-         fishing, 
+         fishing_activity, 
+         hours, 
+         kw_hours,
          total_co2, 
          total_ch4, 
          total_n2o, 
@@ -154,11 +175,23 @@ key <- emissions_2017 %>%
          total_pm, 
          total_co)
 
-# Adapt this code to full dataset
+# -------- Check for discrepancies ---------
+# Total co2 emissions before factoring
+em_before <- sum(broadcasting$emissions_co2_mt, na.rm = TRUE) + sum(non_broadcasting$emissions_co2_non_broadcasting_mt, na.rm = TRUE)
+
+# Total co2 emissions after factoring
+em_after <- sum(emissions$total_co2, na.rm = TRUE)
+
+# Difference in co2 emissions
+diff <- em_after - em_before
+
+# Percent error for co2
+diff/em_before # 0.000004253729% nice
 ```
 
-## Decision points:
+## Future decision points:
 
--   If only dark fleet in a pixel, how do we distribute emissions? Next closest month or next closest pixel? - add +/-1 to lat_long?
+- group by `hours` *and* `kw_hours`? Can you sum a variable that you are grouping by? (i.e. `kw_hours`).
+- is rounding the course of discrepancy? How do we avoid? For building in checks!
 
 ## Visualize (maps, time series plots)
