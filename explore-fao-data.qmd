@@ -33,19 +33,35 @@ library(sf)
 fao_shapefile <- st_read(here::here("/capstone/seamissions/data/fao_region_shapefile/World_Fao_Zones.shp"))
 
 # ---- FAO seafood production data ---
-fao_capture_quantity <- read_csv(here::here("/capstone/seamissions/data/fao_seafood_production/Capture_Quantity.csv"))
+fao_capture_quantity <- read_csv(here::here("/capstone/seamissions/data/fao_seafood_production/Capture_Quantity.csv")) |> clean_names()
 
-fao_country_groups <- read_csv(here::here("/capstone/seamissions/data/fao_seafood_production/CL_FI_COUNTRY_GROUPS.csv"))
+fao_country_groups <- read_csv(here::here("/capstone/seamissions/data/fao_seafood_production/CL_FI_COUNTRY_GROUPS.csv"))|> clean_names()
 
-fao_species_groups <- read_csv(here::here("/capstone/seamissions/data/fao_seafood_production/CL_FI_SPECIES_GROUPS.csv"))
+fao_species_groups <- read_csv(here::here("/capstone/seamissions/data/fao_seafood_production/CL_FI_SPECIES_GROUPS.csv"))|> clean_names()
 
-fao_symbol <- read_csv(here::here("/capstone/seamissions/data/fao_seafood_production/CL_FI_SYMBOL_SDMX.csv"))
-
-fao_waterarea <- read_csv(here::here("/capstone/seamissions/data/fao_seafood_production/CL_FI_WATERAREA_GROUPS.csv"))
+fao_symbol <- read_csv(here::here("/capstone/seamissions/data/fao_seafood_production/CL_FI_SYMBOL_SDMX.csv")) |> clean_names()
+fao_waterarea <- read_csv(here::here("/capstone/seamissions/data/fao_seafood_production/CL_FI_WATERAREA_GROUPS.csv"))|> clean_names()
 
 ```
 
 ```{r}
+# --- Clean Data ----
+fao_country_groups_clean <- fao_country_groups |>
+  select(un_code, iso3_code, name_en, continent_group_en, official_name_en)
+
+fao_capture_join <- left_join(fao_capture_quantity, fao_country_groups_clean, by = join_by(country_un_code == un_code)) 
+
+fao_capture_join <- left_join(fao_capture_join, )
+
+
+
+
+
+# ---- Left join capture and country groups ----
+
+
+
+
 
 ```
 
