@@ -32,7 +32,9 @@ library(reprex)
 ## Load data
 
 ```{r}
-#| code-summary: Expand code
+#| code-summary: Load Project Data
+
+# ---- Load project data ----
 
 # Turn off scientific notation
 options(scipen=999)
@@ -41,9 +43,11 @@ options(scipen=999)
 pathway <- "/capstone/seamissions/data/meds_capstone_project"
 
 # Set up import for .csv or .xlsx files
-file_names <- list.files(here(pathway), pattern=paste0(c("*.xlsx","*.csv"), collapse="|"), full.names=TRUE)
+file_names <- list.files(here(pathway),
+                         pattern=paste0(c("*.xlsx","*.csv"),
+                                        collapse="|"), full.names=TRUE)
 
-# Read in data files
+# Read in emissions data files
 for (i in seq_along(file_names)) {
   # If .csv, read_csv
   if(grepl('.*\\.csv', file_names[i])) {
@@ -70,14 +74,16 @@ for (i in seq_along(file_names)) {
 ## Clean Data
 
 ```{r}
-#| code-summary: Expand code
+#| code-summary: Clean Data
 
-# Create `year_month` column
+# ---- Merge emissions datasets ----
+
+# Create `year_month` column in broadcasting dataset
 broadcasting <- ais_emissions %>%
   mutate(date = lubridate::ymd(month)) %>%
   mutate(year_month = format(date, '%Y-%m'))
   
-# Create `year_month` column
+# Create `year_month` column in nonbroadcasting dataset
 non_broadcasting <- non_broadcasting %>%
   mutate(date = lubridate::ymd(month)) %>%
   mutate(year_month = format(date, '%Y-%m'))
@@ -86,7 +92,8 @@ non_broadcasting <- non_broadcasting %>%
 ## Join Data
 
 ```{r}
-#| code-summary: Expand code
+#| code-summary: Join Broadcasting and Non-Broadcasting Datasets
+
 
 #  ---- Left join broadcasting and non-broadcasting datasets ----
 emissions_joined <- left_join(broadcasting, non_broadcasting, by = c("year_month", "lat_bin", "lon_bin", "length_size_class_percentile")) %>%
@@ -128,12 +135,13 @@ emissions_joined <- left_join(broadcasting, non_broadcasting, by = c("year_month
 
 **Decision point:** NA values in `emissions_non_broadcasting` are giving NA in the totals after factoring.
 
-- Solution: replaced NA with 0
+-   Solution: replaced NA with 0
 
 ## Factor Emissions
 
 ```{r}
-#| code-summary: Expand code
+#| code-summary: Factor Emissions
+
 # Factor non-broadcasting emissions
 emissions <- emissions_joined %>%
   # Calculate total kw hours per grouped "ship"
@@ -191,7 +199,7 @@ diff/em_before # 0.000004253729% nice
 
 ## Future decision points:
 
-- group by `hours` *and* `kw_hours`? Can you sum a variable that you are grouping by? (i.e. `kw_hours`).
-- is rounding the course of discrepancy? How do we avoid? For building in checks!
+-   group by `hours` *and* `kw_hours`? Can you sum a variable that you are grouping by? (i.e. `kw_hours`).
+-   is rounding the course of discrepancy? How do we avoid? For building in checks!
 
 ## Visualize (maps, time series plots)
