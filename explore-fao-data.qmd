@@ -49,7 +49,11 @@ fao_waterarea <- read_csv(here::here("/capstone/seamissions/data/fao_seafood_pro
 fao_country_groups_clean <- fao_country_groups |>
   select(un_code, iso3_code, name_en, continent_group_en, official_name_en)
 
+fao_species_groups_clean <- fao_species_groups |>
+  select(x3a_code, taxonomic_code, identifier, scientific_name, contains("_en"))
+
 fao_capture_join <- left_join(fao_capture_quantity, fao_country_groups_clean, by = join_by(country_un_code == un_code)) 
+
 
 fao_capture_join <- left_join(fao_capture_join, )
 
