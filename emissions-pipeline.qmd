@@ -18,6 +18,7 @@ editor_options:
 This repository hosts the code to create the open source data processing pipeline.
 
 ## Load packages
+
 ```{r}
 #| code-summary: Expand code
 library(tidyverse)
@@ -28,6 +29,7 @@ library(lubridate)
 ```
 
 ## Load data
+
 ```{r}
 #| code-summary: Expand code
 
@@ -63,6 +65,7 @@ for (i in seq_along(file_names)) {
 ```
 
 ## Clean data
+
 ```{r}
 #| code-summary: Expand code
 # Create `year_month` column
@@ -145,7 +148,6 @@ key <- emissions_2017 %>%
 
 ## Decision points:
 
-- If only dark fleet in a pixel, how do we distribute emissions? Next closest month or next closest pixel? - add +/-1 to lat_long?
+-   If only dark fleet in a pixel, how do we distribute emissions? Next closest month or next closest pixel? - add +/-1 to lat_long?
 
 ## Visualize (maps, time series plots)
-
