@@ -1,14 +1,22 @@
 ---
 title: "Visualizations"
-format: html
+subtitle: "Flash Talk 3"
+author: "Carmen Hoyt"
+format:
+  html:
+      toc: true
+      code-fold: true
 editor: visual
+execute:
+  warning: false
+  messages: false
 editor_options: 
   chunk_output_type: console
 ---
 
 # Visualizations
 
-Visualizing the emissions dataset for Flasktalk 3.
+Visualizing the emissions dataset for Flash Talk 3.
 
 ```{r}
 #| code-summary: Expand code
@@ -17,20 +25,27 @@ library(janitor)
 library(here)
 library(gghighlight)
 library(lubridate)
-#library(reprex)
 library(ggwordcloud)
 library(sf)
 library(raster)
 library(tmap)
 ```
 
+## Load Data
 ```{r}
-emissions <- read.csv(here("data", "emissions.csv"))
+#| code-summary: Expand code
+# Read in emissions data
+emissions <- read_csv(here("output", "emissions.csv"), show_col_types = FALSE)
+
+# Read in FAO shapefile
 shp <- st_read('/capstone/seamissions/data/fao_region_shapefile/World_Fao_Zones.shp')
 ```
 
-###
+## Clean Data
+
 ```{r}
+#| code-summary: Expand code
+# Pivot emissions data
 em_pivot <- emissions %>%
   pivot_longer(11:17,
                 names_to = "pollutant_type",
@@ -39,10 +54,10 @@ em_pivot <- emissions %>%
          year = as.numeric(substring(year_month, 1, 4)))
 ```
 
-
-### word cloud
+### Word Clouds
 ```{r}
-# word cloud of pollutants by total emissions in the dataset (all time)
+#| code-summary: Expand code
+# Word cloud of pollutants by total emissions (all time)
 em_pivot %>%
   group_by(pollutant_type) %>%
   summarise(emissions = sum(emissions)) %>%
@@ -50,7 +65,7 @@ ggplot(aes(label = pollutant_type, size = emissions)) +
   geom_text_wordcloud() +
   theme_minimal()
 
-# word cloud of flags
+# Word cloud of flags
 em_pivot %>%
   group_by(flag) %>%
   summarise(emissions = sum(emissions)) %>%
@@ -61,6 +76,7 @@ ggplot(aes(label = flag, size = emissions)) +
 
 ### By vessel class
 ```{r}
+#| code-summary: Expand code
 # emissions of 6 types of vessel classes over time
 em_pivot %>%
   group_by(year, vessel_class, pollutant_type) %>%
@@ -82,8 +98,9 @@ ggplot(aes(year, emissions, color = vessel_class)) +
   facet_wrap(~pollutant_type, scales = "free_y")
 ```
 
-### By flag
+### By Flag
 ```{r}
+#| code-summary: Expand code
 # top 5 + usa with 6 vessel types
 em_pivot %>%
   group_by(year, flag, vessel_class) %>%
@@ -97,13 +114,14 @@ em_pivot %>%
   facet_wrap(~flag, scales = "free_y") +
   theme_minimal() +
   theme(
-    
+   # customize theme 
   )
 ```
 
 ### By spatial extent
 ```{r}
-# mean global co2
+#| code-summary: Expand code
+# Mean global co2
 em_pivot %>%
   filter(pollutant_type == "co2") %>%
   group_by(lat_bin, lon_bin) %>%
@@ -192,12 +210,14 @@ tm_shape(shp) +
 ```
 
 ```{r}
+#| code-summary: Expand code
 em_pivot %>%
   ggplot(aes(as.factor(length_size_class_percentile), emissions)) +
   geom_boxplot()
 ```
 
 ```{r}
+#| code-summary: Expand code
 em_pivot %>%
   group_by(length_size_class_percentile, pollutant_type) %>%
   summarise(emissions = mean(emissions)) %>%
@@ -230,9 +250,24 @@ em_pivot %>%
 
 ```
 
+emLab colors:
+```{r}
+"#FFA508"
+
+"#034E95"
+
+"#63A545"
+
+"#008ECC"
+
+"#047C90"
+
+"#EDF0F2"
+
+```
+
 
 GFW colors:
-
 ```{r}
 "#1b4b87"
 
@@ -264,3 +299,130 @@ GFW colors:
 ```
 
 
+Old work: ?!?
+
+## Visualize (maps, time series plots)
+
+#### Vessel focus
+
+```{r}
+vessels <- emissions %>%
+  mutate(year = as.integer(substring(year_month, 1, 4))) %>%
+  group_by(year, vessel_class) %>%
+  summarise(co2 = sum(total_co2)) 
+
+ggplot(vessels, aes(year, co2, color = vessel_class)) +
+  geom_line() +
+  #scale_x_date(labels = scales::date_format("%Y")) +
+  scale_x_continuous(breaks = seq(min(vessels$year), max(vessels$year), by = 1)) +
+  gghighlight(vessel_class == "trawlers", use_group_by = FALSE)
+
+vessels2 <- emissions %>%
+  mutate(year = as.numeric(substring(year_month, 1, 4))) %>%
+  group_by(year, vessel_class) %>%
+  summarise(co2 = sum(total_co2),
+            ch4 = sum(total_ch4),
+            n2o = sum(total_n2o),
+            nox = sum(total_nox),
+            sox = sum(total_sox),
+            pm = sum(total_pm),
+            co = sum(total_co)) %>%
+  pivot_longer(cols = c(3:9), 
+               names_to = "pollutant_type",
+               values_to = "emissions")
+
+# vessels2$pollutant_type <- factor(vessels2$pollutant_type,
+#                           levels = c("co2", "ch4", "n2o"), 
+#                           labels = c("CO2", "CH4", "N2O"))
+
+ggplot(vessels2, aes(year, emissions, color = pollutant_type)) +
+  geom_line() +
+  facet_wrap(~vessel_class, scales = "free_y")
+  #gghighlight(pollutant_type == "co2", use_group_by = FALSE)
+
+ggplot(vessels2, aes(year, emissions, color = vessel_class)) +
+  geom_line() +
+  facet_wrap(~pollutant_type, scales = "free_y")
+
+vessels2 %>%
+  filter(pollutant_type == "co2") %>%
+  #filter(vessel_class %in% c("drifting_longlines", "passenger", "trawlers", "tuna_purse_seines", "squid_jigger")) %>%
+ggplot(aes(year, emissions)) +
+  geom_line() +
+  facet_wrap(~vessel_class 
+             #scales = "free_y"
+             ) +
+  scale_x_continuous(breaks = seq(min(vessels$year), max(vessels$year), by = 2)) 
+
+vessels2 %>%
+  filter(pollutant_type == "co2") %>%
+  filter(vessel_class %in% c("drifting_longlines", "passenger", "trawlers", "tuna_purse_seines", "squid_jigger", "pole_and_line")) %>%
+ggplot(aes(year, emissions, color = pollutant_type)) +
+  geom_line() +
+  facet_wrap(~vessel_class, scales = "free_y") +
+  scale_x_continuous(breaks = seq(min(vessels$year), max(vessels$year), by = 2))
+  #gghighlight(pollutant_type == "co2", use_group_by = TRUE)
+
+vessels2 %>%
+  filter(pollutant_type != "co2") %>%
+  filter(vessel_class %in% c("drifting_longlines", "passenger", "trawlers", "tuna_purse_seines", "squid_jigger", "pole_and_line")) %>%
+ggplot(aes(vessel_class, emissions, fill = pollutant_type)) +
+  geom_col(position = position_dodge()) +
+  coord_flip()
+```
+
+```{r}
+flags <- emissions %>%
+  mutate(year = as.integer(substring(year_month, 1, 4))) %>%
+  group_by(year, flag, vessel_class) %>%
+  summarise(co2 = sum(total_co2),
+            ch4 = sum(total_ch4),
+            n2o = sum(total_n2o),
+            nox = sum(total_nox),
+            sox = sum(total_sox),
+            pm = sum(total_pm),
+            co = sum(total_co)) %>%
+  pivot_longer(cols = c(4:10), 
+               names_to = "pollutant_type",
+               values_to = "emissions") 
+
+flags %>%
+  filter(pollutant_type == "co2") %>%
+  filter(flag %in% c("CHN", "RUS", "NOR", "JPN", "KOR", "USA")) %>%
+  filter(vessel_class %in% c("trawlers", "passenger", "patrol_vessel", "tuna_purse_seines", "drifting_longlines", "set_gillnets", "set_longlines")) %>%
+ggplot(aes(year, emissions, color = vessel_class)) +
+  geom_line() +
+  facet_wrap(~flag, scales = "free_y") +
+  scale_x_continuous(breaks = seq(min(vessels$year), max(vessels$year), by = 2))
+  
+
+#gghighlight(vessel_class == "trawlers", use_group_by = FALSE)
+
+
+emissions_2017 <- emissions %>%
+  mutate(date = lubridate::ym(year_month)) %>%
+  mutate(year = year(date)) %>%
+  filter(year == "2017")
+
+ggplot(emissions_2017, aes(flag, total_co2)) +
+  geom_boxplot() +
+  coord_flip()
+
+# em_pivot <- emissions %>%
+#   pivot_longer(cols = c(10:16), names_to = "pollutant_type",
+#                values_to = "total_emissions_mt") %>%
+#   mutate(pollutant_type = str_remove(pollutant_type, "total_"))
+# 
+# 
+# ggplot(em_pivot, aes(pollutant_type, total_emissions_mt)) +
+#   geom_boxplot() +
+#   coord_flip()
+
+# word cloud of pollutants by total emissions in the dataset (all time)
+em_pivot %>%
+  group_by(pollutant_type) %>%
+  summarise(emissions = sum(total_emissions_mt)) %>%
+ggplot(aes(label = pollutant_type, size = emissions)) +
+  geom_text_wordcloud() +
+  theme_minimal()
+```
