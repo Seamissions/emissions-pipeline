@@ -44,6 +44,7 @@ pathway <- "/capstone/seamissions/data/meds_capstone_project"
 # Set up import for .csv or .xlsx files
 file_names <- list.files(here(pathway), pattern=paste0(c("*.xlsx","*.csv"), collapse="|"), full.names=TRUE)
 
+# Read in emissions data files
 for (i in seq_along(file_names)) {
  if(str_detect(file_names[i], "non")) {
     table_name <- paste("non_broadcasting")
