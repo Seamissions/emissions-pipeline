@@ -2,4 +2,7 @@
 .Rhistory
 .RData
 .Ruserdata
-data/
+output/
+emissions-pipeline_files/libs
+visualizations_files/
+emissions-pipeline.rmarkdown

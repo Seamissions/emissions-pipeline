@@ -125,7 +125,7 @@ emissions_joined <- left_join(broadcasting, non_broadcasting, by = c("year_month
 
 **Decision point:** NA values in `emissions_non_broadcasting` are giving NA in the totals after factoring.
 
-- Solution: replaced NA with 0
+-   Solution: replaced NA with 0
 
 ## Factor Emissions
 
@@ -188,6 +188,5 @@ diff/em_before # 0.000004253729% nice
 
 ## Future decision points:
 
-- group by `hours` *and* `kw_hours`? Can you sum a variable that you are grouping by? (i.e. `kw_hours`).
-- is rounding the course of discrepancy? How do we avoid? For building in checks!
-
+-   group by `hours` *and* `kw_hours`? Can you sum a variable that you are grouping by? (i.e. `kw_hours`).
+-   is rounding the course of discrepancy? How do we avoid? For building in checks!
