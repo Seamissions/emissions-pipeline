@@ -30,6 +30,7 @@ library(sf)
 library(raster)
 library(tmap)
 library(treemapify)
+library(paletteer)
 ```
 
 ## Load Data
@@ -116,20 +117,38 @@ ggplot(aes(area = emissions, fill = flag, label = labels)) +
     legend.position = 'none'
     )
 
-em_pivot %>%
-  group_by(length_size_class_percentile, vessel_class) %>%
+# pollutant type
+plot <- em_pivot %>%
+  group_by(pollutant_type) %>%
   summarise(emissions = sum(emissions)) %>%
-  arrange(desc(emissions)) %>%
-  slice(1:10) %>%
-  ggplot(aes(area = emissions, fill = vessel_class, label = vessel_class)) +
+  mutate(labels = case_when(
+    pollutant_type == "ch4" ~ "CH4",
+    pollutant_type == "co" ~ "CO", 
+    pollutant_type == "co2" ~ "CO2", 
+    pollutant_type == "n2o" ~ "N2O",
+    pollutant_type == "nox" ~ "NOX", 
+    pollutant_type == "pm" ~ "PM",
+    pollutant_type == "pm10" ~ "PM10",
+    pollutant_type == "pm2_5" ~ "PM2.5",
+    pollutant_type == "sox" ~ "SOX",
+    pollutant_type == "vocs" ~ "VOCs"
+  )) 
+
+custom_labels <- setNames(plot$labels, plot$pollutant_type)
+  #arrange(desc(emissions)) %>%
+  #slice(1:10) %>%
+  ggplot(plot, aes(area = emissions, fill = pollutant_type, label = labels)) +
   geom_treemap() +
   geom_treemap_text(color = "white",
                     place = "center",
-                    #fontface = "bold",
-                    #grow = TRUE
+                    fontface = "bold",
+                    grow = TRUE,
                     size = 10) +
-  facet_wrap(~length_size_class_percentile) +
-  theme_minimal()
+  #scale_fill_brewer(palette = "Dark2") +
+  scale_fill_paletteer_d("ggthemes::Classic_Color_Blind", labels = custom_labels) +
+  theme_minimal() +
+  labs(fill = "Pollutant") +
+    theme(legend.position = 'none')
 
 # vessel classes
 em_pivot %>%
