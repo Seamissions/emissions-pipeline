@@ -95,7 +95,10 @@ emissions_joined <- left_join(broadcasting, non_broadcasting, by = c("year_month
          emissions_nox_non_broadcasting_mt = ifelse(is.na(emissions_nox_non_broadcasting_mt), 0, emissions_nox_non_broadcasting_mt),
          emissions_sox_non_broadcasting_mt = ifelse(is.na(emissions_sox_non_broadcasting_mt), 0, emissions_sox_non_broadcasting_mt),
          emissions_pm_non_broadcasting_mt = ifelse(is.na(emissions_pm_non_broadcasting_mt), 0, emissions_pm_non_broadcasting_mt),
-         emissions_co_non_broadcasting_mt = ifelse(is.na(emissions_co_non_broadcasting_mt), 0, emissions_co_non_broadcasting_mt)) %>%
+         emissions_co_non_broadcasting_mt = ifelse(is.na(emissions_co_non_broadcasting_mt), 0, emissions_co_non_broadcasting_mt),
+         emissions_vocs_non_broadcasting_mt = ifelse(is.na(emissions_vocs_non_broadcasting_mt), 0, emissions_co_non_broadcasting_mt),
+         emissions_pm2_5_non_broadcasting_mt = ifelse(is.na(emissions_pm2_5_non_broadcasting_mt), 0, emissions_co_non_broadcasting_mt),
+         emissions_pm10_non_broadcasting_mt = ifelse(is.na(emissions_pm10_non_broadcasting_mt), 0, emissions_co_non_broadcasting_mt)) %>%
 
   # Select columns to keep
   select(year_month, 
@@ -114,13 +117,20 @@ emissions_joined <- left_join(broadcasting, non_broadcasting, by = c("year_month
          emissions_sox_mt, 
          emissions_pm_mt, 
          emissions_co_mt,
+         emissions_vocs_mt,
+         emissions_pm2_5_mt,
+         emissions_pm10_mt,
          emissions_co2_non_broadcasting_mt,
          emissions_ch4_non_broadcasting_mt,
          emissions_n2o_non_broadcasting_mt,
          emissions_nox_non_broadcasting_mt,
          emissions_sox_non_broadcasting_mt,
          emissions_pm_non_broadcasting_mt,
-         emissions_co_non_broadcasting_mt)
+         emissions_co_non_broadcasting_mt,
+         emissions_vocs_non_broadcasting_mt,
+         emissions_pm2_5_non_broadcasting_mt,
+         emissions_pm10_non_broadcasting_mt
+         )
 ```
 
 **Decision point:** NA values in `emissions_non_broadcasting` are giving NA in the totals after factoring.
@@ -152,7 +162,10 @@ emissions <- emissions_joined %>%
          total_nox = emissions_nox_mt + (factor * emissions_nox_non_broadcasting_mt),
          total_sox = emissions_sox_mt + (factor * emissions_sox_non_broadcasting_mt),
          total_pm = emissions_pm_mt + (factor * emissions_pm_non_broadcasting_mt),
-         total_co = emissions_co_mt + (factor * emissions_co_non_broadcasting_mt)) %>%
+         total_co = emissions_co_mt + (factor * emissions_co_non_broadcasting_mt),
+         total_vocs = emissions_vocs_mt + (factor * emissions_vocs_non_broadcasting_mt),
+         total_pm2_5 =  emissions_pm2_5_mt + (factor * emissions_pm2_5_non_broadcasting_mt),
+         total_pm10 = emissions_pm10_mt + (factor * emissions_pm10_non_broadcasting_mt)) %>%
 
     # Select columns of interest
    select(year_month, 
@@ -170,7 +183,10 @@ emissions <- emissions_joined %>%
          total_nox, 
          total_sox, 
          total_pm, 
-         total_co)
+         total_co,
+         total_vocs,
+         total_pm2_5,
+         total_pm10)
 
 # -------- Check for discrepancies ---------
 # Total co2 emissions before factoring
@@ -183,10 +199,35 @@ em_after <- sum(emissions$total_co2, na.rm = TRUE)
 diff <- em_after - em_before
 
 # Percent error for co2
-diff/em_before # 0.000004253729% nice
+error <- diff/em_before # 0.000004253729% nice
+
+if (error > 0.001) {
+  warning("Error over 0.1% returned for emissions partitioning. Some CO2 emissions may be lost.")
+}
+
+# Total co emissions before factoring
+em_before <- sum(broadcasting$emissions_co_mt, na.rm = TRUE) + sum(non_broadcasting$emissions_co_non_broadcasting_mt, na.rm = TRUE)
+
+# Total co emissions after factoring
+em_after <- sum(emissions$total_co, na.rm = TRUE)
+
+# Difference in co emissions
+diff <- em_after - em_before
+
+# Percent error for co
+error <- diff/em_before # 0.00000449349% nice
+
+if (error > 0.001) {
+  warning("Error over 0.1% returned for emissions partitioning. Some CO emissions may be lost.")
+}
 ```
 
-## Future decision points:
+```{r}
+#| code-summary: Expand code
+# Save combined dataset
+write_csv(emissions, here("output", "emissions.csv"))
+```
 
--   group by `hours` *and* `kw_hours`? Can you sum a variable that you are grouping by? (i.e. `kw_hours`).
--   is rounding the course of discrepancy? How do we avoid? For building in checks!
+Future work:
+
+- Create for loop to check all emissions columns for error.

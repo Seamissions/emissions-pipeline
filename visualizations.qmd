@@ -40,7 +40,7 @@ library(treemapify)
 emissions <- read_csv(here("output", "emissions.csv"), show_col_types = FALSE)
 
 # Read in FAO shapefile
-shp <- st_read('/capstone/seamissions/data/fao_region_shapefile/World_Fao_Zones.shp')
+#shp <- st_read('/capstone/seamissions/data/fao_region_shapefile/World_Fao_Zones.shp')
 ```
 
 ## Clean Data
@@ -49,7 +49,7 @@ shp <- st_read('/capstone/seamissions/data/fao_region_shapefile/World_Fao_Zones.
 #| code-summary: Expand code
 # Pivot emissions data
 em_pivot <- emissions %>%
-  pivot_longer(11:17,
+  pivot_longer(10:19,
                 names_to = "pollutant_type",
                 values_to = "emissions") %>%
   mutate(pollutant_type = str_remove(pollutant_type, "total_"),
@@ -75,28 +75,39 @@ em_pivot %>%
   summarise(emissions = sum(emissions)) %>%
 ggplot(aes(label = flag, size = emissions)) +
   geom_text_wordcloud() +
-  #geom_text_wordcloud_area() +
-  #scale_size_area(max_size = 15) +
-  #scale_size_area(max_size = 10) +
   theme_void() +
-  theme(#plot.margin = unit(c(0, 0, 0, 0), "cm"),
-  text = element_text(family = "Comic Sans MS"))
+  theme(
+  text = element_text(family = "Comic Sans MS")
+  )
 ```
 
 ### Treemap
 
 ```{r}
 em_pivot %>%
+  mutate(flag = ifelse(flag %in% c("CHN", "RUS", "NOR", "JPN", "KOR", "TWN", "USA"), flag, "other")) %>%
   group_by(flag) %>%
   summarise(emissions = sum(emissions)) %>%
   arrange(desc(emissions)) %>%
   slice(1:10) %>%
-ggplot(aes(area = emissions, fill = flag, label = flag)) +
+  mutate(labels = case_when(
+    flag == "CHN" ~ "China",
+    flag == "RUS" ~ "Russia", 
+    flag == "NOR" ~ "Norway", 
+    flag == "JPN" ~ "Japan",
+    flag == "KOR" ~ "South Korea", 
+    flag == NA ~ "No Flag",
+    flag == "TWN" ~ "Taiwan",
+    flag == "USA" ~ "United States",
+    flag == "ISL" ~ "Israel",
+    flag == "ESP" ~ "Spain"
+  )) %>%
+ggplot(aes(area = emissions, fill = flag, label = labels)) +
   geom_treemap() + 
   geom_treemap_text(color = "white", 
                     place = "center", 
                     #fontface = "bold",
-                    #grow = TRUE
+                    grow = TRUE,
                     size = 10) +
   #scale_fill_manual(palette = "Blues") +
   theme_minimal() +
@@ -331,6 +342,99 @@ em_pivot %>%
                                 size = 10,
                                 hjust = 0.5)
   ) 
+
+```
+
+```{r}
+test <- broadcasting %>%
+  pivot_longer(10:19,
+                names_to = "pollutant_type",
+                values_to = "emissions") %>%
+  mutate(pollutant_type = str_remove(pollutant_type, "emissions_")) %>%
+  group_by(year_month, lat_bin, lon_bin) %>%
+  summarise(emissions_broad = sum(emissions))
+
+test2 <- non_broadcasting %>%
+  pivot_longer(5:14,
+                names_to = "pollutant_type",
+                values_to = "emissions") %>%
+  mutate(pollutant_type = str_remove(pollutant_type, "emissions_")) %>%
+  group_by(year_month, lat_bin, lon_bin) %>%
+  summarise(emissions_non = sum(emissions))
+
+test_joined <- left_join(test, test2, by = c("year_month", "lat_bin", "lon_bin"))
+
+viz <- test_joined %>%
+  group_by(lat_bin, lon_bin) %>%
+  summarise(emissions_broad = sum(emissions_broad, na.rm = TRUE),
+            emissions_non = sum(emissions_non, na.rm = TRUE)) %>%
+  mutate(prop = emissions_non/emissions_broad)
+
+# if (nrow(test) != nrow(test2)) {
+#   warning("Mismatched number of pixels. Cannot calculate proportion of ais to non-broadcasting.")
+# }
+
+viz %>%
+  filter(prop >= 20)
+
+ggplot(viz, aes(x = lon_bin, y = lat_bin, fill = prop)) +
+  geom_raster() +  # Faster rendering for large data
+  scale_fill_viridis_c(labels = scales::label_percent(scale = 100, big.mark = ",")) +
+  guides(fill = guide_colorbar(barwidth = 25, 
+                               barheight = 0.75,
+                               title.position = "top")) +
+  theme_void(base_size = 18) +
+  labs(title = "Proportion of Non-Broadcasting to\nBroadcasting Emissions",
+       subtitle = "2015-2024",
+       fill = "") +
+  theme(
+    axis.title = element_blank(),
+    
+    plot.title = element_text(family = "sans",
+                              size = rel(1.2),
+                              hjust = 0.5),
+    
+    plot.subtitle = element_text(family = "sans",
+                                size = rel(1.0),
+                                hjust = 0.5),
+    legend.position = "bottom",
+    legend.title = element_blank()
+    
+    # text(family = "sans",
+    #                             size = rel(1.0),
+    #                             hjust = 0.5)
+  ) 
+
+test2 %>%
+  group_by(lat_bin, lon_bin) %>%
+  summarise(emissions_non = sum(emissions_non)) %>%
+ggplot(aes(x = lon_bin, y = lat_bin, fill = emissions_non)) +
+  geom_raster() +  # Faster rendering for large data
+  scale_fill_viridis_c() +
+  guides(fill = guide_colorbar(barwidth = 15, 
+                               barheight = 0.75,
+                               title.position = "top")) +
+  theme_minimal() +
+  labs(title = "Non-Broadcasting Emissions",
+       subtitle = "",
+       fill = "Proportion") +
+  theme(
+    axis.title = element_blank(),
+    
+    plot.title = element_text(family = "sans",
+                              size = 12,
+                              hjust = 0.5),
+    
+    plot.subtitle = element_text(family = "sans",
+                                size = 10,
+                                hjust = 0.5),
+    legend.position = "bottom",
+    legend.title = element_text(family = "sans",
+                                size = 10,
+                                hjust = 0.5)
+  ) 
+```
+
 
 df_sf <- df_sf %>%
   filter(pollutant_type == "co2") %>%
