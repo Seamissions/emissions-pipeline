@@ -510,8 +510,6 @@ tm_shape(df_sf) +
 tm_shape(shp) +
   tm_borders() 
 
-```
-
 ```{r}
 #| code-summary: Expand code
 em_pivot %>%
