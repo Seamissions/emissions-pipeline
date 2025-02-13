@@ -33,13 +33,30 @@ library(ggwordcloud)
 ## Load data
 
 ```{r}
+data_directory_base <-  ifelse(Sys.info()["nodename"] == "quebracho" | Sys.info()["nodename"] == "sequoia",
+                               "/home/emlab",
+                               # Otherwise, set the directory for local machines based on the OS
+                               # If using Mac OS, the directory will be automatically set as follows
+                               ifelse(Sys.info()["sysname"]=="Darwin",
+                                      "/Users/Shared/nextcloud/emLab",
+                                      # If using Windows, the directory will be automatically set as follows
+                                      ifelse(Sys.info()["sysname"]=="Windows",
+                                             "G:/Shared\ drives/nextcloud/emLab",
+                                             # If using Linux, will need to manually modify the following directory path based on their user name
+                                             # Replace your_username with your local machine user name
+                                             "/home/choyt/Nextcloud")))
+
+project_directory <- glue::glue("{data_directory_base}/projects/current-projects/ocean-ghg-fisheries/data/processed/gfw-emissions/")
+```
+
+```{r}
 #| code-summary: Expand code
 
 # Turn off scientific notation
 options(scipen=999)
 
 # Set file path to data folder
-pathway <- "/capstone/seamissions/data/meds_capstone_project"
+pathway <- "/home/emlab/projects/current-projects/ocean-ghg-fisheries/data/processed/gfw_emissions/"
 
 # Set up import for .csv or .xlsx files
 file_names <- list.files(here(pathway), pattern=paste0(c("*.xlsx","*.csv"), collapse="|"), full.names=TRUE)
@@ -133,7 +150,7 @@ emissions_joined <- left_join(broadcasting, non_broadcasting, by = c("year_month
          )
 ```
 
-**Decision point:** NA values in `emissions_non_broadcasting` are giving NA in the totals after factoring.
+**Decision point:** NA values in `emissions_non_broadcasting` are giving NA in the totals after factoring (`non_broadcasting` missing 2015 data, NA values on join).
 
 -   Solution: replaced NA with 0
 
@@ -187,47 +204,56 @@ emissions <- emissions_joined %>%
          total_vocs,
          total_pm2_5,
          total_pm10)
-
-# -------- Check for discrepancies ---------
-# Total co2 emissions before factoring
-em_before <- sum(broadcasting$emissions_co2_mt, na.rm = TRUE) + sum(non_broadcasting$emissions_co2_non_broadcasting_mt, na.rm = TRUE)
-
-# Total co2 emissions after factoring
-em_after <- sum(emissions$total_co2, na.rm = TRUE)
-
-# Difference in co2 emissions
-diff <- em_after - em_before
-
-# Percent error for co2
-error <- diff/em_before # 0.000004253729% nice
-
-if (error > 0.001) {
-  warning("Error over 0.1% returned for emissions partitioning. Some CO2 emissions may be lost.")
-}
-
-# Total co emissions before factoring
-em_before <- sum(broadcasting$emissions_co_mt, na.rm = TRUE) + sum(non_broadcasting$emissions_co_non_broadcasting_mt, na.rm = TRUE)
-
-# Total co emissions after factoring
-em_after <- sum(emissions$total_co, na.rm = TRUE)
-
-# Difference in co emissions
-diff <- em_after - em_before
-
-# Percent error for co
-error <- diff/em_before # 0.00000449349% nice
-
-if (error > 0.001) {
-  warning("Error over 0.1% returned for emissions partitioning. Some CO emissions may be lost.")
-}
 ```
 
 ```{r}
 #| code-summary: Expand code
-# Save combined dataset
-write_csv(emissions, here("output", "emissions.csv"))
+# -------- Check for discrepancies ---------
+# List pollutants
+pollutants <- c("co2", 
+                "ch4",
+                "n2o",
+                "nox",
+                "sox", 
+                "pm", 
+                "co",
+                "vocs",
+                "pm2_5",
+                "pm10")
+
+# Check for discrepancies
+for (i in seq_along(pollutants)) {
+  
+  # Assign column names
+  broad_col <- paste0("emissions_", pollutants[i], "_mt")
+  non_broad_col <- paste0("emissions_", pollutants[i], "_non_broadcasting_mt")
+  em_col <- paste0("total_", pollutants[i])
+  
+  # Total emissions before factoring
+  em_before <- sum(broadcasting[[broad_col]], na.rm = TRUE) + sum(non_broadcasting[[non_broad_col]], na.rm = TRUE)
+  
+  # Total emissions after factoring
+  em_after <- sum(emissions[[em_col]], na.rm = TRUE)
+  
+  # Difference in emissions
+  diff <- em_after - em_before
+  
+  # Percent error
+  error <- diff/em_before
+  
+  # Trigger error warning for lost emissions over 0.1%
+  if (error > 0.001) {
+  warning(paste0("Error over 0.1% returned for ", {pollutants[i]}, " emissions partitioning. Some emissions may be lost."))
+  }
+}
 ```
 
-Future work:
+## Save Table
 
-- Create for loop to check all emissions columns for error.
+```{r}
+#| code-summary: Expand code
+# Save combined dataset
+# Create "checkpoint" folder
+write_csv(emissions, here("checkpoint", "emissions.csv"))
+```
+
