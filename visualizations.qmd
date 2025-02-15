@@ -1,0 +1,757 @@
+---
+title: "Visualizations"
+subtitle: "Flash Talk 3"
+author: "Carmen Hoyt"
+format:
+  html:
+      toc: true
+      code-fold: true
+editor: visual
+execute:
+  warning: false
+  messages: false
+editor_options: 
+  chunk_output_type: console
+---
+
+# Visualizations
+
+Visualizing the emissions dataset for Flash Talk 3.
+
+```{r}
+#| code-summary: Expand code
+library(tidyverse)
+library(janitor)
+library(here)
+library(gghighlight)
+library(lubridate)
+library(ggwordcloud)
+library(sf)
+library(raster)
+library(tmap)
+library(treemapify)
+library(paletteer)
+```
+
+## Load Data
+
+```{r}
+#| code-summary: Expand code
+# Read in emissions data
+emissions <- read_csv(here("checkpoint", "emissions.csv"), show_col_types = FALSE)
+
+# Read in FAO shapefile
+#shp <- st_read('/capstone/seamissions/data/fao_region_shapefile/World_Fao_Zones.shp')
+```
+
+## Clean Data
+
+```{r}
+#| code-summary: Expand code
+# Pivot emissions data
+em_pivot <- emissions %>%
+  pivot_longer(10:19,
+                names_to = "pollutant_type",
+                values_to = "emissions") %>%
+  mutate(pollutant_type = str_remove(pollutant_type, "total_"),
+         year = as.numeric(substring(year_month, 1, 4)))
+
+write_csv(em_pivot, here("checkpoint", "em_pivot.csv"))
+```
+
+### Word Clouds
+
+```{r}
+#| code-summary: Expand code
+# Word cloud of pollutants by total emissions (all time)
+em_pivot %>%
+  group_by(pollutant_type) %>%
+  summarise(emissions = sum(emissions)) %>%
+ggplot(aes(label = pollutant_type, size = emissions)) +
+  geom_text_wordcloud() +
+  scale_size_area(max_size = 15) +  # Increase max_size for bigger words
+  theme_minimal()
+
+# Word cloud of flags
+em_pivot %>%
+  group_by(flag) %>%
+  summarise(emissions = sum(emissions)) %>%
+ggplot(aes(label = flag, size = emissions)) +
+  geom_text_wordcloud() +
+  theme_void() +
+  theme(
+  text = element_text(family = "Comic Sans MS")
+  )
+```
+
+### Treemap
+
+```{r}
+em_pivot %>%
+  mutate(flag = ifelse(flag %in% c("CHN", "RUS", "NOR", "JPN", "KOR", "TWN", "USA"), flag, "other")) %>%
+  group_by(flag) %>%
+  summarise(emissions = sum(emissions)) %>%
+  arrange(desc(emissions)) %>%
+  slice(1:10) %>%
+  mutate(labels = case_when(
+    flag == "CHN" ~ "China",
+    flag == "RUS" ~ "Russia", 
+    flag == "NOR" ~ "Norway", 
+    flag == "JPN" ~ "Japan",
+    flag == "KOR" ~ "South Korea", 
+    flag == NA ~ "No Flag",
+    flag == "TWN" ~ "Taiwan",
+    flag == "USA" ~ "United States",
+    flag == "ISL" ~ "Israel",
+    flag == "ESP" ~ "Spain"
+  )) %>%
+ggplot(aes(area = emissions, fill = flag, label = labels)) +
+  geom_treemap() + 
+  geom_treemap_text(color = "white", 
+                    place = "center", 
+                    #fontface = "bold",
+                    grow = TRUE,
+                    size = 10) +
+  #scale_fill_manual(palette = "Blues") +
+  theme_minimal() +
+  theme(
+    # remove legend
+    legend.position = 'none'
+    )
+
+# pollutant type
+plot <- em_pivot %>%
+  group_by(pollutant_type) %>%
+  summarise(emissions = sum(emissions)) %>%
+  mutate(labels = case_when(
+    pollutant_type == "ch4" ~ "CH4",
+    pollutant_type == "co" ~ "CO", 
+    pollutant_type == "co2" ~ "CO2", 
+    pollutant_type == "n2o" ~ "N2O",
+    pollutant_type == "nox" ~ "NOX", 
+    pollutant_type == "pm" ~ "PM",
+    pollutant_type == "pm10" ~ "PM10",
+    pollutant_type == "pm2_5" ~ "PM2.5",
+    pollutant_type == "sox" ~ "SOX",
+    pollutant_type == "vocs" ~ "VOCs"
+  )) 
+
+custom_labels <- setNames(plot$labels, plot$pollutant_type)
+  #arrange(desc(emissions)) %>%
+  #slice(1:10) %>%
+  ggplot(plot, aes(area = emissions, fill = pollutant_type, label = labels)) +
+  geom_treemap() +
+  geom_treemap_text(color = "white",
+                    place = "center",
+                    fontface = "bold",
+                    grow = TRUE,
+                    size = 10) +
+  #scale_fill_brewer(palette = "Dark2") +
+  scale_fill_paletteer_d("ggthemes::Classic_Color_Blind", labels = custom_labels) +
+  theme_minimal() +
+  labs(fill = "Pollutant") +
+    theme(legend.position = 'none')
+
+# vessel classes
+em_pivot %>%
+  mutate(vessels = ifelse(vessel_class %in% c("drifting_longlines", "passenger", "set_longlines", "squid_jigger", "trawlers", "tuna_purse_seines", "pole_and_line", "pots_and_traps", "tug", "set_gillnets"), vessel_class, "other")) %>%
+  group_by(vessels) %>%
+  summarise(emissions = sum(emissions)) %>%
+  mutate(labels = case_when(
+    vessels == "drifting_longlines" ~ "Drifting Longlines",
+    vessels == "passenger" ~ "Passenger", 
+    vessels == "set_longlines" ~ "Set Longlines", 
+    vessels == "squid_jigger" ~ "Squid Jigger",
+    vessels == "trawlers" ~ "Trawlers", 
+    vessels == "tuna_purse_seines" ~ "Tuna Purse Seines",
+    vessels == "pole_and_line" ~ "Pole and Line",
+    vessels == "pots_and_traps" ~ "Pots and Traps",
+    vessels == "tug" ~ "Tug",
+    vessels == "set_gillnets" ~ "Set Gillnets",
+    vessels == "other" ~ "Other"
+  )) %>%
+  arrange(desc(emissions)) %>%
+  #slice(1:10) %>%
+  ggplot(aes(area = emissions, fill = vessels, label = labels)) +
+  geom_treemap() +
+  geom_treemap_text(color = "black",
+                    place = "center",
+                    #fontface = "bold",
+                    grow = TRUE,
+                    size = 10)+
+                    #label = labels) +
+  scale_fill_brewer(palette = "Set3") +
+  # scale_fill_manual(values = c(drifting_longlines = "#FFA508",
+  #           passenger = "#034E95",
+  #           set_longlines = "#63A545",
+  #           squid_jigger = "#008ECC",
+  #           trawlers = "#047C90",
+  #           tuna_purse_seines = "gray60",
+  #           pole_and_line = "brown",
+  #           tug = "#e22e12",
+  #           set_gillnets = "#00003c",
+  #           pots_and_traps = "orange")) +
+  #facet_wrap(~length_size_class_percentile) +
+  theme_minimal() +
+  theme(
+    legend.position = 'none'
+  )
+```
+
+### By vessel class
+
+```{r}
+#| code-summary: Expand code
+
+labels <- c(drifting_longlines = "Drifting Longlines",
+            passenger = "Passenger", 
+            set_longlines = "Set Longlines", 
+            squid_jigger = "Squid Jigger",
+            trawlers = "Trawlers", 
+            tuna_purse_seines = "Tuna Purse Seines",
+            pole_and_line = "Pole and Line",
+            pots_and_traps = "Pots and Traps",
+            tug = "Tug",
+            set_gillnets = "Set Gillnets",
+            other = "Other"
+            )
+
+# emissions of 6 types of vessel classes over time
+em_pivot %>%
+  filter(pollutant_type == "co2") %>%
+  group_by(year, vessel_class, pollutant_type) %>%
+  summarise(emissions = sum(emissions)) %>%
+  filter(vessel_class %in% c("drifting_longlines", "set_longlines", "passenger", "squid_jigger", "trawlers", "tuna_purse_seines")) %>%
+ggplot(aes(year, emissions, color = pollutant_type)) +
+  geom_line() +
+  facet_wrap(~vessel_class, 
+             #scales = "free_y", 
+             labeller = labeller(vessel_class = labels)) +
+  labs(y = "Emissions (MT)") +
+  scale_x_continuous(breaks = seq(min(em_pivot$year), max(em_pivot$year), by = 3)) +
+  scale_y_continuous(labels = scales::label_comma(scale = 1, accuracy = 1)) +
+  theme_minimal() +
+  theme(
+    # remove x axis title
+    axis.title.x = element_blank(),
+    
+    # adjust individual plot titles
+    strip.text = element_text(size = 12, face = "bold"),
+    
+    # remove legend
+    legend.position = 'none',
+    
+    # adjust the font and size of the axis text
+    axis.text = element_text(family = "sans",
+                              size = 10)
+    
+  )
+
+# emissions by pollutant and vessel class
+em_pivot %>%
+  group_by(year, vessel_class, pollutant_type) %>%
+  summarise(emissions = sum(emissions)) %>%
+  filter(vessel_class %in% c("drifting_longlines", "set_longlines", "passenger", "squid_jigger", "trawlers", "tuna_purse_seines")) %>%
+ggplot(aes(year, emissions, color = vessel_class)) +
+  geom_line() +
+  #gghighlight(vessel_class == "trawlers", use_group_by = FALSE) +
+  facet_wrap(~pollutant_type, scales = "free_y")
+
+
+em_pivot %>%
+  mutate(vessels = ifelse(vessel_class %in% c("drifting_longlines", "passenger", "set_longlines", "squid_jigger", "trawlers", "tuna_purse_seines", "pole_and_line", "pots_and_traps", "tug", "set_gillnets"), vessel_class, "other")) %>%
+  group_by(vessels) %>%
+  summarise(emissions = sum(emissions)) %>%
+  mutate(labels = case_when(
+    vessels == "drifting_longlines" ~ "Drifting Longlines",
+    vessels == "passenger" ~ "Passenger", 
+    vessels == "set_longlines" ~ "Set Longlines", 
+    vessels == "squid_jigger" ~ "Squid Jigger",
+    vessels == "trawlers" ~ "Trawlers", 
+    vessels == "tuna_purse_seines" ~ "Tuna Purse Seines",
+    vessels == "pole_and_line" ~ "Pole and Line",
+    vessels == "pots_and_traps" ~ "Pots and Traps",
+    vessels == "tug" ~ "Tug",
+    vessels == "set_gillnets" ~ "Set Gillnets",
+    vessels == "other" ~ "Other"
+  )) %>%
+  arrange(desc(emissions)) %>%
+  ggplot(aes(reorder(vessels, emissions), emissions)) +
+  geom_col() +
+  coord_flip()
+```
+
+### By Flag
+
+```{r}
+#| code-summary: Expand code
+
+flag_labels <- c(CHN = "China",
+                 JPN = "Japan",
+                 KOR = "South Korea",
+                 NOR = "Norway",
+                 RUS = "Russia",
+                 USA = "United States")
+
+# top 5 + usa with 6 vessel types
+em_pivot %>%
+  group_by(year, flag, vessel_class) %>%
+  summarise(emissions = sum(emissions)) %>%
+  filter(flag %in% c("CHN", "RUS", "NOR", "JPN", "KOR", "USA")) %>%
+  filter(vessel_class %in% c("trawlers", "passenger", "tuna_purse_seines", "drifting_longlines", "set_longlines", "squid_jigger", "pole_and_line")) %>%
+  ggplot(aes(year, emissions, color = vessel_class)) +
+  geom_line() +
+  scale_color_manual(values = c("#1b4b87", "#8abbc7", "#e22e12", "#63A545", "#fcb900", "#7bdcb5", "#32373c"), labels = labels) +
+  #scale_color_brewer(palette = "Set3") +
+  #gghighlight(vessel_class == "trawlers", use_group_by = FALSE) +
+  facet_wrap(~flag,
+             labeller = labeller(flag = flag_labels),
+             scales = "free_y") +
+  labs(y = "Emissions (MT)",
+       color = "Vessel Class") +
+  scale_x_continuous(breaks = seq(min(em_pivot$year), max(em_pivot$year), by = 3)) +
+  scale_y_continuous(labels = scales::label_comma(scale = 1, accuracy = 1)) +
+  theme_minimal() +
+  theme(
+    # remove x axis title
+    axis.title.x = element_blank(),
+    
+    # adjust individual plot titles
+    strip.text = element_text(size = 12, face = "bold"),
+    
+    # remove legend
+    #legend.position = 'none',
+    
+    # adjust the font and size of the axis text
+    axis.text = element_text(family = "sans",
+                              size = 10)
+  )
+```
+
+### By spatial extent
+
+```{r}
+#| code-summary: Expand code
+# Mean global co2
+em_pivot %>%
+  filter(pollutant_type == "co2") %>%
+  group_by(lat_bin, lon_bin) %>%
+  summarise(emissions = mean(emissions)) %>%
+  mutate(opacity = scales::rescale(emissions, to = c(0, 1))) %>%
+  ggplot(aes(x = lon_bin, y = lat_bin, fill = opacity)) +
+  geom_raster() +  # Faster rendering for large data
+  scale_fill_viridis_c() +
+  guides(fill = guide_colorbar(barwidth = 15, 
+                               barheight = 0.75,
+                               title.position = "top")) +
+  theme_minimal() +
+  labs(title = "Average Global CO2 Emissions",
+       subtitle = "2015-2024",
+       fill = "Relative Emissions") +
+  theme(
+    axis.title = element_blank(),
+    
+    plot.title = element_text(family = "sans",
+                              size = 12,
+                              hjust = 0.5),
+    
+    plot.subtitle = element_text(family = "sans",
+                                size = 10,
+                                hjust = 0.5),
+    legend.position = "bottom",
+    legend.title = element_text(family = "sans",
+                                size = 10,
+                                hjust = 0.5)
+  ) 
+
+```
+
+```{r}
+test <- broadcasting %>%
+  pivot_longer(10:19,
+                names_to = "pollutant_type",
+                values_to = "emissions") %>%
+  mutate(pollutant_type = str_remove(pollutant_type, "emissions_")) %>%
+  group_by(year_month, lat_bin, lon_bin) %>%
+  summarise(emissions_broad = sum(emissions))
+
+test2 <- non_broadcasting %>%
+  pivot_longer(5:14,
+                names_to = "pollutant_type",
+                values_to = "emissions") %>%
+  mutate(pollutant_type = str_remove(pollutant_type, "emissions_")) %>%
+  group_by(year_month, lat_bin, lon_bin) %>%
+  summarise(emissions_non = sum(emissions))
+
+test_joined <- left_join(test, test2, by = c("year_month", "lat_bin", "lon_bin"))
+
+viz <- test_joined %>%
+  group_by(lat_bin, lon_bin) %>%
+  summarise(emissions_broad = sum(emissions_broad, na.rm = TRUE),
+            emissions_non = sum(emissions_non, na.rm = TRUE)) %>%
+  mutate(prop = emissions_non/emissions_broad)
+
+# if (nrow(test) != nrow(test2)) {
+#   warning("Mismatched number of pixels. Cannot calculate proportion of ais to non-broadcasting.")
+# }
+
+viz %>%
+  filter(prop >= 20)
+
+ggplot(viz, aes(x = lon_bin, y = lat_bin, fill = prop)) +
+  geom_raster() +  # Faster rendering for large data
+  scale_fill_viridis_c(labels = scales::label_percent(scale = 100, big.mark = ",")) +
+  guides(fill = guide_colorbar(barwidth = 25, 
+                               barheight = 0.75,
+                               title.position = "top")) +
+  theme_void(base_size = 18) +
+  labs(title = "Proportion of Non-Broadcasting to\nBroadcasting Emissions",
+       subtitle = "2015-2024",
+       fill = "") +
+  theme(
+    axis.title = element_blank(),
+    
+    plot.title = element_text(family = "sans",
+                              size = rel(1.2),
+                              hjust = 0.5),
+    
+    plot.subtitle = element_text(family = "sans",
+                                size = rel(1.0),
+                                hjust = 0.5),
+    legend.position = "bottom",
+    legend.title = element_blank()
+    
+    # text(family = "sans",
+    #                             size = rel(1.0),
+    #                             hjust = 0.5)
+  ) 
+
+test2 %>%
+  group_by(lat_bin, lon_bin) %>%
+  summarise(emissions_non = sum(emissions_non)) %>%
+ggplot(aes(x = lon_bin, y = lat_bin, fill = emissions_non)) +
+  geom_raster() +  # Faster rendering for large data
+  scale_fill_viridis_c() +
+  guides(fill = guide_colorbar(barwidth = 15, 
+                               barheight = 0.75,
+                               title.position = "top")) +
+  theme_minimal() +
+  labs(title = "Non-Broadcasting Emissions",
+       subtitle = "",
+       fill = "Proportion") +
+  theme(
+    axis.title = element_blank(),
+    
+    plot.title = element_text(family = "sans",
+                              size = 12,
+                              hjust = 0.5),
+    
+    plot.subtitle = element_text(family = "sans",
+                                size = 10,
+                                hjust = 0.5),
+    legend.position = "bottom",
+    legend.title = element_text(family = "sans",
+                                size = 10,
+                                hjust = 0.5)
+  ) 
+```
+
+
+df_sf <- df_sf %>%
+  filter(pollutant_type == "co2") %>%
+  group_by(geometry) %>%
+  summarise(emissions = mean(emissions)) %>%
+  mutate(opacity = scales::rescale(emissions, to = c(0, 1))) %>%
+  ggplot(aes(fill = opacity)) +
+  geom_sf() +
+  scale_fill_viridis_c() +
+  geom_sf(data = shp, color = "black", fill = NA, size = 0.5) +  # Shapefile overlay
+  coord_sf() +
+  guides(fill = guide_colorbar(barwidth = 15, barheight = 0.75,
+                               title.position = "top")) +
+  theme_minimal() +
+  labs(title = "Average Global CO2 Emissions",
+       subtitle = "2015-2024",
+       fill = "Relative Emissions") +
+  theme(
+    axis.title = element_blank(),
+
+    plot.title = element_text(family = "sans",
+                              size = 12,
+                              hjust = 0.5),
+
+    plot.subtitle = element_text(family = "sans",
+                                size = 10,
+                                hjust = 0.5),
+    legend.position = "bottom",
+    legend.title = element_text(family = "sans",
+                                size = 10,
+                                hjust = 0.5)
+  )
+# 
+df_sf <- st_as_sf(em_pivot, coords = c("lon_bin", "lat_bin"), crs = 4326)
+shp <- st_transform(shp, crs(df_sf))
+colnames(shp)
+
+ggplot() +
+  # Assuming shapefile has a column "population" for color mapping
+
+  geom_sf(data = df_sf, aes(color = opacity)) +
+   geom_sf(data = shp, color = "black", size = 0.5) +
+  scale_fill_viridis_c() +  # Apply color scale (viridis for continuous data)
+  theme_minimal()
+
+shp <- st_make_valid(shp)
+st_crs(shp) == st_crs(df_sf)
+
+invalid_geometries <- st_is_valid(shp)
+shp <- shp[invalid_geometries, ]
+
+tm_shape(df_sf) +
+  tm_dots(col = "opacity", palette = "viridis") +  # Raster layer with color palette
+tm_shape(shp) +
+  tm_borders() 
+
+```{r}
+#| code-summary: Expand code
+em_pivot %>%
+  ggplot(aes(as.factor(length_size_class_percentile), emissions)) +
+  geom_boxplot()
+```
+
+```{r}
+#| code-summary: Expand code
+em_pivot %>%
+  filter(pollutant_type == "co2") %>%
+  group_by(length_size_class_percentile, pollutant_type) %>%
+  summarise(emissions = mean(emissions)) %>%
+  ggplot(aes(pollutant_type, emissions, fill = pollutant_type)) +
+  geom_col() +   # Create bars
+  coord_polar(theta = "y") + 
+  facet_wrap(~length_size_class_percentile) +
+  labs(fill = "Pollutant",
+       title = "Mean Emissions (Mt) by Vessel Length Class Size Percentile") +
+  theme_minimal()
+
+em_pivot %>%
+  group_by(length_size_class_percentile, vessel_class) %>%
+  summarise(vessels = n()) %>%
+  ggplot(aes(vessel_class, vessels, fill = vessel_class)) +
+  geom_col() +
+  coord_polar(theta = "y") +
+  facet_wrap(~length_size_class_percentile) +
+  theme_minimal()
+
+em_pivot %>%
+  group_by(length_size_class_percentile,  vessel_class) %>%
+  summarise(vessels = n()) %>%
+  ggplot(aes(length_size_class_percentile, fill = vessel_class)) +
+  geom_bar(stat = "count")
+
+em_pivot %>%
+  group_by(length_size_class_percentile,  vessel_class) %>%
+  summarise(vessels = n()) %>%
+  group_by(length_size_class_percentile) %>%
+  mutate(total_vessels = sum(vessels)) %>%
+  mutate(prop = vessels/total_vessels) %>%
+  
+  ggplot(aes(x = as.factor(length_size_class_percentile), y = prop, fill = vessel_class)) +
+  geom_col(stat = "identity")
+
+# df <- em_pivot %>%
+#   group_by(length_size_class_percentile, pollutant_type) %>%
+#   summarise(emissions = mean(emissions))
+# 
+# # Compute fractions of the whole
+# df$fraction <- df$emissions / sum(df$emissions)
+# df$ymax <- cumsum(df$fraction)
+# df$ymin <- c(0, head(df$ymax, n = -1))
+# 
+# ggplot(df, aes(ymax = ymax, ymin = ymin, xmax = 2, xmin = 1, fill = pollutant_type)) +
+#   geom_rect() +  # Create the donut segments
+#   geom_text(aes(x = 1.5, y = (ymin + ymax) / 2, label = paste0(round(fraction * 100), "%")), size = 5) +  # Labels
+#   coord_polar(theta = "y", start = -pi/2) + # Convert to semi-circle
+#   xlim(c(0, 2)) +  # Limit to half-circle
+#   facet_wrap(~length_size_class_percentile) +
+#   theme_void() +  # Remove grid and axis
+#   labs(title = "Fractions of a Whole in a Semi-Circle Donut Chart") +
+#   theme(legend.position = "bottom")
+
+```
+
+emLab colors:
+
+```{r}
+"#FFA508"
+
+"#034E95"
+
+"#63A545"
+
+"#008ECC"
+
+"#047C90"
+
+"#EDF0F2"
+
+```
+
+GFW colors:
+
+```{r}
+"#1b4b87"
+
+"#8abbc7"
+
+"#e22e12"
+
+"#00003c"
+
+"#f78da7"
+
+"#cf2e2e"
+
+"#ff6900"
+
+"#fcb900"
+
+"#7bdcb5"
+
+"#00d084"
+
+"#8ed1fc"
+
+"#0693e3"
+
+"#9b51e0"
+
+"#32373c"
+```
+
+Old work: ?!?
+
+## Visualize (maps, time series plots)
+
+#### Vessel focus
+
+```{r}
+vessels <- emissions %>%
+  mutate(year = as.integer(substring(year_month, 1, 4))) %>%
+  group_by(year, vessel_class) %>%
+  summarise(co2 = sum(total_co2)) 
+
+ggplot(vessels, aes(year, co2, color = vessel_class)) +
+  geom_line() +
+  #scale_x_date(labels = scales::date_format("%Y")) +
+  scale_x_continuous(breaks = seq(min(vessels$year), max(vessels$year), by = 1)) +
+  gghighlight(vessel_class == "trawlers", use_group_by = FALSE)
+
+vessels2 <- emissions %>%
+  mutate(year = as.numeric(substring(year_month, 1, 4))) %>%
+  group_by(year, vessel_class) %>%
+  summarise(co2 = sum(total_co2),
+            ch4 = sum(total_ch4),
+            n2o = sum(total_n2o),
+            nox = sum(total_nox),
+            sox = sum(total_sox),
+            pm = sum(total_pm),
+            co = sum(total_co)) %>%
+  pivot_longer(cols = c(3:9), 
+               names_to = "pollutant_type",
+               values_to = "emissions")
+
+# vessels2$pollutant_type <- factor(vessels2$pollutant_type,
+#                           levels = c("co2", "ch4", "n2o"), 
+#                           labels = c("CO2", "CH4", "N2O"))
+
+ggplot(vessels2, aes(year, emissions, color = pollutant_type)) +
+  geom_line() +
+  facet_wrap(~vessel_class, scales = "free_y")
+  #gghighlight(pollutant_type == "co2", use_group_by = FALSE)
+
+ggplot(vessels2, aes(year, emissions, color = vessel_class)) +
+  geom_line() +
+  facet_wrap(~pollutant_type, scales = "free_y")
+
+vessels2 %>%
+  filter(pollutant_type == "co2") %>%
+  #filter(vessel_class %in% c("drifting_longlines", "passenger", "trawlers", "tuna_purse_seines", "squid_jigger")) %>%
+ggplot(aes(year, emissions)) +
+  geom_line() +
+  facet_wrap(~vessel_class 
+             #scales = "free_y"
+             ) +
+  scale_x_continuous(breaks = seq(min(vessels$year), max(vessels$year), by = 2)) 
+
+vessels2 %>%
+  filter(pollutant_type == "co2") %>%
+  filter(vessel_class %in% c("drifting_longlines", "passenger", "trawlers", "tuna_purse_seines", "squid_jigger", "pole_and_line")) %>%
+ggplot(aes(year, emissions, color = pollutant_type)) +
+  geom_line() +
+  facet_wrap(~vessel_class, scales = "free_y") +
+  scale_x_continuous(breaks = seq(min(vessels$year), max(vessels$year), by = 2))
+  #gghighlight(pollutant_type == "co2", use_group_by = TRUE)
+
+vessels2 %>%
+  filter(pollutant_type != "co2") %>%
+  filter(vessel_class %in% c("drifting_longlines", "passenger", "trawlers", "tuna_purse_seines", "squid_jigger", "pole_and_line")) %>%
+ggplot(aes(vessel_class, emissions, fill = pollutant_type)) +
+  geom_col(position = position_dodge()) +
+  coord_flip()
+```
+
+```{r}
+flags <- emissions %>%
+  mutate(year = as.integer(substring(year_month, 1, 4))) %>%
+  group_by(year, flag, vessel_class) %>%
+  summarise(co2 = sum(total_co2),
+            ch4 = sum(total_ch4),
+            n2o = sum(total_n2o),
+            nox = sum(total_nox),
+            sox = sum(total_sox),
+            pm = sum(total_pm),
+            co = sum(total_co)) %>%
+  pivot_longer(cols = c(4:10), 
+               names_to = "pollutant_type",
+               values_to = "emissions") 
+
+flags %>%
+  filter(pollutant_type == "co2") %>%
+  filter(flag %in% c("CHN", "RUS", "NOR", "JPN", "KOR", "USA")) %>%
+  filter(vessel_class %in% c("trawlers", "passenger", "patrol_vessel", "tuna_purse_seines", "drifting_longlines", "set_gillnets", "set_longlines")) %>%
+ggplot(aes(year, emissions, color = vessel_class)) +
+  geom_line() +
+  facet_wrap(~flag, scales = "free_y") +
+  scale_x_continuous(breaks = seq(min(vessels$year), max(vessels$year), by = 2))
+  
+
+#gghighlight(vessel_class == "trawlers", use_group_by = FALSE)
+
+
+emissions_2017 <- emissions %>%
+  mutate(date = lubridate::ym(year_month)) %>%
+  mutate(year = year(date)) %>%
+  filter(year == "2017")
+
+ggplot(emissions_2017, aes(flag, total_co2)) +
+  geom_boxplot() +
+  coord_flip()
+
+# em_pivot <- emissions %>%
+#   pivot_longer(cols = c(10:16), names_to = "pollutant_type",
+#                values_to = "total_emissions_mt") %>%
+#   mutate(pollutant_type = str_remove(pollutant_type, "total_"))
+# 
+# 
+# ggplot(em_pivot, aes(pollutant_type, total_emissions_mt)) +
+#   geom_boxplot() +
+#   coord_flip()
+
+# word cloud of pollutants by total emissions in the dataset (all time)
+em_pivot %>%
+  group_by(pollutant_type) %>%
+  summarise(emissions = sum(total_emissions_mt)) %>%
+ggplot(aes(label = pollutant_type, size = emissions)) +
+  geom_text_wordcloud() +
+  theme_minimal()
+```

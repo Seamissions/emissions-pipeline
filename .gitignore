@@ -3,3 +3,8 @@ data/
 .Rhistory
 .RData
 .Ruserdata
+checkpoint/
+plots/
+emissions-pipeline_files/libs
+visualizations_files/
+emissions-pipeline.rmarkdown

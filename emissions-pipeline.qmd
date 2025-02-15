@@ -15,7 +15,7 @@ editor_options:
 
 # About
 
-This repository hosts the code to create the open source data processing pipeline.
+This repository hosts the code for merging the emissions datasets.
 
 ## Load packages
 
@@ -26,7 +26,8 @@ library(janitor)
 library(here)
 library(gghighlight)
 library(lubridate)
-library(reprex)
+library(ggwordcloud)
+library(glue)
 ```
 
 ## Load data
@@ -36,36 +37,50 @@ library(reprex)
 
 # ---- Load project data ----
 
+data_directory_base <-  ifelse(Sys.info()["nodename"] == "quebracho" | Sys.info()["nodename"] == "sequoia",
+                               "/home/emlab",
+                               # Otherwise, set the directory for local machines based on the OS
+                               # If using Mac OS, the directory will be automatically set as follows
+                               ifelse(Sys.info()["sysname"]=="Darwin",
+                                      "/Users/Shared/nextcloud/emLab",
+                                      # If using Windows, the directory will be automatically set as follows
+                                      ifelse(Sys.info()["sysname"]=="Windows",
+                                             "G:/Shared\ drives/nextcloud/emLab",
+                                             # If using Linux, will need to manually modify the following directory path based on their user name
+                                             # Replace your_username with your local machine user name
+                                             "/home/choyt/Nextcloud")))
+
+project_directory <- paste0(data_directory_base, "/projects/current-projects/ocean-ghg-fisheries/data/processed/gfw-emissions/")
+```
+
+```{r}
+#| code-summary: Expand code
+
 # Turn off scientific notation
 options(scipen=999)
 
 # Set file path to data folder
-pathway <- '/home/emlab/projects/current-projects/ocean-ghg-fisheries/data/processed/gfw_emissions/'
+pathway <- "/home/emlab/projects/current-projects/ocean-ghg-fisheries/data/processed/gfw_emissions/"
+
 
 # Set up import for .csv or .xlsx files
-file_names <- list.files(here(pathway),
-                         pattern=paste0(c("*.xlsx","*.csv"),
-                                        collapse="|"), full.names=TRUE)
+file_names <- list.files(pathway, pattern="*.csv", full.names=TRUE)
 
 # Read in emissions data files
 for (i in seq_along(file_names)) {
-  # If .csv, read_csv
-  if(grepl('.*\\.csv', file_names[i])) {
-        table <- read_csv(file_names[i], show_col_types = FALSE) %>%
-          clean_names()
-         } else {
-           # If .xslx, read_excel
-           table <- read_excel(file_names[i]) %>%
-             clean_names()
-         }
-  
-  # Rename files truncated names
-  if(str_detect(file_names[i], "non")) {
-    table_name <- substr(file_names[i], 64, 79)
+ if(str_detect(file_names[i], "non")) {
+    table_name <- paste("non_broadcasting")
+    assign(table_name, read_csv(file_names[i], show_col_types = FALSE) %>%
+          clean_names())
+
+  } else if (str_detect(file_names[i], "ais")) {
+    table_name <- paste("broadcasting")
+    assign(table_name, read_csv(file_names[i], show_col_types = FALSE) %>%
+          clean_names())
+    
   } else {
-    table_name <- substr(file_names[i], 64, 76)
+    warning("Extra file detected.")
   }
-  assign(table_name, table)
 }
 ```
 
@@ -78,8 +93,9 @@ for (i in seq_along(file_names)) {
 
 # ---- Merge emissions datasets ----
 
-# Create `year_month` column in broadcasting dataset
-broadcasting <- ais_emissions %>%
+# Create `year_month` column
+broadcasting <- broadcasting %>%
+
   mutate(date = lubridate::ymd(month)) %>%
   mutate(year_month = format(date, '%Y-%m'))
   
@@ -105,7 +121,10 @@ emissions_joined <- left_join(broadcasting, non_broadcasting, by = c("year_month
          emissions_nox_non_broadcasting_mt = ifelse(is.na(emissions_nox_non_broadcasting_mt), 0, emissions_nox_non_broadcasting_mt),
          emissions_sox_non_broadcasting_mt = ifelse(is.na(emissions_sox_non_broadcasting_mt), 0, emissions_sox_non_broadcasting_mt),
          emissions_pm_non_broadcasting_mt = ifelse(is.na(emissions_pm_non_broadcasting_mt), 0, emissions_pm_non_broadcasting_mt),
-         emissions_co_non_broadcasting_mt = ifelse(is.na(emissions_co_non_broadcasting_mt), 0, emissions_co_non_broadcasting_mt)) %>%
+         emissions_co_non_broadcasting_mt = ifelse(is.na(emissions_co_non_broadcasting_mt), 0, emissions_co_non_broadcasting_mt),
+         emissions_vocs_non_broadcasting_mt = ifelse(is.na(emissions_vocs_non_broadcasting_mt), 0, emissions_co_non_broadcasting_mt),
+         emissions_pm2_5_non_broadcasting_mt = ifelse(is.na(emissions_pm2_5_non_broadcasting_mt), 0, emissions_co_non_broadcasting_mt),
+         emissions_pm10_non_broadcasting_mt = ifelse(is.na(emissions_pm10_non_broadcasting_mt), 0, emissions_co_non_broadcasting_mt)) %>%
 
   # Select columns to keep
   select(year_month, 
@@ -124,26 +143,37 @@ emissions_joined <- left_join(broadcasting, non_broadcasting, by = c("year_month
          emissions_sox_mt, 
          emissions_pm_mt, 
          emissions_co_mt,
+         emissions_vocs_mt,
+         emissions_pm2_5_mt,
+         emissions_pm10_mt,
          emissions_co2_non_broadcasting_mt,
          emissions_ch4_non_broadcasting_mt,
          emissions_n2o_non_broadcasting_mt,
          emissions_nox_non_broadcasting_mt,
          emissions_sox_non_broadcasting_mt,
          emissions_pm_non_broadcasting_mt,
-         emissions_co_non_broadcasting_mt)
+         emissions_co_non_broadcasting_mt,
+         emissions_vocs_non_broadcasting_mt,
+         emissions_pm2_5_non_broadcasting_mt,
+         emissions_pm10_non_broadcasting_mt
+         )
 ```
 
-**Decision point:** NA values in `emissions_non_broadcasting` are giving NA in the totals after factoring.
+**Decision point:** NA values in `emissions_non_broadcasting` are giving NA in the totals after factoring (`non_broadcasting` missing 2015 data, NA values on join).
 
 -   Solution: replaced NA with 0
+-   Filter for year >= 2016?
+
 
 ## Factor Emissions
 
 ```{r}
-#| code-summary: Factor Emissions
+#| code-summary: Expand code
+
 
 # Factor non-broadcasting emissions
 emissions <- emissions_joined %>%
+  
   # Calculate total kw hours per grouped "ship"
   group_by(year_month, lon_bin, lat_bin, flag, vessel_class, length_size_class_percentile, hours, kw_hours) %>% 
   mutate(kw_hours_by_ship = sum(kw_hours, na.rm = TRUE)) %>%
@@ -163,10 +193,13 @@ emissions <- emissions_joined %>%
          total_nox = emissions_nox_mt + (factor * emissions_nox_non_broadcasting_mt),
          total_sox = emissions_sox_mt + (factor * emissions_sox_non_broadcasting_mt),
          total_pm = emissions_pm_mt + (factor * emissions_pm_non_broadcasting_mt),
-         total_co = emissions_co_mt + (factor * emissions_co_non_broadcasting_mt)) %>%
+         total_co = emissions_co_mt + (factor * emissions_co_non_broadcasting_mt),
+         total_vocs = emissions_vocs_mt + (factor * emissions_vocs_non_broadcasting_mt),
+         total_pm2_5 =  emissions_pm2_5_mt + (factor * emissions_pm2_5_non_broadcasting_mt),
+         total_pm10 = emissions_pm10_mt + (factor * emissions_pm10_non_broadcasting_mt)) %>%
 
-    # Select columns of interest
-   select(year_month, 
+  # Select columns of interest
+  select(year_month, 
          lon_bin,
          lat_bin,
          flag, 
@@ -181,25 +214,80 @@ emissions <- emissions_joined %>%
          total_nox, 
          total_sox, 
          total_pm, 
-         total_co)
-
-# -------- Check for discrepancies ---------
-# Total co2 emissions before factoring
-em_before <- sum(broadcasting$emissions_co2_mt, na.rm = TRUE) + sum(non_broadcasting$emissions_co2_non_broadcasting_mt, na.rm = TRUE)
-
-# Total co2 emissions after factoring
-em_after <- sum(emissions$total_co2, na.rm = TRUE)
-
-# Difference in co2 emissions
-diff <- em_after - em_before
-
-# Percent error for co2
-diff/em_before # 0.000004253729% nice
+         total_co,
+         total_vocs,
+         total_pm2_5,
+         total_pm10)
 ```
 
-## Future decision points:
+## Check for Discrepancies
 
--   group by `hours` *and* `kw_hours`? Can you sum a variable that you are grouping by? (i.e. `kw_hours`).
--   is rounding the course of discrepancy? How do we avoid? For building in checks!
+```{r}
+#| code-summary: Expand code
 
-## Visualize (maps, time series plots)
+# List pollutants
+pollutants <- c("co2", 
+                "ch4",
+                "n2o",
+                "nox",
+                "sox", 
+                "pm", 
+                "co",
+                "vocs",
+                "pm2_5",
+                "pm10")
+
+# Check for discrepancies
+for (i in seq_along(pollutants)) {
+  
+  # Assign column names
+  broad_col <- paste0("emissions_", pollutants[i], "_mt")
+  non_broad_col <- paste0("emissions_", pollutants[i], "_non_broadcasting_mt")
+  em_col <- paste0("total_", pollutants[i])
+  
+  # Total emissions before factoring
+  em_before <- sum(broadcasting[[broad_col]], na.rm = TRUE) + sum(non_broadcasting[[non_broad_col]], na.rm = TRUE)
+  
+  # Total emissions after factoring
+  em_after <- sum(emissions[[em_col]], na.rm = TRUE)
+  
+  # Difference in emissions
+  diff <- em_after - em_before
+  
+  # Percent error
+  error <- diff/em_before
+  
+  # Trigger error warning for lost emissions over 0.1%
+  if (error > 0.001) {
+  warning(paste0("Error over 0.1% returned for ", {pollutants[i]}, " emissions partitioning. Some emissions may be lost."))
+  }
+}
+```
+
+## Pivot Data for Visualizations
+
+```{r}
+#| code-summary: Expand code
+
+# Pivot emissions data
+em_pivot <- emissions %>%
+  pivot_longer(10:19,
+                names_to = "pollutant_type",
+                values_to = "emissions") %>%
+  mutate(pollutant_type = str_remove(pollutant_type, "total_"),
+         year = as.numeric(substring(year_month, 1, 4)))
+```
+
+## Save Tables
+
+```{r}
+#| code-summary: Expand code
+
+# Create "checkpoint" folder if needed
+# Save combined dataset
+write_csv(emissions, here("checkpoint", "emissions.csv"))
+# Saved pivot dataset
+write_csv(em_pivot, here("checkpoint", "em_pivot.csv"))
+```
+
+
