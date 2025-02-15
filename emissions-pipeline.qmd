@@ -28,6 +28,7 @@ library(gghighlight)
 library(lubridate)
 library(ggwordcloud)
 library(glue)
+library(sf)
 ```
 
 ## Load data
@@ -60,6 +61,8 @@ project_directory <- paste0(data_directory_base, "/projects/current-projects/oce
 options(scipen=999)
 
 # Set file path to data folder
+data_pathway <- "/home/emlab/projects/current-projects/ocean-ghg-fisheries/data/_targets_meds_data/process"
+
 pathway <- "/home/emlab/projects/current-projects/ocean-ghg-fisheries/data/processed/gfw_emissions/"
 
 
@@ -288,6 +291,47 @@ em_pivot <- emissions %>%
 write_csv(emissions, here("checkpoint", "emissions.csv"))
 # Saved pivot dataset
 write_csv(em_pivot, here("checkpoint", "em_pivot.csv"))
+```
+
+## Spatial Join FAO Regions and Emissions 
+
+- Convert emissions to square pixels (st_make_grid) (Note: Lat, Long is lower left of pixel)
+- Use Equal Earth or Mollweide for projection
+
+```{r}
+# Define emissions as sf object
+emissions_sf <- emissions %>%
+  st_as_sf(coords = c("lon_bin", "lat_bin"), crs = 4326) # Change CRS later
+
+# convert lat/long points to grid of polygons
+emissions_grid <- emissions_sf %>%
+  st_make_grid(cellsize = c(1,1),
+               what = "polygons")
+
+# force to spatial object
+emissions_grid_sf <- st_as_sf(emissions_grid)
+
+# join emissions grid with original sf for attribute data
+# emissions_grid <- st_join(emissions_grid_sf, emissions_sf)
+
+# check it out
+plot(st_geometry(emissions_grid), main = "Emissions Grid")
+```
+
+#### Check CRS and projections 
+
+- Check FAO and emissions grid, make sure they match and re-project if needed
+
+```{r}
+fao_regions <- st_read(file.path(data_pathway, "fao_region_shapefile/World_FAO_Zones.shp"))
+```
+
+- Assign FAO regions to emissions 
+- Assign majority pixel to region as a test then, assign by proportion
+
+
+```{r}
+
 ```
 
 
