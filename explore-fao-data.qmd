@@ -62,4 +62,3 @@ fao_capture_join <- left_join(fao_capture_join, fao_species_groups_clean, by = j
 fao_capture_join <- left_join(fao_capture_join, fao_waterarea_clean, by = join_by(area_code == code))
 
 ```
-
