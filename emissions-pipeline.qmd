@@ -40,7 +40,7 @@ library(reprex)
 options(scipen=999)
 
 # Set file path to data folder
-pathway <- "/capstone/seamissions/data/meds_capstone_project"
+pathway <- '/home/emlab/projects/current-projects/ocean-ghg-fisheries/data/processed/gfw_emissions/'
 
 # Set up import for .csv or .xlsx files
 file_names <- list.files(here(pathway),
@@ -137,7 +137,7 @@ emissions_joined <- left_join(broadcasting, non_broadcasting, by = c("year_month
 
 -   Solution: replaced NA with 0
 
-## Factor Emissions 
+## Factor Emissions
 
 ```{r}
 #| code-summary: Factor Emissions
