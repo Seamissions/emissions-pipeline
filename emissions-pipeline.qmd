@@ -52,6 +52,9 @@ data_directory_base <-  ifelse(Sys.info()["nodename"] == "quebracho" | Sys.info(
                                              "/home/choyt/Nextcloud")))
 
 project_directory <- paste0(data_directory_base, "/projects/current-projects/ocean-ghg-fisheries/data/processed/gfw-emissions/")
+
+# Set file path to data folder
+data_pathway <- "/home/emlab/projects/current-projects/ocean-ghg-fisheries/data/raw"
 ```
 
 ```{r}
@@ -60,8 +63,11 @@ project_directory <- paste0(data_directory_base, "/projects/current-projects/oce
 # Turn off scientific notation
 options(scipen=999)
 
+<<<<<<< HEAD
 # Set file path to data folder
 data_pathway <- "/home/emlab/projects/current-projects/ocean-ghg-fisheries/data"
+=======
+>>>>>>> c9ead5b9922e415e572a0f3105bc26b89ca06b3c
 pathway <- "/home/emlab/projects/current-projects/ocean-ghg-fisheries/data/processed/gfw_emissions/"
 
 
@@ -325,7 +331,11 @@ plot(st_geometry(emissions_grid), main = "Emissions Grid")
 - Check FAO and emissions grid, make sure they match and re-project if needed
 
 ```{r}
+<<<<<<< HEAD
 fao_regions <- st_read(file.path(data_pathway, "raw/world_fao_zones/world_fao_zones.shp"))
+=======
+fao_regions <- st_read(file.path("/home/emlab/projects/current-projects/ocean-ghg-fisheries/data/raw/world_fao_zones/world_fao_zones.shp"))
+>>>>>>> c9ead5b9922e415e572a0f3105bc26b89ca06b3c
 ```
 
 - Assign FAO regions to emissions 
