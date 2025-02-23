@@ -63,13 +63,10 @@ data_pathway <- "/home/emlab/projects/current-projects/ocean-ghg-fisheries/data/
 # Turn off scientific notation
 options(scipen=999)
 
-<<<<<<< HEAD
 # Set file path to data folder
-data_pathway <- "/home/emlab/projects/current-projects/ocean-ghg-fisheries/data"
-=======
->>>>>>> c9ead5b9922e415e572a0f3105bc26b89ca06b3c
-pathway <- "/home/emlab/projects/current-projects/ocean-ghg-fisheries/data/processed/gfw_emissions/"
+#pathway <- "/home/emlab/projects/current-projects/ocean-ghg-fisheries/data/processed/gfw_emissions/"
 
+pathway <- "/capstone/seamissions/data/meds_capstone_project"
 
 # Set up import for .csv or .xlsx files
 file_names <- list.files(pathway, pattern="*.csv", full.names=TRUE)
@@ -172,10 +169,6 @@ emissions_joined <- left_join(broadcasting, non_broadcasting, by = c("year_month
 -   Solution: replaced NA with 0
 -   Filter for year >= 2016?
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 65348f1988d186d5b9432eec671f1ba99e682a28
 ## Factor Emissions
 
 ```{r}
@@ -331,11 +324,13 @@ plot(st_geometry(emissions_grid), main = "Emissions Grid")
 - Check FAO and emissions grid, make sure they match and re-project if needed
 
 ```{r}
-<<<<<<< HEAD
-fao_regions <- st_read(file.path(data_pathway, "raw/world_fao_zones/world_fao_zones.shp"))
-=======
-fao_regions <- st_read(file.path("/home/emlab/projects/current-projects/ocean-ghg-fisheries/data/raw/world_fao_zones/world_fao_zones.shp"))
->>>>>>> c9ead5b9922e415e572a0f3105bc26b89ca06b3c
+
+#fao_regions <- st_read(file.path(data_pathway, "raw/world_fao_zones/world_fao_zones.shp"))
+
+#fao_regions <- st_read(file.path("/home/emlab/projects/current-projects/ocean-ghg-fisheries/data/raw/world_fao_zones/world_fao_zones.shp"))
+
+fao_regions <- st_read(file.path("/capstone/seamissions/data/fao_region_shapefile"))
+
 ```
 
 - Assign FAO regions to emissions 
