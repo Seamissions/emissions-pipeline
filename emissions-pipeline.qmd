@@ -310,13 +310,49 @@ emissions_grid <- emissions_sf %>%
                what = "polygons")
 
 # force to spatial object
-emissions_grid_sf <- st_as_sf(emissions_grid)
+#emissions_grid_sf <- st_as_sf(emissions_grid)
 
 # join emissions grid with original sf for attribute data
 # emissions_grid <- st_join(emissions_grid_sf, emissions_sf)
 
 # check it out
 plot(st_geometry(emissions_grid), main = "Emissions Grid")
+```
+
+## Side quest
+
+```{r}
+# Define emissions as sf object
+emissions_sf_2 <- emissions %>%
+  filter(lat_bin >= -15 & lat_bin <= -75) %>%
+  filter(lon_bin >= 120 & lon_bin <= -115) %>%
+  st_as_sf(coords = c("lon_bin", "lat_bin"), crs = 4326) # Change CRS later
+  
+# convert lat/long points to grid of polygons
+emissions_grid_2 <- emissions_sf_2 %>%
+  st_make_grid(cellsize = c(1,1),
+               what = "polygons")
+
+# force to spatial object
+#emissions_grid_sf_2 <- st_as_sf(emissions_grid_2)
+#emissions_grid_sf_2 <- st_sf(geometry = emissions_grid_2)
+
+# join emissions grid with original sf for attribute data
+# emissions_grid <- st_join(emissions_grid_sf, emissions_sf)
+
+points_2 <- emissions %>%
+  filter(lat_bin >= 0 & lat_bin <= 10) %>%
+  filter(lon_bin >= 0 & lon_bin <= 10) %>%
+  st_as_sf(coords = c("lon_bin", "lat_bin"), crs = 4326)
+
+
+test <- emissions %>%
+  filter(lat_bin == 8) %>%
+  filter(lon_bin == 8)
+
+# check it out
+plot(st_geometry(emissions_grid_2), main = "Emissions Grid")
+plot(st_geometry(points_2), add = TRUE)
 ```
 
 #### Check CRS and projections 
@@ -329,8 +365,18 @@ plot(st_geometry(emissions_grid), main = "Emissions Grid")
 
 #fao_regions <- st_read(file.path("/home/emlab/projects/current-projects/ocean-ghg-fisheries/data/raw/world_fao_zones/world_fao_zones.shp"))
 
-fao_regions <- st_read(file.path("/capstone/seamissions/data/fao_region_shapefile"))
+fao_regions <- st_read(file.path("/capstone/seamissions/data/fao_region_shapefile"), crs = st_crs(emissions_grid))
 
+#st_crs(fao_regions) <- st_crs(emissions_grid_2)
+st_crs(fao_regions) == st_crs(emissions_grid)
+
+zone_31 <- fao_regions %>%
+  filter(zone ==31)
+plot(zone_31)
+
+intersecting_points <- emissions_sf[st_intersects(emissions_sf, zone_31, sparse = FALSE), ]
+
+plot(intersecting_points['flag'])
 ```
 
 - Assign FAO regions to emissions 
