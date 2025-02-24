@@ -33,7 +33,9 @@ library(glue)
 ## Load data
 
 ```{r}
-#| code-summary: Expand code
+#| code-summary: Load Project Data
+
+# ---- Load project data ----
 
 data_directory_base <-  ifelse(Sys.info()["nodename"] == "quebracho" | Sys.info()["nodename"] == "sequoia",
                                "/home/emlab",
@@ -86,14 +88,17 @@ for (i in seq_along(file_names)) {
 ## Clean Data
 
 ```{r}
-#| code-summary: Expand code
+#| code-summary: Clean Data
+
+# ---- Merge emissions datasets ----
 
 # Create `year_month` column
 broadcasting <- broadcasting %>%
+
   mutate(date = lubridate::ymd(month)) %>%
   mutate(year_month = format(date, '%Y-%m'))
   
-# Create `year_month` column
+# Create `year_month` column in nonbroadcasting dataset
 non_broadcasting <- non_broadcasting %>%
   mutate(date = lubridate::ymd(month)) %>%
   mutate(year_month = format(date, '%Y-%m'))
@@ -102,7 +107,8 @@ non_broadcasting <- non_broadcasting %>%
 ## Join Data
 
 ```{r}
-#| code-summary: Expand code
+#| code-summary: Join Broadcasting and Non-Broadcasting Datasets
+
 
 #  ---- Left join broadcasting and non-broadcasting datasets ----
 emissions_joined <- left_join(broadcasting, non_broadcasting, by = c("year_month", "lat_bin", "lon_bin", "length_size_class_percentile")) %>%
@@ -157,10 +163,12 @@ emissions_joined <- left_join(broadcasting, non_broadcasting, by = c("year_month
 -   Solution: replaced NA with 0
 -   Filter for year >= 2016?
 
-## Factor Emissions
+
+## Factor Emissions 
 
 ```{r}
 #| code-summary: Expand code
+
 
 # Factor non-broadcasting emissions
 emissions <- emissions_joined %>%
@@ -280,4 +288,5 @@ write_csv(emissions, here("checkpoint", "emissions.csv"))
 # Saved pivot dataset
 write_csv(em_pivot, here("checkpoint", "em_pivot.csv"))
 ```
+
 
