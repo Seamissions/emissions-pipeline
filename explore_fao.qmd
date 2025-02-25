@@ -1,0 +1,84 @@
+---
+title: "Join FAO Data"
+date: last-modified
+format:
+  html:
+      toc: true
+      code-fold: true
+editor: visual
+execute:
+  warning: false
+  messages: false
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r}
+#| code-summary: Load Libraries
+library(tidyverse)
+library(janitor)
+library(here)
+library(gghighlight)
+library(lubridate)
+library(reprex)
+library(sf)
+```
+
+
+```{r}
+# ---- Load project data ----
+
+data_directory_base <-  ifelse(Sys.info()["nodename"] == "quebracho" | Sys.info()["nodename"] == "sequoia",
+                               "/home/emlab",
+                               # Otherwise, set the directory for local machines based on the OS
+                               # If using Mac OS, the directory will be automatically set as follows
+                               ifelse(Sys.info()["sysname"]=="Darwin",
+                                      "/Users/Shared/nextcloud/emLab",
+                                      # If using Windows, the directory will be automatically set as follows
+                                      ifelse(Sys.info()["sysname"]=="Windows",
+                                             "G:/Shared\ drives/nextcloud/emLab",
+                                             # If using Linux, will need to manually modify the following directory path based on their user name
+                                             # Replace your_username with your local machine user name
+                                             "/home/choyt/Nextcloud")))
+
+project_directory <- paste0(data_directory_base, "/projects/current-projects/ocean-ghg-fisheries/data/processed/gfw-emissions/")
+```
+
+
+```{r}
+#| code-summary: Load Project Data
+
+# Define data folder pathway
+data_pathway <- "/home/emlab/projects/current-projects/ocean-ghg-fisheries/data"
+
+# ---- Read in Project Data ----
+# FAO region shapefile
+
+fao_regions <- st_read(file.path(data_pathway,"raw/fao_region_shapefile/world_fao_zones.shp"))
+
+```
+
+
+```{r}
+# --- Clean Data ----
+fao_country_groups_clean <- fao_country_groups |>
+  select(un_code, iso3_code, name_en, continent_group_en, official_name_en)
+
+fao_species_groups_clean <- fao_species_groups |>
+  select(x3a_code, taxonomic_code, identifier, scientific_name, contains("_en"))
+
+fao_waterarea_clean <- fao_waterarea |>
+  select(code, contains("_en"))
+
+# ---- Left join capture and country groups ----
+
+fao_capture_join <- left_join(fao_capture_quantity, fao_country_groups_clean, by = join_by(country_un_code == un_code)) 
+
+
+fao_capture_join <- left_join(fao_capture_join, fao_species_groups_clean, by = join_by(iso3_code == x3a_code))
+
+
+
+fao_capture_join <- left_join(fao_capture_join, fao_waterarea_clean, by = join_by(area_code == code))
+
