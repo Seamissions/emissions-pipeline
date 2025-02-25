@@ -1,0 +1,236 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+
+
+library(tidyverse)
+library(janitor)
+library(here)
+library(gghighlight)
+library(lubridate)
+library(ggwordcloud)
+library(sf)
+library(raster)
+library(tmap)
+library(treemapify)
+library(paletteer)
+library(ggstream)
+library(scales)
+```
+
+
+```{r}
+
+# ---- Load project data ----
+
+data_directory_base <-  ifelse(Sys.info()["nodename"] == "quebracho" | Sys.info()["nodename"] == "sequoia",
+                               "/home/emlab",
+                               # Otherwise, set the directory for local machines based on the OS
+                               # If using Mac OS, the directory will be automatically set as follows
+                               ifelse(Sys.info()["sysname"]=="Darwin",
+                                      "/Users/Shared/nextcloud/emLab",
+                                      # If using Windows, the directory will be automatically set as follows
+                                      ifelse(Sys.info()["sysname"]=="Windows",
+                                             "G:/Shared\ drives/nextcloud/emLab",
+                                             # If using Linux, will need to manually modify the following directory path based on their user name
+                                             # Replace your_username with your local machine user name
+                                             "/home/choyt/Nextcloud")))
+
+project_directory <- paste0(data_directory_base, "/projects/current-projects/ocean-ghg-fisheries/data/processed/gfw-emissions/")
+
+# Set file path to data folder
+pathway <- "/home/emlab/projects/current-projects/ocean-ghg-fisheries/data/processed/gfw_emissions/"
+
+# Set up import for .csv or .xlsx files
+file_names <- list.files(pathway, pattern="*.csv", full.names=TRUE)
+
+# Read in emissions data files
+for (i in seq_along(file_names)) {
+ if(str_detect(file_names[i], "non")) {
+    table_name <- paste("non_broadcasting")
+    assign(table_name, read_csv(file_names[i], show_col_types = FALSE) %>%
+          clean_names())
+
+  } else if (str_detect(file_names[i], "ais")) {
+    table_name <- paste("broadcasting")
+    assign(table_name, read_csv(file_names[i], show_col_types = FALSE) %>%
+          clean_names())
+    
+  } else {
+    warning("Extra file detected.")
+  }
+}
+```
+
+
+```{r}
+# add source column and combine datasets
+broadcasting <- broadcasting %>% mutate(source = 'broadcasting')
+non_broadcasting <- non_broadcasting %>% mutate(source = 'non-broadcasting')
+combined_data <- bind_rows(broadcasting, non_broadcasting)
+
+# Extract year from date
+combined_data <- combined_data %>%
+  mutate(year = year(month))
+
+# Summarize total emissions by year and source
+summary_data <- combined_data %>%
+  group_by(year, source) %>%
+  summarise(total_emissions = sum(across(starts_with('emissions_')), na.rm = TRUE))
+
+# Create the stream plot
+ggplot(summary_data, aes(x = year, y = total_emissions, fill = source)) +
+  geom_stream(type = "ridge") +
+  labs(title = "Total Emissions by Year and Source",
+       x = "Year",
+       y = "Source",
+       fill = "Source") +
+  theme_minimal()
+```
+
+
+```{r}
+# Calculate percentage for each source
+summary_data <- summary_data %>%
+  mutate(percentage = total_emissions / total_emissions * 100)
+
+# Create the stacked bar chart with percentage annotations
+ggplot(summary_data, aes(x = factor(year), y = total_emissions, fill = source)) +
+  geom_bar(stat = "identity", position = "stack") +
+  geom_text(aes(label = sprintf("%.1f%%", percentage)),
+            position = position_stack(vjust = 0.5),
+            color = "white",
+            fontface = "bold",
+            size = 12) +
+  labs(title = "Total Emissions by Year and Source",
+       x = "Year",
+       y = "Total Emissions",
+       fill = "Source") +
+  theme_minimal()
+```
+
+
+```{r}
+
+# ---- Clean and prep data ----
+
+# Add source column and combine datasets
+broadcasting <- broadcasting %>% mutate(source = 'broadcasting')
+non_broadcasting <- non_broadcasting %>% mutate(source = 'non-broadcasting')
+combined_data <- bind_rows(broadcasting, non_broadcasting)
+
+# Extract year from date
+combined_data <- combined_data %>%
+  mutate(year = year(month))
+
+# Summarize total emissions by year and source
+summary_data <- combined_data %>%
+  group_by(year, source) %>%
+  summarise(total_emissions = sum(across(starts_with('emissions_')), na.rm = TRUE)) %>%
+  ungroup()
+
+# Calculate total emissions per year
+total_emissions_per_year <- summary_data %>%
+  group_by(year) %>%
+  summarise(total_emissions_total = sum(total_emissions))
+
+# Merge total emissions back into summary data
+summary_data <- summary_data %>%
+  left_join(total_emissions_per_year, by = "year")
+
+# Calculate percentage for each source
+summary_data <- summary_data |>
+  filter(year > 2015) |>
+  mutate(percentage = total_emissions / total_emissions_total * 100)
+```
+
+
+```{r}
+
+# ---- Create the stacked bar chart with percentage annotations ---- 
+
+ggplot(summary_data, aes(x = factor(year), y = total_emissions, fill = source)) +
+  geom_bar(stat = "identity", position = "stack") +
+  
+  # Add annotations for proportion
+  geom_text(aes(label = sprintf("%.1f%%", percentage)),
+            position = position_stack(vjust = 0.5),
+            color = "white",
+            fontface = "bold",
+            size = 5.5) +
+  
+  scale_fill_manual(values = c('broadcasting' = '#057c91', 'non-broadcasting' = '#ff0000'),
+                    labels = c('Broadcasting', 'Non-Broadcasting')) +
+  
+  scale_y_continuous(labels = label_comma()) +
+  
+  labs(title = "Total Annual Seafood Emissions by Year and Source",
+       x = "Year",
+       y = "Total Emissions",
+       fill = "Source") +
+  
+  theme_minimal() +
+  
+ theme(
+    plot.background = element_rect(fill = "#0b2232", color = "#0b2232"),
+    panel.background = element_rect(fill = "#0b2232", color = "#0b2232"),
+    axis.text = element_text(color = "white", size = 15),
+    axis.ticks = element_line(color = "white"),
+    axis.line = element_line(color = "white"),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    legend.text = element_text(color = "white"),
+    legend.title = element_text(color = "white"),
+    plot.title = element_text(color = "white", face = "bold", size = 20),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+  )
+```
+
+
+```{r}
+# ---- Create the stacked area chart with percentage annotations ---- 
+ggplot(summary_data, aes(x = year, y = total_emissions, fill = source)) +
+  geom_area(position = "stack") + 
+  theme_minimal() +
+  
+  geom_text(aes(label = ifelse(year %in% c(2016, 2024), NA, sprintf("%.1f%%", percentage))),
+            position = position_stack(vjust = 0.5),
+            color = "white",
+            fontface = "bold",
+            size = 5.5) +
+  
+  scale_fill_manual(values = c('broadcasting' = '#057c91', 'non-broadcasting' = '#ff0000'),
+                    labels = c('Broadcasting', 'Non-Broadcasting')) +
+  
+scale_y_continuous(labels = scales::comma) + #, expand = c(0, 0)
+   
+  #scale_x_continuous(expand = c(0, 0)) +
+  
+  labs(title = "Total Annual Seafood Emissions by Year and Source",
+       x = "Year",
+       y = "Total Emissions",
+       fill = "Source") +
+  
+  theme_minimal() +
+  
+  theme(
+    plot.background = element_rect(fill = "#0b2232", color = "#0b2232"),
+    panel.background = element_rect(fill = "#0b2232", color = "#0b2232"),
+    axis.text = element_text(color = "white", size = 15),
+    axis.ticks = element_line(color = "white"),
+    axis.line = element_line(color = "white"),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    legend.text = element_text(color = "white"),
+    legend.title = element_text(color = "white"),
+    plot.title = element_text(color = "white", face = "bold", size = 20),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+  )
+```
+
