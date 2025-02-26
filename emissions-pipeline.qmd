@@ -173,7 +173,6 @@ emissions_joined <- left_join(broadcasting, non_broadcasting, by = c("year_month
 ```{r}
 #| code-summary: Expand code
 
-
 # Factor non-broadcasting emissions
 emissions <- emissions_joined %>%
   
@@ -288,12 +287,12 @@ em_pivot <- emissions %>%
 
 # Create "checkpoint" folder if needed
 # Save combined dataset
-write_csv(emissions, here("checkpoint", "emissions.csv"))
+#write_csv(emissions, here("checkpoint", "emissions.csv"))
 
 emissions <- read_csv(here("checkpoint", "emissions.csv"))
 
 # Saved pivot dataset
-write_csv(em_pivot, here("checkpoint", "em_pivot.csv"))
+#write_csv(em_pivot, here("checkpoint", "em_pivot.csv"))
 
 em_pivot <- read_csv(here("checkpoint", "em_pivot.csv"))
 ```
@@ -307,17 +306,20 @@ em_pivot <- read_csv(here("checkpoint", "em_pivot.csv"))
 #| code-summary: Expand code
 
 # Define emissions as sf object
-emissions_sf <- emissions %>%
-  st_as_sf(coords = c("lon_bin", "lat_bin"), crs = "54009") #4326 
+# emissions_sf <- emissions %>%
+#   st_as_sf(coords = c("lon_bin", "lat_bin"), crs = "54009") #4326 
 
 # --- Prepare emissions and FAO data ----
 emissions_sf <- emissions %>%
   # add lat and lon bin to preserve for merge 
   dplyr::mutate(lat = lat_bin, lon = lon_bin) %>%
-  st_as_sf(coords = c("lon", "lat"), crs = 54009)  
+  st_as_sf(coords = c("lon", "lat"), crs = "54009")  
 
-fao_regions <- st_read(file.path("/home/emlab/projects/current-projects/ocean-ghg-fisheries/data/raw/world_fao_zones/world_fao_zones.shp"), crs = st_crs(emissions_sf)) |> st_make_valid() # need make valid?
+# for sequoia
+#fao_regions <- st_read(file.path("/home/emlab/projects/current-projects/ocean-ghg-fisheries/data/raw/world_fao_zones/world_fao_zones.shp"), crs = st_crs(emissions_sf)) #|> st_make_valid()
 
+# for workbench
+fao_regions <- st_read(file.path("/capstone/seamissions/data/fao_region_shapefile"), crs = st_crs(emissions_sf))
 ```
 
 ```{r}
@@ -328,25 +330,39 @@ point_grid_intersections <- st_intersects(points, grid)
 
 # Assign the grid cell ID to each point
 points$grid_id <- sapply(point_grid_intersections, function(x) ifelse(length(x) > 0, x[1], NA))
-
 ```
 1578367
 
 ```{r}
+
+# subset sf for speed
+subset_sf <- emissions_sf %>%
+  filter(lat_bin %in% c(36:40)) %>%
+  filter(lon_bin %in% c(-40:-45))
+
 # ---- Step 1: Convert lat/long points to grid of polygons (1x1 degree cells) & make a key ----
-emissions_grid <- emissions_sf %>%
+emissions_grid <- subset_sf %>%
   # select lat & lon columns
   dplyr::select(lat_bin, lon_bin)
+
+plot(st_geometry(emissions_grid))
+
+#joined_grid <- st_join(emissions_grid, fao_regions, left = FALSE)
+#unique(joined_grid$zone)
+
+# check this step!
+joined_grid <- st_join(emissions_grid, fao_regions, left = TRUE, join = st_intersection)
   
   # ---- Step 2: Find overlap between the grid cells and FAO zones using st_intersection ----
 fao_intersections <- st_intersection(emissions_grid, fao_regions)
+plot(fao_intersections)
 
 # check it out
 # Convert to sf to handle attributes and geometry together
 fao_intersections <- st_as_sf(fao_intersections)
 
 # Add area column to fao_intersections
-fao_intersections$area <- st_area(fao_intersections)
+joined_grid$area <- st_area(joined_gid)
 
 # Now select the relevant columns (fao_zone, geometry, area)
 fao_intersections <- fao_intersections %>%
@@ -404,13 +420,9 @@ plot(st_geometry(points_2), add = TRUE)
 
 ```{r}
 
-#fao_regions <- st_read(file.path(data_pathway, "raw/world_fao_zones/world_fao_zones.shp"))
-
-
-#fao_regions <- st_read(file.path(data_pathway, "raw/world_fao_zones/world_fao_zones.shp"))
-
-
-#fao_regions <- st_read(file.path("/capstone/seamissions/data/fao_region_shapefile"), crs = st_crs(emissions_grid))
+emissions_grid <- emissions_sf %>%
+  st_make_grid(cellsize = c(1,1),
+               what = "polygons")
 
 st_crs(fao_regions) == st_crs(emissions_grid)
 
@@ -420,8 +432,16 @@ zone_31 <- fao_regions %>%
 
 #intersecting_points <- emissions_sf[st_intersects(emissions_sf, zone_31, sparse = FALSE), ]
 zone_31_grid <- st_intersection(emissions_grid, zone_31, sparse = FALSE)
+
 plot(zone_31_grid)
 
+zone_31_grid$area <- st_area(zone_31_grid)
+
+unique(zone_31_grid$area)
+```
+
+
+```{r}
 # still mis-match?!
 plot(zone_31, main = "FAO Zone 31", col = "gray90")
 plot(zone_31_grid, add = TRUE)
@@ -429,7 +449,53 @@ plot(zone_31_grid, add = TRUE)
 st_crs(zone_31) == st_crs(zone_31_grid) #TRUE
 
 #plot(intersecting_points['flag'], pch = 21)
+
 ```
+
+
+# I think this works for zone 31 (it takes forever to run, haven't applied it to other zones)
+
+```{r}
+# create grid from extent of emissions_sf
+emissions_grid <- emissions_sf %>%
+  st_make_grid(cellsize = c(1,1),
+               what = "polygons")
+
+# convert the grid to an sf object
+emissions_grid_sf <- st_sf(geometry = emissions_grid)
+
+# spatially join emissions data to the grid
+emissions_grid_sf <- st_join(emissions_grid_sf, emissions_sf, left = FALSE)
+
+# If a grid cell has no emissions data, it will be removed when left = FALSE.
+# If you want all grid cells, even empty ones, use left = TRUE.
+
+# filter for zone 31
+zone_31 <- fao_regions %>%
+  filter(zone == 31)
+
+# check crs
+st_crs(emissions_grid_sf) == st_crs(zone_31)
+
+# find grid cells that overlap with zone 31
+fao_zones <- st_intersection(emissions_grid_sf, zone_31, sparse = FALSE)
+
+# add area column
+fao_zones$area <- st_area(fao_zones)
+
+# look at area breakdown to see if makes sense (most 1s)
+areas <- fao_zones %>%
+  group_by(area) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count))
+
+plot(fao_zones['total_co2'])
+plot(fao_zones['area'])
+plot(fao_zones['flag'])
+```
+
+
+
 
 - Assign FAO regions to emissions 
 - Assign majority pixel to region as a test then, assign by proportion
@@ -437,6 +503,58 @@ st_crs(zone_31) == st_crs(zone_31_grid) #TRUE
 
 ```{r}
 
+#joined_sf <- st_join(emissions_sf, fao_regions, left = TRUE, join = st_intersection)
+#polygons_sf <- st_sf(id = 1, geometry = emissions_grid)
+
+#joined_grid <- st_join(emissions_sf, polygons_sf, left = TRUE)
+
+joined_sf <- st_join(emissions_sf, fao_regions, left = TRUE)
+#joined_sf <- st_join(emissions_grid, fao_regions, left = TRUE)
+
+#joined_sf <- st_join(emissions_grid, fao_regions, left = TRUE)
+
+#plot(joined_sf)
+
+#ggplot(joined_sf, aes(x = lon_bin, y = lat_bin, fill = zone)) +
+ # geom_raster() 
+
+joined_sf %>%
+  filter(zone %in% c(31, 21, 34, 27)) %>%
+ggplot() +
+    geom_sf(aes(color = zone)) + 
+    theme_minimal()
+
+
+#fao_zones <- st_intersection(emissions_grid, fao_regions, sparse = FALSE)
+
+#plot(fao_zones, col = fao_zones)
 ```
 
+```{r}
+# Define the bounding box of the points
+test <- joined_sf %>%
+  filter(zone == 31) 
+
+bbox <- st_bbox(test)
+
+#plot(test)
+
+# Create a rectangular grid with 1-degree spacing
+grid_sf <- st_make_grid(test, cellsize = 1, square = TRUE) %>% st_as_sf()
+
+points_with_grid <- st_join(grid_sf, test)
+
+#plot(grid_sf)
+# Plot the result
+plot(st_geometry(grid_sf), col = NA, border = "blue")
+plot(st_geometry(points_with_grid), add = TRUE)
+
+# Count how many points fall into each grid cell
+grid_with_counts <- grid_sf %>%
+    mutate(point_count = lengths(st_intersects(grid_sf, test)))
+
+# View results
+print(grid_with_counts)
+
+```
 
