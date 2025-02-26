@@ -448,14 +448,22 @@ plot(zone_31_grid, add = TRUE)
 
 st_crs(zone_31) == st_crs(zone_31_grid) #TRUE
 
-#plot(intersecting_points['flag'], pch = 21)
-
 ```
 
 
 # I think this works for zone 31 (it takes forever to run, haven't applied it to other zones)
 
 ```{r}
+
+#emissions <- read_csv(here("checkpoint", "emissions.csv"))
+
+emissions_sf <- emissions %>%
+  # add lat and lon bin to preserve for merge 
+  dplyr::mutate(lat = lat_bin, lon = lon_bin) %>%
+  st_as_sf(coords = c("lon", "lat"), crs = "54009") 
+
+fao_regions <- st_read(file.path("/capstone/seamissions/data/fao_region_shapefile"), crs = st_crs(emissions_sf))
+
 # create grid from extent of emissions_sf
 emissions_grid <- emissions_sf %>%
   st_make_grid(cellsize = c(1,1),
@@ -489,9 +497,24 @@ areas <- fao_zones %>%
   summarise(count = n()) %>%
   arrange(desc(count))
 
-plot(fao_zones['total_co2'])
-plot(fao_zones['area'])
-plot(fao_zones['flag'])
+#plot(fao_zones['total_co2'])
+#plot(fao_zones['area'])
+#plot(fao_zones['flag'])
+
+test <- fao_zones %>%
+  group_by(lat_bin, lon_bin) %>%
+  summarize(co2 = sum(total_co2))
+
+ggplot(test) +
+  geom_sf(aes(fill = co2)) +
+  theme_minimal()
+
+fao_zones_merged <- fao_zones %>%
+  group_by(zone, year_month, flag) %>%
+  summarise(countries = n())
+
+
+# add FAO data
 ```
 
 
