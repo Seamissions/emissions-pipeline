@@ -215,7 +215,7 @@ emissions <- emissions_joined %>%
          total_n2o, 
          total_nox, 
          total_sox, 
-         #total_pm, 
+         #total_pm, # remove
          total_co,
          total_vocs,
          total_pm2_5,
@@ -233,7 +233,7 @@ pollutants <- c("co2",
                 "n2o",
                 "nox",
                 "sox", 
-                "pm", 
+                #"pm", # remove
                 "co",
                 "vocs",
                 "pm2_5",
@@ -461,7 +461,7 @@ st_crs(zone_31) == st_crs(zone_31_grid) #TRUE
 ```{r}
 #| code-summary: Expand code
 # read in emissions data
-emissions <- read_csv(here("checkpoint", "emissions.csv"))
+emissions <- read_csv(here("checkpoint", "emissions.csv"), show_col_types = FALSE)
 
 # convert emissions to spatial object(?)
 emissions_sf <- emissions %>%
@@ -486,7 +486,19 @@ emissions_grid_sf <- st_join(emissions_grid_sf, emissions_sf, left = FALSE)
 # If a grid cell has no emissions data, it will be removed when left = FALSE.
 # If you want all grid cells, even empty ones, use left = TRUE.
 
+# -------- full join --------
+emissions_regions <- st_intersection(emissions_grid_sf, fao_regions, sparse = FALSE)
 
+# add area column
+emissions_regions$area <- st_area(emissions_regions)
+
+st_write(emissions_zones, here("checkpoint", "emissions_zones.gpkg"))
+st_write(emissions_zones, file.path("/capstone/seamissions/data/checkpoint/emissions_zones.gpkg"))
+```
+
+#### Zone 31
+
+```{r}
 # ---------- zone 31 test ------------
 # filter for zone 31 for speed
 zone_31 <- fao_regions %>%
@@ -524,9 +536,10 @@ prep_emissions_zone_31 <- emissions_zone_31 %>%
 
 # -------- CHECKPOINT --------
 #st_write(emissions_zone_31, here("checkpoint", "emissions_zone_31.gpkg"))
+#st_write(emissions_zone_31, here("checkpoint", "emissions_zone_31.gpkg"))
 ```
 
-#### Merge with FAO catch data
+#### Assemble FAO catch data
 
 ```{r}
 #| code-summary: Load Project Data
@@ -540,10 +553,6 @@ fao_species_groups <- read_csv(here::here("/capstone/seamissions/data/fao_seafoo
 fao_symbol <- read_csv(here::here("/capstone/seamissions/data/fao_seafood_production/CL_FI_SYMBOL_SDMX.csv"), show_col_types = FALSE) |> clean_names()
 fao_waterarea <- read_csv(here::here("/capstone/seamissions/data/fao_seafood_production/CL_FI_WATERAREA_GROUPS.csv"), show_col_types = FALSE)|> clean_names()
 
-```
-
-```{r}
-#| code-summary: Assemble FAO data
 # --- Clean Data ----
 fao_country_groups_clean <- fao_country_groups |>
   select(un_code, iso3_code, name_en, continent_group_en, official_name_en)
@@ -565,6 +574,42 @@ fao_capture_join <- left_join(fao_capture_join, fao_waterarea_clean, by = join_b
 # Attempt to merge emissions with FAO catch data for zone 31 
 
 *make sure flags match in FAO and GFW datasets*
+
+Flags in FAO catch but **not** emissions for Zone 31:
+
+- AIA (Anguilla)
+- BHS (Bahamas)
+- BRB (Barbados)
+- CUB (Cuba)
+- DMA (Dominica)
+- GUF (French Guiana)
+- GLP (Guadeloupe)
+- GTM (Guatemala)
+- GUY (Guyana)
+- HND (Honduras)
+- ITA (Italy)
+- MTQ (Martinique)
+- MSR (Montserrat)
+- ANT (Netherlands Antilles)
+- PHL (Philippines)
+- PRI (Puerto Rico)
+- BLM (Saint Barthelemy)
+- LCA (Saint Lucia)
+- MAF (Saint Martin (french))
+- SXM (Sint Maarten (dutch))
+- SUR (Suriname)
+- SUN (Un. Sov. Soc. Rep.)
+- VIR (US Virgin Islands)
+
+```{r}
+# full join
+emissions_regions <- st_intersection(emissions_grid_sf, fao_regions, sparse = FALSE)
+
+# add area column
+emissions_regions$area <- st_area(emissions_regions)
+
+st_write(emissions_zones, here("checkpoint", "emissions_zones.gpkg"))
+```
 
 ```{r}
 #| code-summary: Merge emissions and FAO catch data
@@ -588,6 +633,9 @@ fao_catch_31 <- fao_capture_join %>%
   mutate(zone = as.integer(zone),
          year = as.integer(year))
 
+# flags in fao catch but not emissions
+diff_flag <- anti_join(fao_catch_31, emissions_zone_31, by = "flag") 
+
 # replace year_month with year
 emissions_zone_31 <- emissions_zone_31 %>%
   mutate(year = as.integer(substr(year_month, 1, 4))) %>%
@@ -601,8 +649,15 @@ catch_emissions_zone_31_no_geo <- catch_emissions_zone_31 %>%
   st_drop_geometry()
 
 # ------- CHECKPOINT --------
-#st_write(catch_emissions_zone_31, here("checkpoint", "catch_emissions_zone_31.gpkg"))
-#write_csv(catch_emissions_zone_31_no_geo, here("checkpoint", "catch_emissions_zone_31_no_geo.csv"))
+st_write(catch_emissions_zone_31, here("checkpoint", "catch_emissions_zone_31.gpkg"))
+
+write_csv(catch_emissions_zone_31_no_geo, here("checkpoint", "catch_emissions_zone_31_no_geo.csv"))
+```
+
+#### full
+
+```{r}
+
 ```
 
 #### Explore
