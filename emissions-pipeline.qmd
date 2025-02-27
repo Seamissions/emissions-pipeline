@@ -468,7 +468,7 @@ emissions <- read_csv(file.path("/capstone/seamissions/data/checkpoint/emissions
 emissions_sf <- emissions %>%
   # add lat and lon bin to preserve for merge 
   dplyr::mutate(lat = lat_bin, lon = lon_bin) %>%
-  st_as_sf(coords = c("lon", "lat"), crs = "54009") 
+  st_as_sf(coords = c("lon", "lat"), crs = 54009) # CRS not working for Carmen
 
 # read in fao regions (assign same CRS as emissions_sf)
 fao_regions <- st_read(file.path("/capstone/seamissions/data/fao_region_shapefile"), crs = st_crs(emissions_sf))
@@ -546,7 +546,7 @@ fao_catch <- fao_capture_join %>%
 
 # -------- CHECKPOINT --------
 # save locally
-write_csv(fao_catch, here("checkpoint", "fao_cath.csv"))
+write_csv(fao_catch, here("checkpoint", "fao_catch.csv"))
 
 # save to server 
 write_csv(fao_catch, file.path("/capstone/seamissions/data/checkpoint/fao_catch.csv"))
@@ -605,6 +605,7 @@ st_write(emissions_zone_31, file.path("/capstone/seamissions/data/checkpoint/emi
 
 #fao_regions <- st_cast(fao_regions, "POLYGON") %>%
  # st_make_valid()
+
 mollweide_proj <- "+proj=moll +lon_0=0 +datum=WGS84 +units=m +no_defs"
 
 emissions_grid_sf <- st_set_crs(emissions_grid_sf, mollweide_proj)
@@ -708,7 +709,12 @@ FAO flags **NOT** in emissions:
 -   YUG (Yugoslavia SFR)
 -   EAZ (United Republic of Tanzania, Zanzibar)
 
-Emissions flags **NOT** in FAO: - UNK (unknown) - VAT (Holy See) - CXR (Christmas Island) - CCK (Cocos (Keeling) Islands)
+Emissions flags **NOT** in FAO: 
+
+- UNK (unknown) 
+- VAT (Holy See) 
+- CXR (Christmas Island) 
+- CCK (Cocos (Keeling) Islands)
 
 ```{r}
 #| code-summary: Another approach

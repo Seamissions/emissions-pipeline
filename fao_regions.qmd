@@ -54,7 +54,7 @@ st_crs(emissions_grid_sf) == st_crs(fao_regions)
 
 # -------- FAO CATCH --------
 # import catch data
-fao_catch <- read_csv(file.path("/capstone/seamissions/checkpoint/fao_catch.csv"))
+fao_catch <- read_csv(file.path("/capstone/seamissions/checkpoint/fao_catch.csv"), show_col_types = FALSE)
 
 # fao_catch <- read_csv(file.path("/capstone/seamissions/checkpoint/fao_catch.csv")) %>%
 #   select(area_code,
@@ -78,9 +78,9 @@ fao_catch <- read_csv(file.path("/capstone/seamissions/checkpoint/fao_catch.csv"
 #st_write(emissions_grid_sf, here("checkpoint", "emissions_grid_sf.gpkg"))
 
 # save to server
-#st_write(emissions_grid_sf, file.path("/capstone/seamissions/checkpoint/emissions_grid_sf.gpkg"))
+#st_write(emissions_grid_sf, file.path("/capstone/seamissions/checkpoint/emissions_grid_sf.gpkg"), delete_dsn = TRUE)
 
-#st_write(fao_regions, file.path("/capstone/seamissions/checkpoint/fao_regions/fao_regions.shp", delete_dsn = TRUE))
+#st_write(fao_regions, file.path("/capstone/seamissions/checkpoint/fao_regions/fao_regions.shp"), delete_dsn = TRUE)
 ```
 
 ### Zone 31:
@@ -109,12 +109,46 @@ ggplot() +
   geom_sf(data = zone_31, fill = NA, color = "red")
 
 plot(zone_31)
-#plot(emissions_grid_sf[""])
+plot(st_geometry(emissions_grid_sf))
 
 ```
 
-
 ### Zone 41:
 
+FAO flags **NOT** in emissions:
 
+-   IOT (British Indian Ocean Territory)
+-   CSK (Czechoslovakia)
+-   ETH (Ethiopia)
+-   GUM (Guam)
+-   LSO (Lesotho)
+-   MYT (Mayotte)
+-   ANT (Netherlands Antilles)
+-   NFK (Norfold Island)
+-   BLM (Saint Barthelemy)
+-   MAF (Saint Martin (french))
+-   SRB (Serbia)
+-   SCG (Serbia and Montenegro)
+-   SXM (Sint Maarten (dutch))
+-   SVK (Slovakia)
+-   SSD (South Sudan)
+-   SJM (Svalbard and Jan Mayen Islands)
+-   TLS (Timor-Leste)
+-   TKL (Tokelau)
+-   UGA (Uganda)
+-   SUN (Un. Sov. Soc. Rep.)
+-   ESH (Western Sahara)
+-   YUG (Yugoslavia SFR)
+-   EAZ (United Republic of Tanzania, Zanzibar)
+
+Emissions flags **NOT** in FAO: 
+
+- UNK (unknown) 
+- VAT (Holy See) 
+- CXR (Christmas Island) 
+- CCK (Cocos (Keeling) Islands)
+
+Decision point:
+
+- assign FAO flags to UNK emissions? add territories to countries?
 
