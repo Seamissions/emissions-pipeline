@@ -709,12 +709,12 @@ FAO flags **NOT** in emissions:
 -   YUG (Yugoslavia SFR)
 -   EAZ (United Republic of Tanzania, Zanzibar)
 
-Emissions flags **NOT** in FAO: 
+Emissions flags **NOT** in FAO:
 
-- UNK (unknown) 
-- VAT (Holy See) 
-- CXR (Christmas Island) 
-- CCK (Cocos (Keeling) Islands)
+-   UNK (unknown)
+-   VAT (Holy See)
+-   CXR (Christmas Island)
+-   CCK (Cocos (Keeling) Islands)
 
 ```{r}
 #| code-summary: Another approach

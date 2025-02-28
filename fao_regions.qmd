@@ -19,19 +19,59 @@ library(dplyr)
 ```
 
 ```{r}
+data_directory_base <-  ifelse(Sys.info()["nodename"] == "quebracho" | Sys.info()["nodename"] == "sequoia",
+                               "/home/emlab",
+                               # Otherwise, set the directory for local machines based on the OS
+                               # If using Mac OS, the directory will be automatically set as follows
+                               ifelse(Sys.info()["sysname"]=="Darwin",
+                                      "/Users/Shared/nextcloud/emLab",
+                                      # If using Windows, the directory will be automatically set as follows
+                                      ifelse(Sys.info()["sysname"]=="Windows",
+                                             "G:/Shared\ drives/nextcloud/emLab",
+                                             # If using Linux, will need to manually modify the following directory path based on their user name
+                                             # Replace your_username with your local machine user name
+                                             "/home/your_username/Nextcloud")))
+
+project_directory <- glue::glue("{data_directory_base}/projects/current-projects/ocean-ghg-fisheries")
+```
+
+```{r}
 # -------- EMISSIONS --------
+#filepath <- paste0(project_directory, "/checkpoint/emissions.csv")
+
 # import emissions data
-emissions <- read_csv(file.path("/capstone/seamissions/checkpoint/emissions.csv"))
+#emissions <- read_csv(filepath)
+emissions <- read_csv(file.path("/Users/carmenhoyt/Documents/UCSB/Capstone/Data/checkpoint/emissions.csv"), show_col_types = FALSE)
 
 # set to WGS (degrees) ?
-emissions_sf <- emissions %>%
-  # add lat and lon bin to preserve for merge 
-  dplyr::mutate(lat = lat_bin, lon = lon_bin) %>%
-  st_as_sf(coords = c("lon", "lat"), crs = 4326)  # equal earth 8857
+# emissions_sf <- emissions %>%
+#   # add lat and lon bin to preserve for merge 
+#   dplyr::mutate(lat = lat_bin, lon = lon_bin) %>%
+#   st_as_sf(coords = c("lon", "lat"), crs = 4326)  
+
+# equal earth 8857
+#my_crs <- st_crs("+proj=eqearth +datum=WGS84 +units=m +no_defs")
 
 # OR mollweide projection 54009 but not recognized
 #mollweide_proj <- "+proj=moll +lon_0=0 +datum=WGS84 +units=m +no_defs"
 #emissions_sf <- st_set_crs(emissions_sf, mollweide_proj) # transform?
+
+# create grid throughout extent of emissions_sf
+# emissions_grid <- emissions_sf %>%
+#   st_make_grid(cellsize = c(1,1),
+#                what = "polygons") %>%
+#   st_sf() %>%
+#   st_make_valid()
+
+emissions_filtered <- emissions %>%
+  mutate(year = as.integer(substr(year_month, 1, 4))) %>%
+  group_by(lat_bin, lon_bin, year, flag) %>%
+  summarise(total_co2 = sum(total_co2, na.rm = TRUE))
+
+emissions_sf <- emissions_filtered %>%
+  # add lat and lon bin to preserve for merge 
+  dplyr::mutate(lat = lat_bin, lon = lon_bin) %>%
+  st_as_sf(coords = c("lon", "lat"), crs = 4326) 
 
 # create grid throughout extent of emissions_sf
 emissions_grid <- emissions_sf %>%
@@ -39,13 +79,16 @@ emissions_grid <- emissions_sf %>%
                what = "polygons") %>%
   st_sf() %>%
   st_make_valid()
-
+  
 # spatially join emissions data to the grid
-emissions_grid_sf <- st_join(emissions_grid, emissions_sf, left = FALSE)
+emissions_grid_sf <- st_join(emissions_grid, emissions_sf, left = FALSE) %>%
+  # transform to Equal Earth
+  st_transform(6933)
 
 # -------- FAO REGIONS --------
 # import regions data (set same crs)
-fao_regions <- st_read(file.path("/capstone/seamissions/fao_region_shapefile")) %>%
+fao_regions <- st_read(file.path("/Users/carmenhoyt/Documents/UCSB/Capstone/Data/fao_region_shapefile")) %>%
+  # transform to Mollweide
   st_transform(st_crs(emissions_grid_sf)) %>%
   st_make_valid()
 
@@ -54,7 +97,7 @@ st_crs(emissions_grid_sf) == st_crs(fao_regions)
 
 # -------- FAO CATCH --------
 # import catch data
-fao_catch <- read_csv(file.path("/capstone/seamissions/checkpoint/fao_catch.csv"), show_col_types = FALSE)
+fao_catch <- read_csv(file.path("/Users/carmenhoyt/Documents/UCSB/Capstone/Data/checkpoint/fao_catch.csv"), show_col_types = FALSE)
 
 # fao_catch <- read_csv(file.path("/capstone/seamissions/checkpoint/fao_catch.csv")) %>%
 #   select(area_code,
@@ -91,7 +134,7 @@ zone_31 <- fao_regions %>%
   filter(zone == 31)
 
 # cut out grid cells that overlap with zone 31
-emissions_zone_31 <- st_intersection(emissions_grid_sf, zone_31, sparse = FALSE)
+emissions_zone_31 <- st_intersection(emissions_grid_sf, zone_31) #sparse = FALSE)
 
 # add area column
 emissions_zone_31$area <- st_area(emissions_zone_31)
@@ -101,19 +144,42 @@ areas <- emissions_zone_31 %>%
   group_by(area) %>%
   summarise(count = n()) %>%
   arrange(desc(count))
-```
 
-```{r}
-ggplot() +
-  geom_sf(data = emissions_grid_sf, fill = NA, color = "blue") +
-  geom_sf(data = zone_31, fill = NA, color = "red")
-
-plot(zone_31)
-plot(st_geometry(emissions_grid_sf))
-
+plot(st_geometry(zone_31))
+plot(st_geometry(emissions_zone_31), add = TRUE)
 ```
 
 ### Zone 41:
+
+```{r}
+# filter for zone 31
+zone_41 <- fao_regions %>%
+  filter(zone == 41)
+
+# cut out grid cells that overlap with zone 31
+emissions_zone_41 <- st_intersection(emissions_grid_sf, zone_41) # sparse = FALSE)
+
+emissions_zone_41 <- emissions_zone_41 %>%
+  #st_make_valid() %>%
+  st_zm()
+
+# add area column
+emissions_zone_41$area <- st_area(emissions_zone_41)
+
+sf::sf_use_s2(FALSE)
+sf::sf_use_s2(TRUE)
+
+# look at area breakdown to see if makes sense (mostly 1s)
+areas_41 <- emissions_zone_41 %>%
+  group_by(area) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count))
+
+plot(st_geometry(zone_41))
+plot(st_geometry(emissions_zone_41), add = TRUE)
+```
+
+**maybe get the areas before and after the cut?**
 
 FAO flags **NOT** in emissions:
 
@@ -141,14 +207,13 @@ FAO flags **NOT** in emissions:
 -   YUG (Yugoslavia SFR)
 -   EAZ (United Republic of Tanzania, Zanzibar)
 
-Emissions flags **NOT** in FAO: 
+Emissions flags **NOT** in FAO:
 
-- UNK (unknown) 
-- VAT (Holy See) 
-- CXR (Christmas Island) 
-- CCK (Cocos (Keeling) Islands)
+-   UNK (unknown)
+-   VAT (Holy See)
+-   CXR (Christmas Island)
+-   CCK (Cocos (Keeling) Islands)
 
 Decision point:
 
-- assign FAO flags to UNK emissions? add territories to countries?
-
+-   assign FAO flags to UNK emissions? add territories to countries?
