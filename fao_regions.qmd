@@ -163,11 +163,11 @@ overlapping_pixels <- st_intersects(emissions_grid_sf, zone_31, sparse = FALSE)
 # Select grid polygons that have an intersection (TRUE values)
 full_grid_31 <- emissions_grid_sf[overlapping_pixels, ]
 
-# visualize the overlapping grid
+# visualize the overlapping grid (st_intersects)
 plot(st_geometry(zone_31))
 plot(st_geometry(full_grid_31), add = TRUE)
 
-# visualize the cut grid
+# visualize the cut grid (st_intersection)
 plot(st_geometry(zone_31))
 plot(st_geometry(emissions_zone_31), add = TRUE)
 ```
@@ -258,23 +258,23 @@ overlapping_pixels <- st_intersects(emissions_grid_sf, zone_41, sparse = FALSE)
 # Select grid polygons that have an intersection (TRUE values)
 full_grid_41 <- emissions_grid_sf[overlapping_pixels, ]
 
-# visualize the overlapping grid
+# visualize the overlapping grid (st_intersects)
 plot(st_geometry(zone_41))
 plot(st_geometry(full_grid_41), add = TRUE)
 
-# visualize the cut grid
+# visualize the cut grid (st_intersection)
 plot(st_geometry(zone_41))
 plot(st_geometry(emissions_zone_41), add = TRUE)
 ```
 
 ```{r}
 # cut out grid cells that overlap with zone 31
-emissions_zone_31 <- st_intersection(emissions_grid_sf, zone_31) #sparse = FALSE)
+emissions_zones <- st_intersection(emissions_grid_sf, fao_regions) #sparse = FALSE)
 
 # add area column
-emissions_zone_31$area_after <- st_area(emissions_zone_31)
+emissions_zones$area_after <- st_area(emissions_zones)
 
-emissions_zone_31 <- emissions_zone_31 %>%
+emissions_zones <- emissions_zones %>%
   mutate(area_prop = as.numeric(area_after/area_before)) %>%
   mutate(co2_prop = total_co2 * area_prop) %>%
   select(-c(total_co2, area_prop, area_before, area_after))
@@ -286,17 +286,9 @@ emissions_zone_31 <- emissions_zone_31 %>%
 #   arrange(desc(count))
 
 # Find which grid polygons intersect with the large polygon
-overlapping_pixels <- st_intersects(emissions_grid_sf, zone_31, sparse = FALSE)
+#overlapping_pixels <- st_intersects(emissions_grid_sf, fao_zones, sparse = FALSE)
 
 # Select grid polygons that have an intersection (TRUE values)
-full_grid_31 <- emissions_grid_sf[overlapping_pixels, ]
-
-# visualize the overlapping grid
-plot(st_geometry(zone_31))
-plot(st_geometry(full_grid_31), add = TRUE)
-
-# visualize the cut grid
-plot(st_geometry(zone_31))
-plot(st_geometry(emissions_zone_31), add = TRUE)
+#full_grid <- emissions_grid_sf[overlapping_pixels, ]
 ```
 
