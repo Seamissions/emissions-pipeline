@@ -279,16 +279,18 @@ emissions_zones <- emissions_zones %>%
   mutate(co2_prop = total_co2 * area_prop) %>%
   select(-c(total_co2, area_prop, area_before, area_after))
 
-# look at area breakdown to see if makes sense (mostly 1s)
-# areas_31 <- emissions_zone_31 %>%
-#   group_by(area_prop) %>%
-#   summarise(count = n()) %>%
-#   arrange(desc(count))
+emissions_zones_no_geo <- emissions_zones %>%
+  st_drop_geometry()
 
-# Find which grid polygons intersect with the large polygon
-#overlapping_pixels <- st_intersects(emissions_grid_sf, fao_zones, sparse = FALSE)
+# -------- CHECKPOINT --------
+#write_csv(emissions_zones_no_geo, file.path("/capstone/seamissions/checkpoint/emissions_zones_no_geo.csv"))
+#st_write(emissions_zones, file.path("/capstone/seamissions/checkpoint/emissions_zones.gpkg"))
+#write_csv(fao_catch_cleaned, file.path("/capstone/seamissions/checkpoint/fao_catch_cleaned.csv"))
 
-# Select grid polygons that have an intersection (TRUE values)
-#full_grid <- emissions_grid_sf[overlapping_pixels, ]
+emissions_zones_no_geo <- read_csv(file.path("/capstone/seamissions/checkpoint/emissions_zones_no_geo.csv"), show_col_types = FALSE)
+
+fao_catch <- read_csv(file.path("/capstone/seamissions/checkpoint/fao_catch_cleaned.csv"), show_col_types = FALSE)
+
 ```
+
 
