@@ -35,7 +35,7 @@ library(dplyr)
 ## Load data
 
 ```{r}
-#| code-summary: Load Project Data
+#| code-summary: Load project data
 #| # Turn off scientific notation
 options(scipen=999)
 
@@ -55,20 +55,12 @@ data_directory_base <-  ifelse(Sys.info()["nodename"] == "quebracho" | Sys.info(
                                              "/home/choyt/Nextcloud")))
 
 project_directory <- paste0(data_directory_base, "/projects/current-projects/ocean-ghg-fisheries/data/processed/gfw-emissions/")
-
-
 ```
 
 ```{r}
-#| code-summary: Expand code
-
-# Turn off scientific notation
-options(scipen=999)
-
-# Set file path to data folder
-data_pathway <- "/home/emlab/projects/current-projects/ocean-ghg-fisheries/data"
-pathway <- "/home/emlab/projects/current-projects/ocean-ghg-fisheries/data/processed/gfw_emissions/"
-#pathway <- "/capstone/seamissions/data/meds_capstone_project"
+#| code-summary: Load emissions data
+# Set file path to data folder workbench-2
+pathway <- "/capstone/seamissions/data/meds_capstone_project"
 
 # Set up import for .csv or .xlsx files
 file_names <- list.files(pathway, pattern="*.csv", full.names=TRUE)
@@ -98,15 +90,12 @@ for (i in seq_along(file_names)) {
 ```{r}
 #| code-summary: Clean Data
 
-# ---- Merge emissions datasets ----
-
 # Create `year_month` column
 broadcasting <- broadcasting %>%
-
   mutate(date = lubridate::ymd(month)) %>%
   mutate(year_month = format(date, '%Y-%m'))
   
-# Create `year_month` column in nonbroadcasting dataset
+# Create `year_month` column 
 non_broadcasting <- non_broadcasting %>%
   mutate(date = lubridate::ymd(month)) %>%
   mutate(year_month = format(date, '%Y-%m'))
@@ -117,7 +106,7 @@ non_broadcasting <- non_broadcasting %>%
 ```{r}
 #| code-summary: Join Broadcasting and Non-Broadcasting Datasets
 
-#  ---- Left join broadcasting and non-broadcasting datasets ----
+# Left join broadcasting and non-broadcasting datasets
 emissions_joined <- left_join(broadcasting, non_broadcasting, by = c("year_month", "lat_bin", "lon_bin", "length_size_class_percentile")) %>%
   
   # Replace non-broadcasting NA values with 0 (see decision point below)
@@ -147,7 +136,7 @@ emissions_joined <- left_join(broadcasting, non_broadcasting, by = c("year_month
          emissions_n2o_mt, 
          emissions_nox_mt, 
          emissions_sox_mt, 
-         emissions_pm_mt, 
+         #emissions_pm_mt, 
          emissions_co_mt,
          emissions_vocs_mt,
          emissions_pm2_5_mt,
@@ -196,7 +185,7 @@ emissions <- emissions_joined %>%
          total_n2o = emissions_n2o_mt + (factor * emissions_n2o_non_broadcasting_mt),
          total_nox = emissions_nox_mt + (factor * emissions_nox_non_broadcasting_mt),
          total_sox = emissions_sox_mt + (factor * emissions_sox_non_broadcasting_mt),
-         total_pm = emissions_pm_mt + (factor * emissions_pm_non_broadcasting_mt),
+         #total_pm = emissions_pm_mt + (factor * emissions_pm_non_broadcasting_mt),
          total_co = emissions_co_mt + (factor * emissions_co_non_broadcasting_mt),
          total_vocs = emissions_vocs_mt + (factor * emissions_vocs_non_broadcasting_mt),
          total_pm2_5 =  emissions_pm2_5_mt + (factor * emissions_pm2_5_non_broadcasting_mt),
@@ -275,7 +264,7 @@ for (i in seq_along(pollutants)) {
 
 # Pivot emissions data
 em_pivot <- emissions %>%
-  pivot_longer(10:19,
+  pivot_longer(10:18,
                 names_to = "pollutant_type",
                 values_to = "emissions") %>%
   mutate(pollutant_type = str_remove(pollutant_type, "total_"),
@@ -287,7 +276,7 @@ em_pivot <- emissions %>%
 ```{r}
 #| code-summary: Expand code
 
-# Create "checkpoint" folder if needed
+# -------- Create "checkpoint" folder if needed --------
 
 # Save emissions dataset to workbench-2
 write_csv(emissions, file.path("/capstone/seamissions/checkpoint/emissions.csv"))
@@ -309,7 +298,7 @@ write_csv(em_pivot, file.path("/capstone/seamissions/checkpoint/em_pivot.csv"))
 ```{r}
 #| code-summary: Expand code
 
-# set up projections
+# -------- set up projections --------
 # equal earth 8857
 #my_crs <- st_crs("+proj=eqearth +datum=WGS84 +units=m +no_defs")
 
@@ -323,7 +312,7 @@ emissions_filtered <- emissions %>%
   # Create year column
   mutate(year = as.integer(substr(year_month, 1, 4))) %>%
   # Group by pixel, year, and flag
-  group_by(lat_bin, lon_bin, year, flag, vessel_class) %>%
+  group_by(lat_bin, lon_bin, year, flag) %>% # vessel_class
   # Sum co2 (ADD OTHER POLLUTANTS HERE)
   summarise(total_co2_mt = sum(total_co2, na.rm = TRUE))
 
@@ -350,7 +339,7 @@ emissions_grid_sf <- st_join(emissions_grid, emissions_sf, left = FALSE) %>%
 
 # -------- FAO REGIONS --------
 # Import regions data (set same crs) from workbench-2
-fao_regions <- st_read(file.path("/capstone/seamissions/fao_region_shapefile")) %>%
+fao_regions <- st_read(file.path("/capstone/seamissions/data/fao_region_shapefile")) %>%
   # Transform to same crs as grid
   st_transform(st_crs(emissions_grid_sf)) %>%
   # Fix geometries
@@ -404,15 +393,26 @@ emissions_grid_sf <- st_read(file.path("/capstone/seamissions/checkpoint/emissio
 fao_catch <- read_csv(file.path("/capstone/seamissions/checkpoint/fao_catch.csv"), show_col_types = FALSE)
 ```
 
-## Run intersection
+## Run intersects
 
 ```{r}
 #| code-summary: Checkpoint
 # Find which grid cells intersect with the FAO regions
-overlapping_pixels <- st_intersects(emissions_grid_sf, fao_regions, sparse = FALSE)
+overlapping_pixels <- st_intersects(emissions_grid_sf, fao_regions) #sparse = FALSE)
 
 # Select grid polygons that have an intersection (TRUE values)
-emissions_zones <- emissions_grid_sf[overlapping_pixels, ]
+emissions_zones <- emissions_grid_sf[lengths(overlapping_pixels) > 0, ]
+
+emissions_zones$region <- sapply(overlapping_pixels[lengths(overlapping_pixels) > 0], function(x) {
+  if (length(x) > 0) {
+    return(paste(fao_regions$zone[x], collapse = ","))  # Store multiple region numbers as a comma-separated string
+  } else {
+    return(NA)
+  }
+})
+
+# Filter grid cells that intersect with more than one FAO region
+multiple_regions <- emissions_zones[grepl(",", emissions_zones$region), ]
 
 # Drop geometry
 emissions_zones_no_geo <- emissions_zones %>%
@@ -425,36 +425,14 @@ emissions_zones_no_geo <- emissions_zones %>%
 #| code-summary: Checkpoint
 
 # Save emissions_zones to workbench-2
-#st_write(emissions_zones, file.path("/capstone/seamissions/checkpoint/emissions_zones.gpkg"), delete_dsn = TRUE)
+st_write(emissions_zones, file.path("/capstone/seamissions/checkpoint/emissions_zones.gpkg"), delete_dsn = TRUE)
 
 # Read in emissions_zones from workbench-2
-emissions_zones <- st_read(file.path("/capstone/seamissions/checkpoint/emissions_zones.gpkg"))
+#emissions_zones <- st_read(file.path("/capstone/seamissions/checkpoint/emissions_zones.gpkg"))
 
 # Save cleaned emissions_zones_no_geo data
-#write_csv(emissions_zones_no_geo, file.path("/capstone/seamissions/checkpoint/emissions_zones_no_geo.csv"))
+write_csv(emissions_zones_no_geo, file.path("/capstone/seamissions/checkpoint/emissions_zones_no_geo.csv"))
 
 # Read in emissions_zones_no_geo data
-emissions_zones_no_geo <- read_csv(file.path("/capstone/seamissions/checkpoint/emissions_zones_no_geo.csv"), show_col_types = FALSE)
-```
-
-### Old
-
-```{r}
-# cut out grid cells that overlap with zones (st_intersection)
-emissions_zones <- st_intersection(emissions_grid_sf, fao_regions) #sparse = FALSE)
-
-# add area column after intersection
-emissions_zones$area_after <- st_area(emissions_zones)
-
-# calculate area proportion
-emissions_zones <- emissions_zones %>%
-  mutate(area_prop = as.numeric(area_after/area_before)) %>%
-  # multiply emissions by proportion
-  mutate(co2_prop = total_co2 * area_prop) %>%
-  select(-c(total_co2, area_prop, area_before, area_after))
-
-# drop geometry
-emissions_zones_no_geo <- emissions_zones %>%
-  st_drop_geometry()
-
+#emissions_zones_no_geo <- read_csv(file.path("/capstone/seamissions/checkpoint/emissions_zones_no_geo.csv"), show_col_types = FALSE)
 ```

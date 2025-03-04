@@ -5,6 +5,7 @@ editor: visual
 editor_options: 
   chunk_output_type: console
 ---
+
 # FAO Regions
 
 ### Load packages
@@ -128,7 +129,6 @@ fao_catch <- read_csv(file.path("/capstone/seamissions/checkpoint/fao_catch.csv"
 #st_write(fao_regions, file.path("/capstone/seamissions/checkpoint/fao_regions/fao_regions.shp"), delete_dsn = TRUE)
 ```
 
-
 ```{r}
 # cut out grid cells that overlap with zones (st_intersection)
 emissions_zones <- st_intersection(emissions_grid_sf, fao_regions) #sparse = FALSE)
@@ -181,10 +181,10 @@ emissions_zones %>%
 
 ## Decision points:
 
-- what attributes do we want to filter emissions for? do just `flag`, `year`, and `pollutants` make sense? maybe vessel class, but we cannot confidently say vessel class == species
-- what attributes do we want to filter fao catch data for? just `flag`, `year`, and `catch`?
-- how do we want to treat flag mis-match? merge flags?
-- how do we want to join catch and emissions? which is the primary dataset and how does that affect "lost" emissions
+-   what attributes do we want to filter emissions for? do just `flag`, `year`, and `pollutants` make sense? maybe vessel class, but we cannot confidently say vessel class == species
+-   what attributes do we want to filter fao catch data for? just `flag`, `year`, and `catch`?
+-   how do we want to treat flag mis-match? merge flags?
+-   how do we want to join catch and emissions? which is the primary dataset and how does that affect "lost" emissions
 
 FAO flags **NOT** in emissions:
 
@@ -340,8 +340,6 @@ plot(st_geometry(full_grid_41), add = TRUE)
 plot(st_geometry(zone_41))
 plot(st_geometry(emissions_zone_41), add = TRUE)
 ```
-
-
 
 ```{r}
 #| code-summary: Expand code
@@ -896,4 +894,123 @@ unique(fao_zone_31_merged_no_geo$flag)
 
 -   Assign FAO regions to emissions
 -   Assign majority pixel to region as a test then, assign by proportion
+
+```{r}
+# View the filtered results
+#print(multiple_regions)
+
+region_31 <- fao_regions %>%
+  filter(zone == 31)
+
+region_34 <- fao_regions %>%
+  filter(zone == 34)
+
+region_77 <- fao_regions %>%
+  filter(zone == 77)
+
+region_21 <- fao_regions %>%
+  filter(zone == 21)
+
+region_27 <- fao_regions %>%
+  filter(zone == 27)
+
+
+grid_31 <- multiple_regions %>%
+  filter(str_detect(region, "31"))
+
+grid_31_27 <- grid_31 %>%
+  filter(str_detect(region, "27"))
+
+#[1] "34,31"    "77,31"    "31,21"    "31,21,27" "34,31,27"
+
+plot(st_geometry(region_31), col = "cornflowerblue")
+plot(st_geometry(region_34), col = "lightblue", add = TRUE)
+plot(st_geometry(region_77), col = "navyblue", add = TRUE)
+plot(st_geometry(region_21), col = "lightgreen", add = TRUE)
+plot(st_geometry(region_27), col = "darkgreen", add = TRUE)
+#plot(st_geometry(grid_31), add = TRUE)
+plot(st_geometry(grid_31_27))
+
+
+bb <- st_bbox(grid_31_27)
+
+plot(st_geometry(region_31), col = "cornflowerblue", xlim = bb[c(1,3)], ylim = bb[c(2,4)])
+plot(st_geometry(region_27), col = "lightgreen", xlim = bb[c(1,3)], ylim = bb[c(2,4)], add = TRUE)
+plot(st_geometry(region_34), col = "lightblue", xlim = bb[c(1,3)], ylim = bb[c(2,4)], add = TRUE)
+plot(st_geometry(grid_31_27), add = TRUE)
+
+
+grid_77 <- grid_31 %>%
+  filter(str_detect(region, "77"))
+
+bb <- st_bbox(grid_77)
+
+plot(st_geometry(region_77), col = "lightgreen", xlim = bb[c(1,3)], ylim = bb[c(2,4)])
+plot(st_geometry(region_31), col = "cornflowerblue", xlim = bb[c(1,3)], ylim = bb[c(2,4)], add = TRUE)
+plot(st_geometry(grid_77), add = TRUE)
+
+
+
+region_81 <- fao_regions %>%
+  filter(zone == 81)
+
+region_57 <- fao_regions %>%
+  filter(zone == 57)
+
+
+grid_81 <- multiple_regions %>%
+  filter(str_detect(region, "81"))
+
+grid_81 <- emissions_zones %>%
+  filter(region == 81)
+
+region_71 <- fao_regions %>%
+  filter(zone ==71)
+
+
+
+# Bounding box in Equal Earth projection (EPSG:8857)
+australia_nz_bbox <- c(
+  xmin = 900000,   # Covers Western Australia
+  xmax = 2300000,  # Covers New Zealand's easternmost islands
+  ymin = -6500000, # Covers Tasmania and southernmost NZ
+  ymax = -2500000  # Covers northern Australia
+)
+
+bb <- st_bbox(region_57)
+
+
+new_xmin <- 11000000  # Move western boundary even closer to Australia's east coast
+new_xmax <- 12300000  # Move eastern boundary even closer to New Zealand
+bbox_adjusted <- c(xmin = new_xmin, ymin = -6005522, xmax = new_xmax, ymax = 2928172)
+
+plot(st_geometry(region_81), col = "cornflowerblue", xlim = bbox_adjusted[c(1,3)], ylim = bbox_adjusted[c(2,4)])
+plot(st_geometry(region_57), col = "lightgreen", xlim = bbox_adjusted[c(1,3)], ylim = bbox_adjusted[c(2,4)], add = TRUE)
+plot(st_geometry(region_71), col = "lavender", xlim = bbox_adjusted[c(1,3)], ylim = bbox_adjusted[c(2,4)], add = TRUE)
+#plot(st_geometry(grid_81), add = TRUE)
+
+
+```
+
+
+```{r}
+# cut out grid cells that overlap with zones (st_intersection)
+emissions_zones <- st_intersection(emissions_grid_sf, fao_regions) #sparse = FALSE)
+
+# add area column after intersection
+emissions_zones$area_after <- st_area(emissions_zones)
+
+# calculate area proportion
+emissions_zones <- emissions_zones %>%
+  mutate(area_prop = as.numeric(area_after/area_before)) %>%
+  # multiply emissions by proportion
+  mutate(co2_prop = total_co2 * area_prop) %>%
+  select(-c(total_co2, area_prop, area_before, area_after))
+
+# drop geometry
+emissions_zones_no_geo <- emissions_zones %>%
+  st_drop_geometry()
+
+```
+
 
