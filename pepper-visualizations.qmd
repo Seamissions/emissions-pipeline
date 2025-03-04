@@ -68,22 +68,39 @@ for (i in seq_along(file_names)) {
 
 
 ```{r}
-# add source column and combine datasets
+# ---- Clean and prep data for source plots ----
+
+# Add source column and combine datasets
 broadcasting <- broadcasting %>% mutate(source = 'broadcasting')
 non_broadcasting <- non_broadcasting %>% mutate(source = 'non-broadcasting')
-combined_data <- bind_rows(broadcasting, non_broadcasting)
-
-# Extract year from date
-combined_data <- combined_data %>%
+combined_data <- bind_rows(broadcasting, non_broadcasting) %>%
   mutate(year = year(month))
 
 # Summarize total emissions by year and source
-summary_data <- combined_data %>%
+source_data <- combined_data %>%
   group_by(year, source) %>%
-  summarise(total_emissions = sum(across(starts_with('emissions_')), na.rm = TRUE))
+  summarise(total_emissions = sum(across(starts_with('emissions_')), na.rm = TRUE)) %>%
+  ungroup()
 
-# Create the stream plot
-ggplot(summary_data, aes(x = year, y = total_emissions, fill = source)) +
+# Calculate total emissions per year
+total_emissions_per_year <- source_data %>%
+  group_by(year) %>%
+  summarise(total_emissions_total = sum(total_emissions))
+
+# Merge total emissions back into summary data
+source_data <- source_data %>%
+  left_join(total_emissions_per_year, by = "year")
+
+# Calculate percentage for each source
+source_data <- source_data |>
+  filter(year > 2015) |>
+  mutate(percentage = total_emissions / total_emissions_total * 100)
+```
+
+
+```{r}
+# Create stream plot for emissions type 
+ggplot(source_data, aes(x = year, y = total_emissions, fill = source)) +
   geom_stream(type = "ridge") +
   labs(title = "Total Emissions by Year and Source",
        x = "Year",
@@ -94,66 +111,10 @@ ggplot(summary_data, aes(x = year, y = total_emissions, fill = source)) +
 
 
 ```{r}
-# Calculate percentage for each source
-summary_data <- summary_data %>%
-  mutate(percentage = total_emissions / total_emissions * 100)
-
-# Create the stacked bar chart with percentage annotations
-ggplot(summary_data, aes(x = factor(year), y = total_emissions, fill = source)) +
-  geom_bar(stat = "identity", position = "stack") +
-  geom_text(aes(label = sprintf("%.1f%%", percentage)),
-            position = position_stack(vjust = 0.5),
-            color = "white",
-            fontface = "bold",
-            size = 12) +
-  labs(title = "Total Emissions by Year and Source",
-       x = "Year",
-       y = "Total Emissions",
-       fill = "Source") +
-  theme_minimal()
-```
-
-
-```{r}
-
-# ---- Clean and prep data ----
-
-# Add source column and combine datasets
-broadcasting <- broadcasting %>% mutate(source = 'broadcasting')
-non_broadcasting <- non_broadcasting %>% mutate(source = 'non-broadcasting')
-combined_data <- bind_rows(broadcasting, non_broadcasting)
-
-# Extract year from date
-combined_data <- combined_data %>%
-  mutate(year = year(month))
-
-# Summarize total emissions by year and source
-summary_data <- combined_data %>%
-  group_by(year, source) %>%
-  summarise(total_emissions = sum(across(starts_with('emissions_')), na.rm = TRUE)) %>%
-  ungroup()
-
-# Calculate total emissions per year
-total_emissions_per_year <- summary_data %>%
-  group_by(year) %>%
-  summarise(total_emissions_total = sum(total_emissions))
-
-# Merge total emissions back into summary data
-summary_data <- summary_data %>%
-  left_join(total_emissions_per_year, by = "year")
-
-# Calculate percentage for each source
-summary_data <- summary_data |>
-  filter(year > 2015) |>
-  mutate(percentage = total_emissions / total_emissions_total * 100)
-```
-
-
-```{r}
 
 # ---- Create the stacked bar chart with percentage annotations ---- 
 
-ggplot(summary_data, aes(x = factor(year), y = total_emissions, fill = source)) +
+ggplot(source_data, aes(x = factor(year), y = total_emissions, fill = source)) +
   geom_bar(stat = "identity", position = "stack") +
   
   # Add annotations for proportion
@@ -194,7 +155,7 @@ ggplot(summary_data, aes(x = factor(year), y = total_emissions, fill = source)) 
 
 ```{r}
 # ---- Create the stacked area chart with percentage annotations ---- 
-ggplot(summary_data, aes(x = year, y = total_emissions, fill = source)) +
+ggplot(source_data, aes(x = year, y = total_emissions, fill = source)) +
   geom_area(position = "stack") + 
   theme_minimal() +
   
@@ -233,4 +194,77 @@ scale_y_continuous(labels = scales::comma) + #, expand = c(0, 0)
     panel.grid.minor = element_blank()
   )
 ```
+
+
+```{r}
+# ---- Clean and prep data for source plots ----
+
+# Identify the top 9 vessel classes
+top_gear_types <- names(sort(table(combined_data$vessel_class), decreasing = TRUE))[1:9]
+
+# Filter the dataset for only the top 9 vessel classes and summarize emissions
+gear_data <- combined_data %>%
+  filter(vessel_class %in% top_gear_types) %>%
+  group_by(year, vessel_class) %>%  
+  summarise(total_emissions = sum(across(starts_with('emissions_')), na.rm = TRUE)) %>% 
+  ungroup()
+
+```
+
+
+```{r}
+# Define large seamissions color palette
+seamissions_large_palette <- c(
+  "#00D9FF","#057C91", "#9058C6", "#F781BF", "#FF0000", 
+  "#FB8C22", "#FFFF33", "#4EAF4A", "#DBEBBE", "#A8825E")
+```
+
+```{r}
+# --- Create proportional stream area chart for emissions by vessel class ----
+ggplot(gear_data, aes(x = year, y = total_emissions, fill = vessel_class)) +
+  geom_stream(type = "proportional") +
+  scale_fill_manual(values = seamissions_large_palette) +
+  theme_minimal() +
+  labs(
+    title = "Stream Graph of Vessel Emissions Over Time",
+    x = "Year",
+    y = "Total Emissions",
+    fill = "Vessel Class"
+  ) + 
+geom_text(aes(x = 2020.0, y = .75, 
+                label = "Drifting Longlines"), 
+            hjust = 0, vjust = 1.5, size = 5, fontface = "bold", color = "black") 
+```
+
+```{r}
+# --- Create proportional stream area chart for emissions by vessel class ----
+ggplot(gear_data, aes(x = year, y = total_emissions, fill = vessel_class)) +
+  geom_stream(type = "ridge") +
+  scale_fill_manual(values = seamissions_large_palette) +
+  theme_minimal() +
+  labs(
+    title = "Stream Graph of Vessel Emissions Over Time",
+    x = "Year",
+    y = "Total Emissions",
+    fill = "Vessel Class"
+  )
+```
+
+
+```{r}
+
+
+# group by year and gear type, sum total emissions
+
+# Create the stacked area plot
+ggplot(summary_data , aes(x = year, y = count, fill = c_name)) +
+    geom_stream(type = "ridge", alpha = 0.7) +  # Stacked area chart
+    scale_x_continuous(breaks = seq(min(ca_salmon_species_year$y_end), max(ca_salmon_species_year$y_end), by = 5)) + # Adjust X-axis breaks
+    labs(title = "CA Salmon Population Over Time",
+         x = "Year",
+         y = "Count",
+         fill = "Species") +
+    theme_minimal()
+```
+
 
