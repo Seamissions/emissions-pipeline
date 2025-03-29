@@ -1,0 +1,57 @@
+---
+title: "Sea Around Us"
+author: "Carmen Hoyt"
+date: last-modified
+format:
+  html:
+      toc: true
+      code-fold: true
+editor: visual
+execute:
+  warning: false
+  messages: false
+editor_options: 
+  chunk_output_type: console
+---
+
+Load Packages
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(here)
+```
+
+Import Data
+
+```{r}
+# add iso flag code
+iso_flags <- read_csv("/capstone/seamissions/data/fao_seafood_production/CL_FI_COUNTRY_GROUPS.csv", show_col_types = FALSE) %>%
+  clean_names() %>%
+  select(iso3_code, name_en)
+
+# Set up import for .csv files
+file_names <- list.files("/capstone/seamissions/data/sau", pattern="*.csv", full.names=TRUE)
+
+# Read in emissions data files
+for (i in seq_along(file_names)) {
+  table_name <- paste0("region_", str_sub(file_names[i], 40, 41))
+  assign(table_name, read_csv(file_names[i], show_col_types = FALSE) %>%
+           clean_names() %>%
+           filter(year >= 2015) %>%
+           left_join(iso_flags, by = c("fishing_entity" = "name_en")) %>%
+           mutate(iso3_code = ifelse(is.na(iso3_code), fishing_entity, iso3_code)))
+}
+
+# append to list?
+
+unique(region_18$iso3_code)
+unique(region_21$iso3_code)
+unique(region_27$iso3_code)
+unique(region_31$iso3_code)
+
+
+#problem files
+#31
+```
+
