@@ -408,16 +408,16 @@ fao_catch <- read_csv(file.path("/capstone/seamissions/data/fao_seafood_producti
 #| code-summary: Checkpoint
 
 # Save emissions_grid_sf to workbench-2
-st_write(emissions_grid_sf, file.path("/capstone/seamissions/checkpoint/emissions_grid_sf.gpkg"), delete_dsn = TRUE)
+#st_write(emissions_grid_sf, file.path("/capstone/seamissions/checkpoint/emissions_grid_sf.gpkg"), delete_dsn = TRUE)
 
 # Read in emissions_grid_sf from workbench-2
-#emissions_grid_sf <- st_read(file.path("/capstone/seamissions/checkpoint/emissions_grid_sf.gpkg"))
+emissions_grid_sf <- st_read(file.path("/capstone/seamissions/checkpoint/emissions_grid_sf.gpkg"))
 
 # Save cleaned fao_catch data
-write_csv(fao_catch, file.path("/capstone/seamissions/checkpoint/fao_catch.csv"))
+#write_csv(fao_catch, file.path("/capstone/seamissions/checkpoint/fao_catch.csv"))
 
 # Read in fao catch data
-#fao_catch <- read_csv(file.path("/capstone/seamissions/checkpoint/fao_catch.csv"), show_col_types = FALSE)
+fao_catch <- read_csv(file.path("/capstone/seamissions/checkpoint/fao_catch.csv"), show_col_types = FALSE)
 ```
 
 ## Run intersects
@@ -453,10 +453,10 @@ emissions_zones_no_geo <- emissions_zones %>%
 #| code-summary: Checkpoint
 
 # Save emissions_zones to workbench-2
-st_write(emissions_zones, file.path("/capstone/seamissions/checkpoint/emissions_zones.gpkg"), delete_dsn = TRUE)
+#st_write(emissions_zones, file.path("/capstone/seamissions/checkpoint/emissions_zones.gpkg"), delete_dsn = TRUE)
 
 # Read in emissions_zones from workbench-2
-#emissions_zones <- st_read(file.path("/capstone/seamissions/checkpoint/emissions_zones.gpkg"))
+emissions_zones <- st_read(file.path("/capstone/seamissions/checkpoint/emissions_zones.gpkg"))
 
 # Save cleaned emissions_zones_no_geo data
 write_csv(emissions_zones_no_geo, file.path("/capstone/seamissions/checkpoint/emissions_zones_no_geo.csv"))

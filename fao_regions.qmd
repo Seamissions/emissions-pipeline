@@ -992,7 +992,6 @@ plot(st_geometry(region_71), col = "lavender", xlim = bbox_adjusted[c(1,3)], yli
 
 ```
 
-
 ```{r}
 # cut out grid cells that overlap with zones (st_intersection)
 emissions_zones <- st_intersection(emissions_grid_sf, fao_regions) #sparse = FALSE)
@@ -1012,5 +1011,3 @@ emissions_zones_no_geo <- emissions_zones %>%
   st_drop_geometry()
 
 ```
-
-
