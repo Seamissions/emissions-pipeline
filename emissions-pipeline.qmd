@@ -62,6 +62,7 @@ options(scipen=999)
 # Set file path to data folder
 pathway <- "/home/emlab/projects/current-projects/ocean-ghg-fisheries/data/processed/gfw_emissions/"
 
+
 # Set up import for .csv or .xlsx files
 file_names <- list.files(pathway, pattern="*.csv", full.names=TRUE)
 
@@ -164,7 +165,7 @@ emissions_joined <- left_join(broadcasting, non_broadcasting, by = c("year_month
 -   Filter for year >= 2016?
 
 
-## Factor Emissions 
+## Factor Emissions
 
 ```{r}
 #| code-summary: Expand code
