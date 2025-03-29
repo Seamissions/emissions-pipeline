@@ -1,0 +1,665 @@
+---
+title: "Scratch"
+format: html
+editor: visual
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+#| code-summary: Expand code
+library(tidyverse)
+library(janitor)
+library(here)
+library(gghighlight)
+library(lubridate)
+library(ggwordcloud)
+library(glue)
+library(sf)
+library(dplyr)
+```
+
+```{r}
+#| code-summary: Load emissions data
+# Set file path to data folder workbench-2
+pathway <- "/capstone/seamissions/data/meds_capstone_project"
+
+# Set up import for .csv or .xlsx files
+file_names <- list.files(pathway, pattern="*.csv", full.names=TRUE)
+
+# Read in emissions data files
+for (i in seq_along(file_names)) {
+ if(str_detect(file_names[i], "non")) {
+    table_name <- paste("non_broadcasting")
+    assign(table_name, read_csv(file_names[i], show_col_types = FALSE) %>%
+          clean_names())
+
+  } else if (str_detect(file_names[i], "ais")) {
+    table_name <- paste("broadcasting")
+    assign(table_name, read_csv(file_names[i], show_col_types = FALSE) %>%
+          clean_names())
+    
+  } else {
+    warning("Extra file detected.")
+  }
+}
+```
+
+# Merge Emissions Datasets
+
+## Clean Data
+
+```{r}
+#| code-summary: Clean Data
+
+# Create `year_month` column
+broadcasting <- broadcasting %>%
+  mutate(date = lubridate::ymd(month)) %>%
+  mutate(year_month = format(date, '%Y-%m'))
+  
+# Create `year_month` column 
+non_broadcasting <- non_broadcasting %>%
+  mutate(date = lubridate::ymd(month)) %>%
+  mutate(year_month = format(date, '%Y-%m'))
+```
+
+## Join Data
+
+```{r}
+#| code-summary: Join Broadcasting and Non-Broadcasting Datasets
+
+# Left join broadcasting and non-broadcasting datasets
+emissions_joined <- left_join(broadcasting, non_broadcasting, by = c("year_month", "lat_bin", "lon_bin", "length_size_class_percentile")) %>%
+  
+  # Replace non-broadcasting NA values with (see decision point below)
+  mutate(emissions_co2_non_broadcasting_mt = ifelse(is.na(emissions_co2_non_broadcasting_mt), 0, emissions_co2_non_broadcasting_mt),
+         emissions_ch4_non_broadcasting_mt = ifelse(is.na(emissions_ch4_non_broadcasting_mt), 0, emissions_ch4_non_broadcasting_mt),
+         emissions_n2o_non_broadcasting_mt = ifelse(is.na(emissions_n2o_non_broadcasting_mt), 0, emissions_n2o_non_broadcasting_mt),
+         emissions_nox_non_broadcasting_mt = ifelse(is.na(emissions_nox_non_broadcasting_mt), 0, emissions_nox_non_broadcasting_mt),
+         emissions_sox_non_broadcasting_mt = ifelse(is.na(emissions_sox_non_broadcasting_mt), 0, emissions_sox_non_broadcasting_mt),
+         emissions_pm_non_broadcasting_mt = ifelse(is.na(emissions_pm_non_broadcasting_mt), 0, emissions_pm_non_broadcasting_mt),
+         emissions_co_non_broadcasting_mt = ifelse(is.na(emissions_co_non_broadcasting_mt), 0, emissions_co_non_broadcasting_mt),
+         emissions_vocs_non_broadcasting_mt = ifelse(is.na(emissions_vocs_non_broadcasting_mt), 0, emissions_co_non_broadcasting_mt),
+         emissions_pm2_5_non_broadcasting_mt = ifelse(is.na(emissions_pm2_5_non_broadcasting_mt), 0, emissions_co_non_broadcasting_mt),
+         emissions_pm10_non_broadcasting_mt = ifelse(is.na(emissions_pm10_non_broadcasting_mt), 0, emissions_co_non_broadcasting_mt)) %>%
+
+  # Select columns to keep
+  dplyr::select(year_month, 
+         lon_bin,
+         lat_bin,
+         flag, 
+         vessel_class, 
+         length_size_class_percentile, 
+         fishing_activity, 
+         hours, 
+         kw_hours,
+         emissions_co2_mt, 
+         emissions_ch4_mt, 
+         emissions_n2o_mt, 
+         emissions_nox_mt, 
+         emissions_sox_mt, 
+         emissions_co_mt,
+         emissions_vocs_mt,
+         emissions_pm2_5_mt,
+         emissions_pm10_mt,
+         emissions_co2_non_broadcasting_mt,
+         emissions_ch4_non_broadcasting_mt,
+         emissions_n2o_non_broadcasting_mt,
+         emissions_nox_non_broadcasting_mt,
+         emissions_sox_non_broadcasting_mt,
+         emissions_pm_non_broadcasting_mt,
+         emissions_co_non_broadcasting_mt,
+         emissions_vocs_non_broadcasting_mt,
+         emissions_pm2_5_non_broadcasting_mt,
+         emissions_pm10_non_broadcasting_mt
+         )
+```
+
+**Decision point:** NA values in `emissions_non_broadcasting` are giving NA in the totals after factoring (`non_broadcasting` missing 2015 data, NA values on join).
+
+-   Solution: replaced NA with 0
+-   Filter for year \>= 2016?
+
+## Factor Emissions
+
+```{r}
+#| code-summary: Expand code
+
+# List pollutants
+pollutants <- c("co2", 
+                "ch4",
+                "n2o",
+                "nox",
+                "sox",
+                "co",
+                "vocs",
+                "pm2_5",
+                "pm10")
+
+# Factor non-broadcasting emissions
+emissions <- emissions_joined %>%
+  
+  # Calculate total ais emissions per grouped effort
+  group_by(year_month, lon_bin, lat_bin, flag, vessel_class, length_size_class_percentile, hours, kw_hours) %>% 
+  mutate(ais_emissions_co2 = sum(emissions_co2_mt, na.rm = TRUE),
+         ais_emissions_ch4 = sum(emissions_ch4_mt, na.rm = TRUE),
+         ais_emissions_n2o = sum(emissions_n2o_mt, na.rm = TRUE),
+         ais_emissions_nox = sum(emissions_nox_mt, na.rm = TRUE),
+         ais_emissions_sox = sum(emissions_sox_mt, na.rm = TRUE),
+         ais_emissions_co = sum(emissions_co_mt, na.rm = TRUE),
+         ais_emissions_vocs = sum(emissions_vocs_mt, na.rm = TRUE),
+         ais_emissions_pm2_5 = sum(emissions_pm2_5_mt, na.rm = TRUE),
+         ais_emissions_pm10 = sum(emissions_pm10_mt, na.rm = TRUE)
+         ) %>%
+  
+  # Calculate total ais emissions per pixel and length size class
+  group_by(year_month, lon_bin, lat_bin, length_size_class_percentile) %>%
+  mutate(total_ais_emissions_co2 = sum(emissions_co2_mt, na.rm = TRUE),
+         total_ais_emissions_ch4 = sum(emissions_ch4_mt, na.rm = TRUE),
+         total_ais_emissions_n2o = sum(emissions_n2o_mt, na.rm = TRUE),
+         total_ais_emissions_nox = sum(emissions_nox_mt, na.rm = TRUE),
+         total_ais_emissions_sox = sum(emissions_sox_mt, na.rm = TRUE),
+         total_ais_emissions_co = sum(emissions_co_mt, na.rm = TRUE),
+         total_ais_emissions_vocs = sum(emissions_vocs_mt, na.rm = TRUE),
+         total_ais_emissions_pm2_5 = sum(emissions_pm2_5_mt, na.rm = TRUE),
+         total_ais_emissions_pm10 = sum(emissions_pm10_mt, na.rm = TRUE)) %>%
+  ungroup() %>%
+  
+  # Define a factor for the proportion of hours per flag/total hours 
+  mutate(factor_co2 = ais_emissions_co2/total_ais_emissions_co2,
+         factor_ch4 = ais_emissions_ch4/total_ais_emissions_ch4,
+         factor_n2o = ais_emissions_n2o/total_ais_emissions_n2o,
+         factor_nox = ais_emissions_nox/total_ais_emissions_nox,
+         factor_sox = ais_emissions_sox/total_ais_emissions_sox,
+         factor_co = ais_emissions_co/total_ais_emissions_co,
+         factor_vocs = ais_emissions_vocs/total_ais_emissions_vocs,
+         factor_pm2_5 = ais_emissions_pm2_5/total_ais_emissions_pm2_5,
+         factor_pm10 = ais_emissions_pm10/total_ais_emissions_pm10) %>%
+  
+  # Apply factor to emissions columns to partition nb data
+  mutate(total_co2 = emissions_co2_mt + (factor_co2 * emissions_co2_non_broadcasting_mt),
+         total_ch4 = emissions_ch4_mt + (factor_ch4 * emissions_ch4_non_broadcasting_mt),
+         total_n2o = emissions_n2o_mt + (factor_n2o * emissions_n2o_non_broadcasting_mt),
+         total_nox = emissions_nox_mt + (factor_nox * emissions_nox_non_broadcasting_mt),
+         total_sox = emissions_sox_mt + (factor_sox * emissions_sox_non_broadcasting_mt),
+         total_co = emissions_co_mt + (factor_co * emissions_co_non_broadcasting_mt),
+         total_vocs = emissions_vocs_mt + (factor_vocs * emissions_vocs_non_broadcasting_mt),
+         total_pm2_5 =  emissions_pm2_5_mt + (factor_pm2_5 * emissions_pm2_5_non_broadcasting_mt),
+         total_pm10 = emissions_pm10_mt + (factor_pm10 * emissions_pm10_non_broadcasting_mt)
+         ) %>%
+
+  # Select columns of interest
+  dplyr::select(year_month, 
+         lon_bin,
+         lat_bin,
+         flag, 
+         vessel_class, 
+         length_size_class_percentile, 
+         fishing_activity, 
+         hours, 
+         kw_hours,
+         total_co2, 
+         total_ch4,
+         total_n2o,
+         total_nox,
+         total_sox,
+         total_co,
+         total_vocs,
+         total_pm2_5,
+         total_pm10
+         )
+```
+
+```{r}
+#| code-summary: Expand code
+
+# List pollutants
+pollutants <- c("co2", 
+                "ch4",
+                "n2o",
+                "nox",
+                "sox",
+                "co",
+                "vocs",
+                "pm2_5",
+                "pm10")
+
+# Check for discrepancies
+for (i in seq_along(pollutants)) {
+  
+  # Assign column names
+  broad_col <- paste0("emissions_", pollutants[i], "_mt")
+  non_broad_col <- paste0("emissions_", pollutants[i], "_non_broadcasting_mt")
+  em_col <- paste0("total_", pollutants[i])
+  
+  # Total emissions before factoring
+  em_before <- sum(broadcasting[[broad_col]], na.rm = TRUE) + sum(non_broadcasting[[non_broad_col]], na.rm = TRUE)
+  
+  # Total emissions after factoring
+  em_after <- sum(emissions[[em_col]], na.rm = TRUE)
+  
+  # Difference in emissions
+  diff <- em_after - em_before
+  
+  # Percent error
+  error <- diff/em_before
+  
+  # Trigger error warning for lost emissions over 0.1%
+  if (error > 0.001) {
+  warning(paste0("Error over 0.1% returned for ", {pollutants[i]}, " emissions partitioning. Some emissions may be lost."))
+  }
+}
+```
+
+## Factor Emissions with For loop
+
+```{r}
+#| code-summary: Expand code
+
+# List pollutants
+pollutants <- c("co2" 
+                # "ch4",
+                # "n2o",
+                # "nox",
+                # "sox",
+                # "co",
+                # "vocs",
+                # "pm2_5",
+                # "pm10"
+                )
+
+for (pollutant in pollutants) {
+  
+  ais_emissions <- paste0("ais_emissions_", pollutant)
+  
+  total_ais_emissions <- paste0("total_ais_emissions_", pollutant)
+  
+  factor <- paste0("factor_", pollutant)
+  
+  total <- paste0("total_", pollutant)
+  
+  colnames <- colnames(emissions_joined)
+  
+  non_broadcasting_emissions <- paste0("emissions_", pollutant, "_non_broadcasting_mt")
+  
+  #existing_emissions <- names(df)[str_detect(names(emissions), pollutant)]
+  
+  emissions <- emissions_joined %>%
+    # Calculate total ais emissions per grouped effort
+    group_by(year_month, lon_bin, lat_bin, flag, vessel_class, length_size_class_percentile, hours, kw_hours) %>%
+    mutate(ais_emissions = sum(emissions_joined[str_detect(colnames, pollutant) & !str_detect(colnames, "non")], na.rm = TRUE)) %>%
+    
+    # Calculate total ais emissions per pixel and length size class
+    group_by(year_month, lon_bin, lat_bin, length_size_class_percentile) %>%
+    mutate(total_ais_emissions = sum(emissions_joined[str_detect(colnames, pollutant) & !str_detect(colnames, "non")], na.rm = TRUE)) %>%
+    ungroup() %>%
+    
+    # Define a factor for the proportion of hours per flag/total hours 
+    mutate(factor = ais_emissions/total_ais_emissions) %>%
+    
+    # Apply factor to emissions columns to partition nb data
+    mutate(total = ais_emissions + (factor * emissions_joined[str_detect(colnames, pollutant) & str_detect(colnames, "non")]))
+  
+}
+
+emissions <- emissions %>%
+    # Select columns of interest
+    dplyr::select(year_month, 
+         lon_bin,
+         lat_bin,
+         flag, 
+         vessel_class, 
+         length_size_class_percentile, 
+         fishing_activity, 
+         hours, 
+         kw_hours,
+         total_co2, 
+         total_ch4,
+         total_n2o,
+         total_nox,
+         total_sox,
+         total_co,
+         total_vocs,
+         total_pm2_5,
+         total_pm10
+         )
+
+
+
+
+
+
+pollutant <- "co2"
+
+ais_emissions <- paste0("ais_emissions_", pollutant)
+
+pollutant_emissions <- colnames[str_detect(colnames, pollutant) & !str_detect(colnames, "non")]
+  
+total_ais_emissions <- paste0("total_ais_emissions_", pollutant)
+  
+factor <- paste0("factor_", pollutant)
+  
+total <- paste0("total_", pollutant)
+  
+colnames <- colnames(emissions_joined)
+  
+non_broadcasting_emissions <- paste0("emissions_", pollutant, "_non_broadcasting_mt")
+
+
+emissions <- emissions_joined %>%
+    # Calculate total ais emissions per grouped effort
+    group_by(year_month, lon_bin, lat_bin, flag, vessel_class, length_size_class_percentile, hours, kw_hours) %>%
+    mutate(!!ais_emissions := sum(.data[[pollutant_emissions]], na.rm = TRUE))
+    
+    # Calculate total ais emissions per pixel and length size class
+    group_by(year_month, lon_bin, lat_bin, length_size_class_percentile) %>%
+    mutate(total_ais_emissions = sum(emissions_joined[str_detect(colnames, pollutant) & !str_detect(colnames, "non")], na.rm = TRUE)) %>%
+    ungroup() %>%
+    
+    # Define a factor for the proportion of hours per flag/total hours 
+    mutate(factor = ais_emissions/total_ais_emissions) %>%
+    
+    # Apply factor to emissions columns to partition nb data
+    mutate(total = ais_emissions + (factor * emissions_joined[str_detect(colnames, pollutant) & str_detect(colnames, "non")]))
+
+
+
+
+
+colnames <- colnames(emissions_joined)
+
+emissions_joined[str_detect(names(emissions_joined), pollutant) & str_detect(names(emissions_joined), "non")]
+emissions_joined[str_detect(colnames, pollutant) & str_detect(colnames, "non")]
+
+# Factor non-broadcasting emissions
+emissions <- emissions_joined %>%
+  
+  # Calculate total ais emissions per grouped effort
+  group_by(year_month, lon_bin, lat_bin, flag, vessel_class, length_size_class_percentile, hours, kw_hours) %>% 
+  mutate(ais_emissions_co2 = sum(emissions_co2_mt, na.rm = TRUE),
+         ais_emissions_ch4 = sum(emissions_ch4_mt, na.rm = TRUE),
+         ais_emissions_n2o = sum(emissions_n2o_mt, na.rm = TRUE),
+         ais_emissions_nox = sum(emissions_nox_mt, na.rm = TRUE),
+         ais_emissions_sox = sum(emissions_sox_mt, na.rm = TRUE),
+         ais_emissions_co = sum(emissions_co_mt, na.rm = TRUE),
+         ais_emissions_vocs = sum(emissions_vocs_mt, na.rm = TRUE),
+         ais_emissions_pm2_5 = sum(emissions_pm2_5_mt, na.rm = TRUE),
+         ais_emissions_pm10 = sum(emissions_pm10_mt, na.rm = TRUE)
+         ) %>%
+  
+  # Calculate total ais emissions per pixel and length size class
+  group_by(year_month, lon_bin, lat_bin, length_size_class_percentile) %>%
+  mutate(total_ais_emissions_co2 = sum(emissions_co2_mt, na.rm = TRUE),
+         total_ais_emissions_ch4 = sum(emissions_ch4_mt, na.rm = TRUE),
+         total_ais_emissions_n2o = sum(emissions_n2o_mt, na.rm = TRUE),
+         total_ais_emissions_nox = sum(emissions_nox_mt, na.rm = TRUE),
+         total_ais_emissions_sox = sum(emissions_sox_mt, na.rm = TRUE),
+         total_ais_emissions_co = sum(emissions_co_mt, na.rm = TRUE),
+         total_ais_emissions_vocs = sum(emissions_vocs_mt, na.rm = TRUE),
+         total_ais_emissions_pm2_5 = sum(emissions_pm2_5_mt, na.rm = TRUE),
+         total_ais_emissions_pm10 = sum(emissions_pm10_mt, na.rm = TRUE)) %>%
+  ungroup() %>%
+  
+  # Define a factor for the proportion of hours per flag/total hours 
+  mutate(factor_co2 = ais_emissions_co2/total_ais_emissions_co2,
+         factor_ch4 = ais_emissions_ch4/total_ais_emissions_ch4,
+         factor_n2o = ais_emissions_n2o/total_ais_emissions_n2o,
+         factor_nox = ais_emissions_nox/total_ais_emissions_nox,
+         factor_sox = ais_emissions_sox/total_ais_emissions_sox,
+         factor_co = ais_emissions_co/total_ais_emissions_co,
+         factor_vocs = ais_emissions_vocs/total_ais_emissions_vocs,
+         factor_pm2_5 = ais_emissions_pm2_5/total_ais_emissions_pm2_5,
+         factor_pm10 = ais_emissions_pm10/total_ais_emissions_pm10) %>%
+  
+  # Apply factor to emissions columns to partition nb data
+  mutate(total_co2 = emissions_co2_mt + (factor_co2 * emissions_co2_non_broadcasting_mt),
+         total_ch4 = emissions_ch4_mt + (factor_ch4 * emissions_ch4_non_broadcasting_mt),
+         total_n2o = emissions_n2o_mt + (factor_n2o * emissions_n2o_non_broadcasting_mt),
+         total_nox = emissions_nox_mt + (factor_nox * emissions_nox_non_broadcasting_mt),
+         total_sox = emissions_sox_mt + (factor_sox * emissions_sox_non_broadcasting_mt),
+         total_co = emissions_co_mt + (factor_co * emissions_co_non_broadcasting_mt),
+         total_vocs = emissions_vocs_mt + (factor_vocs * emissions_vocs_non_broadcasting_mt),
+         total_pm2_5 =  emissions_pm2_5_mt + (factor_pm2_5 * emissions_pm2_5_non_broadcasting_mt),
+         total_pm10 = emissions_pm10_mt + (factor_pm10 * emissions_pm10_non_broadcasting_mt)
+         ) %>%
+
+  # Select columns of interest
+  dplyr::select(year_month, 
+         lon_bin,
+         lat_bin,
+         flag, 
+         vessel_class, 
+         length_size_class_percentile, 
+         fishing_activity, 
+         hours, 
+         kw_hours,
+         total_co2, 
+         total_ch4,
+         total_n2o,
+         total_nox,
+         total_sox,
+         total_co,
+         total_vocs,
+         total_pm2_5,
+         total_pm10
+         )
+```
+
+```{r}
+#| code-summary: Expand code
+
+# List pollutants
+pollutants <- c("co2", 
+                "ch4",
+                "n2o",
+                "nox",
+                "sox",
+                "co",
+                "vocs",
+                "pm2_5",
+                "pm10")
+
+# Check for discrepancies
+for (i in seq_along(pollutants)) {
+  
+  # Assign column names
+  broad_col <- paste0("emissions_", pollutants[i], "_mt")
+  non_broad_col <- paste0("emissions_", pollutants[i], "_non_broadcasting_mt")
+  em_col <- paste0("total_", pollutants[i])
+  
+  # Total emissions before factoring
+  em_before <- sum(broadcasting[[broad_col]], na.rm = TRUE) + sum(non_broadcasting[[non_broad_col]], na.rm = TRUE)
+  
+  # Total emissions after factoring
+  em_after <- sum(emissions[[em_col]], na.rm = TRUE)
+  
+  # Difference in emissions
+  diff <- em_after - em_before
+  
+  # Percent error
+  error <- diff/em_before
+  
+  # Trigger error warning for lost emissions over 0.1%
+  if (error > 0.001) {
+  warning(paste0("Error over 0.1% returned for ", {pollutants[i]}, " emissions partitioning. Some emissions may be lost."))
+  }
+}
+```
+
+3/12/25
+
+```{r}
+view <- emissions_zones %>%
+  group_by(lat_bin, lon_bin) %>%
+  summarise(area_before = st_area(geom))
+
+emissions_zones$area_before <- st_area(emissions_zones)
+
+multiple_regions <- multiple_regions %>%
+  separate_longer_delim(region, ",") %>%
+  st_as_sf()
+
+multiple_regions <- multiple_regions %>%
+  group_by(lat_bin, lon_bin, region) %>%
+  mutate(area_before = st_area(geom))
+
+overlap_zones <- st_intersection(multiple_regions, fao_regions)
+
+overlap_zones$area_after <- st_area(overlap_zones)
+
+#options(scipen=999)
+
+overlap_zones <- overlap_zones %>%
+  mutate(area_prop = as.numeric(round(area_after/area_before), 10))
+# calculate area
+# look at areas < 1
+
+multiple_regions_31 <- multiple_regions %>%
+  filter(region == 31)
+overlap_zones_31 <- overlap_zones %>%
+  filter(zone == 31)
+overlap_zones_77 <- overlap_zones %>%
+  filter(zone == 77)
+
+plot(st_geometry(multiple_regions_31))
+plot(st_geometry(overlap_zones_31), col = "lightblue", add = TRUE)
+plot(st_geometry(overlap_zones_77), col = "lightgreen", add = TRUE)
+```
+
+```{r}
+#st_within()
+#st_contains()
+
+fao_region_31 <- fao_regions %>%
+  filter(zone == 31)
+
+# -------- St Contains --------
+contained_31 <- st_contains(fao_region_31, emissions_grid_sf, sparse = FALSE)
+# Get only smaller polygons that are fully inside larger ones
+contained_inside_polygons <- emissions_grid_sf[apply(contained_31, 2, any), ]
+
+# ------- St Within --------
+# within_31 <- st_within(emissions_grid_sf, fao_region_31, sparse = FALSE) 
+# # Get only the smaller polygons that are fully inside
+# within_inside_polygons <- emissions_grid_sf[apply(within_31, 1, any), ]
+
+# St Intersects
+intersects_31 <- st_intersects(emissions_grid_sf, fao_region_31) 
+intersects_inside_polygons <- emissions_grid_sf[lengths(intersects_31) > 0, ]
+
+
+# ST Touches
+touches_31 <- st_touches(emissions_grid_sf, fao_region_31, sparse = FALSE)
+touching_polygons <- emissions_grid_sf[apply(touches_31, 1, any), ]
+
+
+plot(st_geometry(fao_region_31))
+plot(st_geometry(within_inside_polygons))
+plot(st_geometry(contained_inside_polygons), col = 'lightgreen', add = TRUE)
+#plot(st_geometry(within_inside_polygons), col = 'lightgreen', add = TRUE)
+plot(st_geometry(intersects_inside_polygons), border = 'lightpink', add = TRUE)
+
+
+# Filter grid cells that intersect with more than one FAO region
+multiple_regions <- emissions_zones[grepl(",", emissions_zones$region), ]
+
+emissions_zones_31 <- multiple_regions %>%
+  filter(str_detect(region, "31"))
+
+plot(st_geometry(fao_region_31))
+plot(st_geometry(emissions_zones_31), border = 'lightblue', add = TRUE)
+plot(st_geometry(touching_polygons))
+
+# -------- Manually by region --------
+# Overlap grid
+problem_grid_31 <- emissions_zones_31 %>%
+  filter(lon_bin %in% c(-84:-78))
+
+plot(st_geometry(fao_region_31))
+plot(st_geometry(emissions_zones_31), col = 'lightblue', border = 'lightblue', add = TRUE)
+plot(st_geometry(problem_grid_31), add = TRUE)
+
+
+fao_region_test <- fao_regions %>%
+  filter(zone %in% c(31, 77, 27, 21, 34))
+
+grid_test <- st_intersection(emissions_grid_sf, fao_region_test)
+
+plot(st_geometry(grid_test %>% filter(zone %in% 31)))
+
+```
+
+```{r}
+overlapping_pixels <- st_within(emissions_grid_sf, fao_regions) 
+
+fao_region_31 <- fao_regions %>%
+  filter(zone == 31)
+
+contained_31 <- st_contains(fao_region_31, emissions_grid_sf, sparse = FALSE)
+
+inside_polygons_31 <- emissions_grid_sf[apply(contained_31, 2, any), ]
+
+# Get row indices of inside polygons
+#inside_indices <- which(apply(contained_31, 2, any))
+
+# Select polygons that are NOT inside
+#outside_polygons_31 <- emissions_grid_sf[-inside_indices, ]
+
+emissions_zones_31 <- emissions_zones %>%
+  filter(region == 31) %>%
+  mutate(area = st_area(geom))
+
+# Plot for verification
+plot(st_geometry(emissions_zones_31), col = "blue", lwd = 2)
+
+emissions_zone_31_intersect <- st_intersection(emissions_grid_sf, fao_region_31)
+
+emissions_zones_31_intersect <- emissions_grid_sf[lengths(emissions_zone_31_intersect) > 0, ]
+
+emissions_zones_31_intersect$region <- sapply(emissions_zones_31_intersect[lengths(emissions_zones_31_intersect) > 0], function(x) {
+  if (length(x) > 0) {
+    return(paste(fao_region_31$zone[x], collapse = ","))
+  } else {
+    return(NA)
+  }
+})
+
+emissions_zones_31_intersect <- emissions_zones_31_intersect %>%
+  mutate(area_intersect = st_area(geom))
+
+zone_31 <- st_join(emissions_zones_31, emissions_zones_31_intersect) 
+
+plot(st_geometry(emissions_zones_31_intersect), col = "lightgreen", lwd = 2, add = TRUE)
+
+
+# Select grid polygons that have an intersection (TRUE values)
+emissions_zones <- emissions_grid_sf[lengths(overlapping_pixels) > 0, ]
+
+# Add regions column
+emissions_zones$region <- sapply(overlapping_pixels[lengths(overlapping_pixels) > 0], function(x) {
+  if (length(x) > 0) {
+    return(paste(fao_regions$zone[x], collapse = ","))
+  } else {
+    return(NA)
+  }
+})
+
+# Filter grid cells that intersect with more than one FAO region
+multiple_regions <- emissions_zones[grepl(",", emissions_zones$region), ]
+
+#plot(st_geometry(multiple_regions))
+
+#st_write(emissions_zones, file.path("/capstone/seamissions/checkpoint/emissions_zones_st_within.gpkg"))
+emissions_zones_within <- emissions_zones
+
+multi_region <- st_join(multiple_regions, emissions_zones_within, join = "anti", by = c("lat_bin", "lon_bin", "year", "flag"))
+
+# Drop geometry
+emissions_zones_no_geo <- emissions_zones %>%
+  st_drop_geometry()
+```
+
+```{r}
+anti_join <- multiple_regions[!st_intersects(multiple_regions, emissions_zones_within, sparse = FALSE), ]
+```
+
