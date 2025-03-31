@@ -391,14 +391,10 @@ viz <- test_joined %>%
             emissions_non = sum(emissions_non, na.rm = TRUE)) %>%
   mutate(prop = emissions_non/emissions_broad)
 
-# if (nrow(test) != nrow(test2)) {
-#   warning("Mismatched number of pixels. Cannot calculate proportion of ais to non-broadcasting.")
-# }
-
 viz %>%
-  filter(prop >= 20)
-
-ggplot(viz, aes(x = lon_bin, y = lat_bin, fill = prop)) +
+  #filter(lat_bin >= -20 & lat_bin <= 40) %>%
+  #filter(lon_bin >= 50 & lon_bin <= 140) %>%
+ggplot( aes(x = lon_bin, y = lat_bin, fill = prop)) +
   geom_raster() +  # Faster rendering for large data
   scale_fill_viridis_c(labels = scales::label_percent(scale = 100, big.mark = ",")) +
   guides(fill = guide_colorbar(barwidth = 25, 
@@ -420,61 +416,9 @@ ggplot(viz, aes(x = lon_bin, y = lat_bin, fill = prop)) +
                                 hjust = 0.5),
     legend.position = "bottom",
     legend.title = element_blank()
-    
-    # text(family = "sans",
-    #                             size = rel(1.0),
-    #                             hjust = 0.5)
-  ) 
-
-test2 %>%
-  group_by(lat_bin, lon_bin) %>%
-  summarise(emissions_non = sum(emissions_non)) %>%
-ggplot(aes(x = lon_bin, y = lat_bin, fill = emissions_non)) +
-  geom_raster() +  # Faster rendering for large data
-  scale_fill_viridis_c() +
-  guides(fill = guide_colorbar(barwidth = 15, 
-                               barheight = 0.75,
-                               title.position = "top")) +
-  theme_minimal() +
-  labs(title = "Non-Broadcasting Emissions",
-       subtitle = "",
-       fill = "Proportion") +
-  theme(
-    axis.title = element_blank(),
-    
-    plot.title = element_text(family = "sans",
-                              size = 12,
-                              hjust = 0.5),
-    
-    plot.subtitle = element_text(family = "sans",
-                                size = 10,
-                                hjust = 0.5),
-    legend.position = "bottom",
-    legend.title = element_text(family = "sans",
-                                size = 10,
-                                hjust = 0.5)
-  ) 
 ```
 
-
-df_sf <- df_sf %>%
-  filter(pollutant_type == "co2") %>%
-  group_by(geometry) %>%
-  summarise(emissions = mean(emissions)) %>%
-  mutate(opacity = scales::rescale(emissions, to = c(0, 1))) %>%
-  ggplot(aes(fill = opacity)) +
-  geom_sf() +
-  scale_fill_viridis_c() +
-  geom_sf(data = shp, color = "black", fill = NA, size = 0.5) +  # Shapefile overlay
-  coord_sf() +
-  guides(fill = guide_colorbar(barwidth = 15, barheight = 0.75,
-                               title.position = "top")) +
-  theme_minimal() +
-  labs(title = "Average Global CO2 Emissions",
-       subtitle = "2015-2024",
-       fill = "Relative Emissions") +
-  theme(
-    axis.title = element_blank(),
+df_sf \<- df_sf %\>% filter(pollutant_type == "co2") %\>% group_by(geometry) %\>% summarise(emissions = mean(emissions)) %\>% mutate(opacity = scales::rescale(emissions, to = c(0, 1))) %\>% ggplot(aes(fill = opacity)) + geom_sf() + scale_fill_viridis_c() + geom_sf(data = shp, color = "black", fill = NA, size = 0.5) + \# Shapefile overlay coord_sf() + guides(fill = guide_colorbar(barwidth = 15, barheight = 0.75, title.position = "top")) + theme_minimal() + labs(title = "Average Global CO2 Emissions", subtitle = "2015-2024", fill = "Relative Emissions") + theme( axis.title = element_blank(),
 
     plot.title = element_text(family = "sans",
                               size = 12,
@@ -487,30 +431,18 @@ df_sf <- df_sf %>%
     legend.title = element_text(family = "sans",
                                 size = 10,
                                 hjust = 0.5)
-  )
-# 
-df_sf <- st_as_sf(em_pivot, coords = c("lon_bin", "lat_bin"), crs = 4326)
-shp <- st_transform(shp, crs(df_sf))
-colnames(shp)
 
-ggplot() +
-  # Assuming shapefile has a column "population" for color mapping
+) \# df_sf \<- st_as_sf(em_pivot, coords = c("lon_bin", "lat_bin"), crs = 4326) shp \<- st_transform(shp, crs(df_sf)) colnames(shp)
 
-  geom_sf(data = df_sf, aes(color = opacity)) +
-   geom_sf(data = shp, color = "black", size = 0.5) +
-  scale_fill_viridis_c() +  # Apply color scale (viridis for continuous data)
-  theme_minimal()
+ggplot() + \# Assuming shapefile has a column "population" for color mapping
 
-shp <- st_make_valid(shp)
-st_crs(shp) == st_crs(df_sf)
+geom_sf(data = df_sf, aes(color = opacity)) + geom_sf(data = shp, color = "black", size = 0.5) + scale_fill_viridis_c() + \# Apply color scale (viridis for continuous data) theme_minimal()
 
-invalid_geometries <- st_is_valid(shp)
-shp <- shp[invalid_geometries, ]
+shp \<- st_make_valid(shp) st_crs(shp) == st_crs(df_sf)
 
-tm_shape(df_sf) +
-  tm_dots(col = "opacity", palette = "viridis") +  # Raster layer with color palette
-tm_shape(shp) +
-  tm_borders() 
+invalid_geometries \<- st_is_valid(shp) shp \<- shp\[invalid_geometries, \]
+
+tm_shape(df_sf) + tm_dots(col = "opacity", palette = "viridis") + \# Raster layer with color palette tm_shape(shp) + tm_borders()
 
 ```{r}
 #| code-summary: Expand code
