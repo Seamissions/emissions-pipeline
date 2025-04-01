@@ -160,7 +160,7 @@ emissions_joined <- left_join(broadcasting, non_broadcasting, by = c("year_month
 **Decision point:** NA values in `emissions_non_broadcasting` are giving NA in the totals after factoring (`non_broadcasting` missing 2015 data, NA values on join).
 
 -   Solution: replaced NA with 0
--   Filter `broadcasting` for year >= 2016?
+-   Filter `broadcasting` for year \>= 2016?
 
 ## Factor Emissions
 
@@ -423,6 +423,30 @@ fao_catch <- read_csv(file.path("/capstone/seamissions/checkpoint/fao_catch.csv"
 ## Run intersects
 
 ```{r}
+# Assign majority pixel to an FAO region 
+pixels_with_fao_region <- st_join(emissions_grid_sf, fao_regions, largest = TRUE)
+
+# Checkpoint
+st_write(pixels_with_fao_region, file.path("/capstone/seamissions/checkpoint/pixels_with_fao_region.gpkg"), delete_dsn = TRUE)
+
+# check
+if(nrow(pixels_with_fao_region) != nrow(emissions_grid_sf)) {
+  warning("Number of rows differs.")
+} 
+
+# check
+zone_na <- pixels_with_fao_region %>%
+  filter(is.na(zone))
+zone_31 <- pixels_with_fao_region %>%
+  filter(zone == 31)
+fao_zone_31 <- fao_regions %>%
+  filter(zone == 31)
+
+plot(st_geometry(zone_31))
+plot(st_geometry(fao_zone_31), add = TRUE)
+```
+
+```{r}
 #| code-summary: Checkpoint
 # Find which grid cells intersect with the FAO regions
 overlapping_pixels <- st_intersects(emissions_grid_sf, fao_regions) 
@@ -445,6 +469,11 @@ multiple_regions <- emissions_zones[grepl(",", emissions_zones$region), ]
 # Drop geometry
 emissions_zones_no_geo <- emissions_zones %>%
   st_drop_geometry()
+
+#overlapping_grids <- st_difference(multiple_regions, pixels_with_fao_region)  
+common_grids <- st_intersection(multiple_regions, pixels_with_fao_region) # Cells that appear in both
+all_grids <- st_union(multiple_regions, pixels_with_fao_region)           # All grid cells
+unique_grids <- st_difference(all_grids, common_grids) # keep only unique grid cells
 ```
 
 ### Checkpoint
