@@ -10,3 +10,6 @@ visualizations_files/
 emissions-pipeline.rmarkdown
 output/
 scratch.qmd
+.DS_Store
+capstone/.DS_Store
+capstone/seamissions/.DS_Store

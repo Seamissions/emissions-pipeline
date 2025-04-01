@@ -17,6 +17,7 @@ editor_options:
 Load Packages
 
 ```{r}
+#| code-summary: Expand code
 library(tidyverse)
 library(janitor)
 library(here)
@@ -25,12 +26,14 @@ library(here)
 Import Data
 
 ```{r}
+#| code-summary: Expand code
 flag_data <- read_csv("/capstone/seamissions/data/meds_meds_capstone_annual_vessel_flag_country_emissions_v20241121.csv", show_col_types = FALSE)
 ```
 
-1. Full Dataset Mismatch
+1.  Full Dataset Mismatch
 
 ```{r}
+#| code-summary: Expand code
 # investigate matching flags vs. non-matching flags
 flag_match <- flag_data %>%
   # fill `top_visit` NA values with `flag` values (**assumption**)
@@ -47,9 +50,10 @@ total_match <- flag_match %>%
   summarise(counts = n())
 ```
 
-2. Full Dataset Emissions
+2.  Full Dataset Emissions
 
 ```{r}
+#| code-summary: Expand code
 year_emissions <- flag_match %>%
   group_by(year, match) %>%
   summarise(emissions = sum(emissions_co2_mt, na.rm = TRUE)) %>%
@@ -60,9 +64,10 @@ year_emissions <- flag_match %>%
   select(-total_emissions)
 ```
 
-3. Emissions to Different Country
+3.  Emissions to Different Country
 
 ```{r}
+#| code-summary: Expand code
 to_country_emissions <- flag_match %>%
   group_by(flag, match) %>%
   summarise(vessels = n(),
@@ -77,9 +82,10 @@ to_country_emissions %>%
   filter(flag == "PAN")
 ```
 
-4. Emissions from Different Country
+4.  Emissions from Different Country
 
 ```{r}
+#| code-summary: Expand code
 from_country_emissions <- flag_match %>%
   group_by(top_visited_country_iso3, match) %>%
   summarise(vessels = n(),
@@ -94,6 +100,7 @@ from_country_emissions <- flag_match %>%
 Visualize
 
 ```{r}
+#| code-summary: Expand code
 # top countries where emissions (prop) end up somewhere else (are flags of convenience)
 to_country_emissions %>%
   arrange(desc(percent)) %>%
@@ -150,4 +157,3 @@ ggplot(aes(x = reorder(top_visited_country_iso3, emissions), y = emissions)) +
     axis.title.y = element_blank()
   )
 ```
-

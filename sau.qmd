@@ -17,6 +17,7 @@ editor_options:
 Load Packages
 
 ```{r}
+#| code-summary: Expand code
 library(tidyverse)
 library(janitor)
 library(here)
@@ -25,6 +26,7 @@ library(here)
 Import Data
 
 ```{r}
+#| code-summary: Expand code
 # add iso flag code
 iso_flags <- read_csv("/capstone/seamissions/data/fao_seafood_production/CL_FI_COUNTRY_GROUPS.csv", show_col_types = FALSE) %>%
   clean_names() %>%
@@ -72,4 +74,3 @@ region_31 <- read_csv("/capstone/seamissions/data/sau/SAU FAO 31 v50-1.csv", sho
 #problem files
 #31
 ```
-
