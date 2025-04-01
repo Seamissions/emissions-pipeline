@@ -9,3 +9,4 @@ emissions-pipeline_files/libs
 visualizations_files/
 emissions-pipeline.rmarkdown
 output/
+scratch.qmd
