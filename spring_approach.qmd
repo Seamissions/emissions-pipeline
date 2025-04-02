@@ -104,19 +104,21 @@ if(nrow(broadcasting) + nrow(non_broadcasting) != nrow(emissions)) {
 
 ```{r}
 #| code-summary: Expand code
+
+# List pollutants
+pollutants <- c("co2", 
+                "ch4",
+                "n2o",
+                "nox",
+                "sox",
+                "co",
+                "vocs",
+                "pm2_5",
+                "pm10")
+
 # Check for discrepancies
 for (i in seq_along(pollutants)) {
-  # List pollutants
-  pollutants <- c("co2", 
-                  "ch4",
-                  "n2o",
-                  "nox",
-                  "sox",
-                  "co",
-                  "vocs",
-                  "pm2_5",
-                  "pm10")
-  
+
   em_col <- paste0("emissions_", pollutants[1], "_mt")
   
   # Total emissions before factoring
@@ -235,7 +237,7 @@ fao_catch <- read_csv(file.path("/capstone/seamissions/data/fao_seafood_producti
 st_write(emissions_grid_sf, file.path("/capstone/seamissions/checkpoint/emissions_grid_sf.gpkg"), delete_dsn = TRUE)
 
 # Read in emissions_grid_sf from workbench-2
-#emissions_grid_sf <- st_read(file.path("/capstone/seamissions/checkpoint/emissions_grid_sf.gpkg"))
+emissions_grid_sf <- st_read(file.path("/capstone/seamissions/checkpoint/emissions_grid_sf.gpkg"))
 
 # Save cleaned fao_catch data
 #write_csv(fao_catch, file.path("/capstone/seamissions/checkpoint/fao_catch.csv"))
@@ -269,7 +271,7 @@ if (st_crs(emissions_grid_sf) != st_crs(fao_regions)){
 emissions_zones <- st_intersection(emissions_grid_sf, fao_regions) 
 
 # Calculate area after intersection
-emissions_zones$area <- as.numeric(st_area(emissions_zones))
+#emissions_zones$area <- as.numeric(st_area(emissions_zones))
 
 #emissions_zones <- emissions_zones %>%
   #group_by(grid_id) %>%  # Group by grid_id and unique shape
@@ -285,3 +287,5 @@ emissions_zones$area <- as.numeric(st_area(emissions_zones))
 
 emissions_zones <- st_read(file.path("/capstone/seamissions/checkpoint/emissions_zones.gpkg"))
 ```
+
+
