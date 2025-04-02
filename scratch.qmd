@@ -663,4 +663,92 @@ emissions_zones_no_geo <- emissions_zones %>%
 anti_join <- multiple_regions[!st_intersects(multiple_regions, emissions_zones_within, sparse = FALSE), ]
 ```
 
+# 4/2/25
+
+```{r}
+unique(st_geometry_type(emissions_zones))
+table(st_geometry_type(emissions_zones))
+
+emissions_zones_filtered <- emissions_zones %>%
+  filter(st_geometry_type(.) %in% c("POLYGON", "MULTIPOLYGON"))
+
+emissions_zones_exploded <- st_cast(emissions_zones_filtered, "MULTIPOLYGON") %>% 
+  st_cast("POLYGON")
+
+table(st_geometry_type(emissions_zones_exploded))
+
+# using grid_id, group_by and then create prop by summing grid_id area
+emissions_zones_summary <- emissions_zones_exploded %>%
+  group_by(grid_id, geom) %>%
+  summarise(
+    #unique_areas = paste(unique(area), collapse = ", "),
+    number_areas = n_distinct(area),
+    sum_areas = sum(area, na.rm = TRUE),
+    .groups = "drop") %>%
+  group_by(grid_id) %>%
+  summarise(
+    #unique_areas = paste(unique(sum_areas), collapse = ", "),
+    number_areas = sum(number_areas),
+    total_unique_area = sum(sum_areas, na.rm = TRUE))
+
+emissions_zones_summary %>% filter(grid_id == 3576)
+
+check <- emissions_zones_exploded %>%
+  filter(grid_id == 3576)
+
+unique(check$area)
+
+emissions_zones_summary %>%
+  select(grid_id, )
+
+  mutate(prop = area/total_area) %>%
+  mutate(prop_co2_mt = co2_mt * prop,
+         prop_ch4_mt = ch4_mt * prop,
+         prop_n2o_mt = n2o_mt * prop,
+         prop_nox_mt = nox_mt * prop,
+         prop_sox_mt = sox_mt * prop,
+         prop_co_mt = co_mt * prop,
+         prop_vocs_mt = vocs_mt * prop,
+         prop_pm2_5_mt = pm2_5_mt * prop,
+         prop_pm10_mt = pm10_mt * prop)
+
+# check
+sum(emissions_grid_sf$co2_mt) == sum(emissions_zones_calc$prop_co2_mt)
+
+(sum(emissions_grid_sf$co2_mt, na.rm = TRUE) - sum(emissions_zones_calc$prop_co2_mt, na.rm = TRUE))/sum(emissions_grid_sf$co2_mt, na.rm = TRUE)
+
+
+
+
+
+
+zone_31_intersection <- emissions_zones_calc %>%
+  filter(zone == 31)
+
+plot(st_geometry(zone_31_intersection))
+
+
+check <- emissions_zones_calc %>%
+  filter(lat_bin == 40) %>%
+  filter(lon_bin == -176)
+
+plot(st_geometry(check))
+
+sum(unique(check$area_after))
+unique(check$area_before)
+
+
+check_sf <- emissions_grid_sf %>%
+  filter(lat_bin == 40) %>%
+  filter(lon_bin == -176)
+
+unique(check_sf$area_before)
+  
+check <- emissions_zones_calc %>%
+  group_by(lat_bin, lon_bin)
+  
+  
+  
+#
+```
 
