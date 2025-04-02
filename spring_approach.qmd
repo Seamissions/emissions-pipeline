@@ -246,7 +246,7 @@ emissions_grid_sf <- st_read(file.path("/capstone/seamissions/checkpoint/emissio
 #fao_catch <- read_csv(file.path("/capstone/seamissions/checkpoint/fao_catch.csv"), show_col_types = FALSE)
 ```
 
-## Run intersects
+## Run intersection
 
 ```{r}
 #| code-summary: FAO region
@@ -285,7 +285,105 @@ emissions_zones <- st_intersection(emissions_grid_sf, fao_regions)
 # Save emissions_zones to workbench-2
 #st_write(emissions_zones, file.path("/capstone/seamissions/checkpoint/emissions_zones.gpkg"), delete_dsn = TRUE)
 
+# Read in emissions_zones from workbench-2
 emissions_zones <- st_read(file.path("/capstone/seamissions/checkpoint/emissions_zones.gpkg"))
 ```
 
+## Partition emissions by proportional area
 
+```{r}
+#| code-summary: Partition emissions 
+# Inspect geometry types in emissions_zones
+geom_types <- unique(st_geometry_type(emissions_zones))
+
+# Specify desired geometry types POLYGON or MULTIPOLYGON 
+valid_types <- c("POLYGON", "MULTIPOLYGON")
+
+# Identify unexpected types
+invalid_types <- setdiff(geom_types, valid_types) # contains POINT (?)
+
+# Trigger warning if geometry types besides POLYGON or MULTIPOLYGON found
+if(length(invalid_types > 0)) {
+  warning("Additional geometry types detected.")
+}
+
+#table(st_geometry_type(emissions_zones))
+
+# Remove POINT geometry
+emissions_zones_filtered <- emissions_zones %>%
+  filter(st_geometry_type(.) %in% valid_types) # in valid_types, c("POLYGON", "MULTIPOLYGON")
+
+# Break MULTIPOLYGONS down into POLYGONS
+emissions_zones_exploded <- st_cast(emissions_zones_filtered, "MULTIPOLYGON") %>% 
+  st_cast("POLYGON")
+
+#table(st_geometry_type(emissions_zones_exploded))
+
+# Generate areas by grid_id for sub polygons
+emissions_zones_summary_1 <- emissions_zones_exploded %>%
+  group_by(grid_id, geom) %>%
+  summarise(
+    number_areas = n_distinct(area),
+    .groups = "drop") %>%
+  mutate(area_summary = as.numeric(st_area(geom))) %>%
+  ungroup()
+
+# Add up sub polygon areas for overall grid_id area
+emissions_zones_summary_2 <- emissions_zones_summary_1 %>%
+  group_by(grid_id) %>%
+  summarise(
+    unique_areas = paste(unique(area_summary), collapse = ", "),
+    number_areas = sum(number_areas),
+    total_unique_area = sum(area_summary, na.rm = TRUE))
+
+# Made a key of grid_id and overall grid_id area
+grid_id_key <- emissions_zones_summary_2 %>%
+  select(grid_id, total_unique_area) %>%
+  st_drop_geometry()
+
+# Join key with emissions_zones
+emissions_zones_joined <- left_join(emissions_zones, grid_id_key)
+
+# build in warning for matching rows? ids?
+
+# Partition out emissions by area proportion
+emissions_partitioned <- emissions_zones_joined %>%
+  mutate(prop = area/total_unique_area) %>%
+  mutate(prop_co2_mt = co2_mt * prop,
+         prop_ch4_mt = ch4_mt * prop,
+         prop_n2o_mt = n2o_mt * prop,
+         prop_nox_mt = nox_mt * prop,
+         prop_sox_mt = sox_mt * prop,
+         prop_co_mt = co_mt * prop,
+         prop_vocs_mt = vocs_mt * prop,
+         prop_pm2_5_mt = pm2_5_mt * prop,
+         prop_pm10_mt = pm10_mt * prop)
+
+# Check for discrepancies
+for (i in seq_along(pollutants)) {
+  
+  # Assign column names
+  sf_col <- paste0(pollutants[i], "_mt")
+  prop_col <- paste0("prop_", pollutants[i], "_mt")
+  #em_col <- paste0("total_", pollutants[i])
+  
+  # Total emissions before factoring
+  em_before <- sum(emissions_grid_sf[[sf_col]], na.rm = TRUE)
+  
+  # Total emissions after factoring
+  em_after <- sum(emissions_partitioned[[prop_col]], na.rm = TRUE)
+  
+  # Difference in emissions
+  diff <- -(em_after - em_before)
+  
+  # Percent error
+  error <- diff/em_before
+  
+  #print(error)
+  
+  # Trigger error warning for lost emissions over 0.1%
+  if (error > 0.05) {
+  warning(paste0("Error over 5% returned for ", {pollutants[i]}, " emissions partitioning. Some emissions may be lost."))
+  }
+}
+```
