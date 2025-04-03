@@ -30,6 +30,9 @@ library(lubridate)
 #library(glue)
 library(sf)
 library(dplyr)
+
+# Turn off scientific notation
+options(scipen=999)
 ```
 
 ## Load data
@@ -202,30 +205,6 @@ emissions_grid <- emissions_sf %>%
 emissions_grid_sf <- st_join(emissions_grid, emissions_sf, left = FALSE) %>%
   # Transform to Equal Earth projection
   st_transform(6933)
-
-# -------- FAO CATCH --------
-# Import catch data from workbench-2
-fao_catch <- read_csv(file.path("/capstone/seamissions/data/fao_seafood_production/fao_catch.csv"), show_col_types = FALSE) %>%
-  # Select desired columns
-  select(area_code,
-         period,
-         iso3_code,
-         official_name_en,
-         scientific_name,
-         value) %>%
-  # Rename for consistency
-  rename(zone = area_code,
-         year = period,
-         flag = iso3_code,
-         catch = value,
-         official_name = official_name_en) %>%
-  # Filter for >2015 to match emissions data
-  filter(year >= 2015) %>%
-  group_by(year, zone, flag, scientific_name, official_name) %>%
-  summarise(total_catch_t = sum(catch, na.rm = TRUE)) %>%
-  mutate(zone = as.integer(zone),
-         year = as.integer(year))
-
 ```
 
 ### Checkpoint
@@ -380,6 +359,13 @@ for (i in seq_along(pollutants)) {
   warning(paste0("Error over 5% returned for ", {pollutants[i]}, " emissions partitioning. Some emissions may be lost."))
   }
 }
+
+emissions_partitioned_no_geo <- emissions_partitioned %>%
+  st_drop_geometry()
+
+emissions_partitioned_grouped <- emissions_partitioned_no_geo %>%
+  group_by(zone, flag, year) %>%
+  summarise(co2 = sum(prop_co2_mt, na.rm = TRUE))
 ```
 
 ### Checkpoint
@@ -390,5 +376,177 @@ for (i in seq_along(pollutants)) {
 st_write(emissions_partitioned, file.path("/capstone/seamissions/checkpoint/emissions_partitioned.gpkg"), delete_dsn = TRUE)
 
 # Read in emissions_zones from workbench-2
-#emissions_partitioned <- st_read(file.path("/capstone/seamissions/checkpoint/emissions_partitioned.gpkg"))
+emissions_partitioned <- st_read(file.path("/capstone/seamissions/checkpoint/emissions_partitioned.gpkg"))
 ```
+
+## Join FAO Catch
+
+```{r}
+#| code-summary: FAO Catch 
+# Import catch data from workbench-2
+fao_catch <- read_csv(file.path("/capstone/seamissions/data/fao_seafood_production/fao_catch.csv"), show_col_types = FALSE) %>%
+  # Select desired columns
+  select(area_code,
+         period,
+         iso3_code,
+         #official_name_en,
+         scientific_name,
+         value) %>%
+  # Rename for consistency
+  rename(zone = area_code,
+         year = period,
+         flag = iso3_code,
+         catch = value
+         #official_name = official_name_en
+         ) %>%
+  # Filter for >2015 to match emissions data
+  filter(year >= 2015) %>%
+  group_by(year, zone, flag, scientific_name) %>% #official_name
+  summarise(fao_catch_tons = sum(catch, na.rm = TRUE)) %>%
+  mutate(zone = as.integer(zone),
+         year = as.integer(year))
+
+emissions_fao_joined <- left_join(emissions_partitioned_grouped, fao_catch, by = c("zone", "year", "flag"))
+
+# Warning for missing catch across full dataset
+catch_before <- sum(fao_catch$fao_catch_tons, na.rm = TRUE)
+catch_after <- sum(emissions_fao_joined$fao_catch_tons, na.rm = TRUE)
+change_catch <- (catch_before - catch_after)/catch_before
+
+if(change_catch > 0) {
+  warning(paste0(change_catch*100, "% of catch (in tons) lost in full dataset during join."))
+}
+
+# Define regions
+regions <- c(18, 21, 27, 31, 34, 47, 48, 51, 57, 58, 61, 67, 71, 77, 81, 87, 88)
+
+# FAO catch loss by region
+fao_loss <- c(length(regions))
+
+print("For FAO Data:")
+for(i in seq_along(regions)) {
+  # Filter for zone
+  fao_region <- fao_catch %>%
+    filter(zone == regions[i])
+  joined_region <- emissions_fao_joined %>%
+    filter(zone == regions[i])
+  
+  # Calculate loss
+  catch_before <- sum(fao_region$fao_catch_tons, na.rm = TRUE)
+  catch_after <- sum(joined_region$fao_catch_tons, na.rm = TRUE)
+  change_catch <- (catch_before - catch_after)/catch_before
+  
+  fao_loss[i] <- as.numeric(round(change_catch, 4)) 
+  
+  print(paste0("Zone ", x, " lost ~", round(change_catch*100, 0), "% of catch (in tons)."))
+}
+```
+
+## Join SAU Catch
+
+```{r}
+#| code-summary: SAU Catch 
+# Add iso3 flag code
+iso_flags <- read_csv("/capstone/seamissions/data/fao_seafood_production/CL_FI_COUNTRY_GROUPS.csv", show_col_types = FALSE) %>%
+  clean_names() %>%
+  select(iso3_code, name_en) %>%
+  # change and to & to match the SAU data
+  mutate(name_en = str_replace_all(name_en, " and ", " & "))
+
+# Set up import for .csv files
+file_names <- list.files("/capstone/seamissions/data/sau", pattern="*.csv", full.names = TRUE)
+
+sau_regions <- vector("list", length = length(file_names))
+
+# Read in emissions data files
+for (i in seq_along(file_names)) {
+  table_name <- paste0("sau_region_", str_sub(file_names[i], 40, 41))
+  sau_regions[[i]] <- assign(table_name, read.csv(file_names[i], stringsAsFactors = FALSE, check.names = TRUE) %>%
+                               clean_names() %>%
+                               mutate(zone = as.numeric(str_sub(file_names[i], 40, 41)),
+                                      year = as.numeric(year)) %>%
+                               filter(year >= 2015) %>%
+                               left_join(iso_flags, by = c("fishing_entity" = "name_en")) %>%
+                               mutate(flag = ifelse(is.na(iso3_code), fishing_entity, iso3_code))
+                               )
+}
+
+sau_catch_data <- bind_rows(sau_regions)
+
+sau_catch_summary <- sau_catch_data %>%
+  group_by(zone, year, flag, scientific_name) %>%
+  summarise(sau_catch_tons = sum(tonnes, na.rm = TRUE))
+
+emissions_sau_joined <- left_join(emissions_partitioned_grouped, sau_catch_summary, by = c("zone", "year", "flag"))
+
+# Warning for missing catch across full dataset
+catch_before <- sum(sau_catch_summary$sau_catch_tons, na.rm = TRUE)
+catch_after <- sum(emissions_sau_joined$sau_catch_tons, na.rm = TRUE)
+change_catch <- (catch_before - catch_after)/catch_before
+
+if(change_catch > 0) {
+  warning(paste0(change_catch*100, "% of catch (in tons) lost in full dataset during join."))
+}
+
+# SAU catch loss by region
+sau_loss <- c(length(regions))
+
+print("For SAU Data:")
+for(i in seq_along(regions)) {
+  # Filter for zone
+  sau_region <- sau_catch_summary %>%
+    filter(zone == regions[i])
+  joined_region <- emissions_sau_joined %>%
+    filter(zone == regions[i])
+  
+  # Calculate loss
+  catch_before <- sum(sau_region$sau_catch_tons, na.rm = TRUE)
+  catch_after <- sum(joined_region$sau_catch_tons, na.rm = TRUE)
+  change_catch <- (catch_before - catch_after)/catch_before
+  
+  sau_loss[i] <- as.numeric(round(change_catch, 4)) 
+  
+  print(paste0("Zone ", x, " lost ~", round(change_catch*100, 0), "% of catch (in tons)."))
+}
+
+percent_loss_df <- data.frame(regions = regions, fao_loss = paste0(round(fao_loss*100, 0), "%"), sau_loss = paste0(round(sau_loss*100, 0), "%"))
+```
+
+### Check for Descrepancies
+
+```{r}
+#| code-summary: Analysis
+lost_fao_flags <- character(length(regions))
+lost_sau_flags <- character(length(regions))
+number_fao_flags <- c("")
+number_sau_flags <- c("")
+
+# DIFF FLAGS
+
+lost_flags <- data.frame(regions = regions, lost_fao_flags = lost_fao_flags, number_fao_flags = number_fao_flags,  lost_sau_flags = lost_sau_flags, number_sau_flags = number_sau_flags)
+
+for (i in 1:nrow(lost_flags)) {
+  
+  # Filter for FAO zone
+  fao_region <- fao_catch %>%
+    filter(zone == regions[i])
+  joined_region <- emissions_fao_joined %>%
+    filter(zone == regions[i])
+  
+  # Filter for SAU zone
+  sau_region <- sau_catch_summary %>%
+    filter(zone == regions[i])
+  joined_region <- emissions_sau_joined %>%
+    filter(zone == regions[i])
+  
+  lost_flags$lost_fao_flags[i] <- ifelse(length(setdiff(unique(fao_region$flag), unique(joined_region$flag))) == 0, NA, paste(setdiff(unique(fao_region$flag), unique(joined_region$flag)), collapse = ", "))
+  
+  lost_flags$number_fao_flags[i] <- ifelse(length(setdiff(unique(fao_region$flag), unique(joined_region$flag))) == 0, 0, length(setdiff(unique(fao_region$flag), unique(joined_region$flag))))
+  
+  lost_flags$lost_sau_flags[i] <- ifelse(length(setdiff(unique(sau_region$flag), unique(joined_region$flag))) == 0, NA, paste(setdiff(unique(sau_region$flag), unique(joined_region$flag)), collapse = ", "))
+  
+  lost_flags$number_sau_flags[i] <- ifelse(length(setdiff(unique(sau_region$flag), unique(joined_region$flag))) == 0, 0, length(setdiff(unique(sau_region$flag), unique(joined_region$flag))))
+  
+}
+```
+
