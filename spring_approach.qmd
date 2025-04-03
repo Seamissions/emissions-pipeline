@@ -249,7 +249,7 @@ emissions_grid_sf <- st_read(file.path("/capstone/seamissions/checkpoint/emissio
 ## Run intersection
 
 ```{r}
-#| code-summary: FAO region
+#| code-summary: Intersection
 
 # -------- FAO REGIONS --------
 # Import regions data (set same crs) from workbench-2
@@ -264,18 +264,8 @@ if (st_crs(emissions_grid_sf) != st_crs(fao_regions)){
   warning("CRS don't match.")
 }
 
-# Calculate area before intersection
-#emissions_grid_sf$area_before <- as.numeric(st_area(emissions_grid_sf))
-
 # Find which grid cells intersect with the FAO regions
 emissions_zones <- st_intersection(emissions_grid_sf, fao_regions) 
-
-# Calculate area after intersection
-#emissions_zones$area <- as.numeric(st_area(emissions_zones))
-
-#emissions_zones <- emissions_zones %>%
-  #group_by(grid_id) %>%  # Group by grid_id and unique shape
-  #mutate(area_m2 = as.numeric(st_area(geom)))  
 ```
 
 ### Checkpoint
@@ -302,14 +292,14 @@ valid_types <- c("POLYGON", "MULTIPOLYGON")
 # Identify unexpected types
 invalid_types <- setdiff(geom_types, valid_types) # contains POINT (?)
 
-# Trigger warning if geometry types besides POLYGON or MULTIPOLYGON found
+# Warning if geometry types besides POLYGON or MULTIPOLYGON found
 if(length(invalid_types > 0)) {
   warning("Additional geometry types detected.")
 }
 
 #table(st_geometry_type(emissions_zones))
 
-# Remove POINT geometry
+# Remove other geometry types (filter out POINT)
 emissions_zones_filtered <- emissions_zones %>%
   filter(st_geometry_type(.) %in% valid_types) # in valid_types, c("POLYGON", "MULTIPOLYGON")
 
@@ -324,7 +314,7 @@ emissions_zones_summary_1 <- emissions_zones_exploded %>%
   group_by(grid_id, geom) %>%
   summarise(
     number_areas = n_distinct(area),
-    .groups = "drop") %>%
+    .groups = "drop") %>% # keep?
   mutate(area_summary = as.numeric(st_area(geom))) %>%
   ungroup()
 
@@ -345,10 +335,15 @@ grid_id_key <- emissions_zones_summary_2 %>%
 emissions_zones_joined <- left_join(emissions_zones, grid_id_key)
 
 # build in warning for matching rows? ids?
+if(nrow(emissions_zones_joined) != nrow(emissions_zones)) {
+  warning("Incorrect join: too many rows.")
+}
 
 # Partition out emissions by area proportion
 emissions_partitioned <- emissions_zones_joined %>%
+  # Calculate proportion
   mutate(prop = area/total_unique_area) %>%
+  # Partition emissions
   mutate(prop_co2_mt = co2_mt * prop,
          prop_ch4_mt = ch4_mt * prop,
          prop_n2o_mt = n2o_mt * prop,
@@ -365,7 +360,6 @@ for (i in seq_along(pollutants)) {
   # Assign column names
   sf_col <- paste0(pollutants[i], "_mt")
   prop_col <- paste0("prop_", pollutants[i], "_mt")
-  #em_col <- paste0("total_", pollutants[i])
   
   # Total emissions before factoring
   em_before <- sum(emissions_grid_sf[[sf_col]], na.rm = TRUE)
@@ -381,9 +375,20 @@ for (i in seq_along(pollutants)) {
   
   #print(error)
   
-  # Trigger error warning for lost emissions over 0.1%
+  # Error warning for lost emissions over 5% (DECISION POINT)
   if (error > 0.05) {
   warning(paste0("Error over 5% returned for ", {pollutants[i]}, " emissions partitioning. Some emissions may be lost."))
   }
 }
+```
+
+### Checkpoint
+
+```{r}
+#| code-summary: Checkpoint 
+# Save emissions_partitioned to workbench-2
+st_write(emissions_partitioned, file.path("/capstone/seamissions/checkpoint/emissions_partitioned.gpkg"), delete_dsn = TRUE)
+
+# Read in emissions_zones from workbench-2
+#emissions_partitioned <- st_read(file.path("/capstone/seamissions/checkpoint/emissions_partitioned.gpkg"))
 ```
