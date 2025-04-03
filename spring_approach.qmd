@@ -406,6 +406,7 @@ fao_catch <- read_csv(file.path("/capstone/seamissions/data/fao_seafood_producti
   mutate(zone = as.integer(zone),
          year = as.integer(year))
 
+# Join emissions and FAO catch data
 emissions_fao_joined <- left_join(emissions_partitioned_grouped, fao_catch, by = c("zone", "year", "flag"))
 
 # Warning for missing catch across full dataset
@@ -423,6 +424,7 @@ regions <- c(18, 21, 27, 31, 34, 47, 48, 51, 57, 58, 61, 67, 71, 77, 81, 87, 88)
 # FAO catch loss by region
 fao_loss <- c(length(regions))
 
+# Calculate percent catch lost by region
 print("For FAO Data:")
 for(i in seq_along(regions)) {
   # Filter for zone
@@ -436,8 +438,10 @@ for(i in seq_along(regions)) {
   catch_after <- sum(joined_region$fao_catch_tons, na.rm = TRUE)
   change_catch <- (catch_before - catch_after)/catch_before
   
+  # Append to vector
   fao_loss[i] <- as.numeric(round(change_catch, 4)) 
   
+  # Print findings
   print(paste0("Zone ", x, " lost ~", round(change_catch*100, 0), "% of catch (in tons)."))
 }
 ```
@@ -446,16 +450,13 @@ for(i in seq_along(regions)) {
 
 ```{r}
 #| code-summary: SAU Catch 
-# Add iso3 flag code
-iso_flags <- read_csv("/capstone/seamissions/data/fao_seafood_production/CL_FI_COUNTRY_GROUPS.csv", show_col_types = FALSE) %>%
-  clean_names() %>%
-  select(iso3_code, name_en) %>%
-  # change and to & to match the SAU data
-  mutate(name_en = str_replace_all(name_en, " and ", " & "))
+# Import FAO-SAU flag key
+flag_key <- read_csv("/capstone/seamissions/checkpoint/flag_key.csv", show_col_types = FALSE)
 
 # Set up import for .csv files
 file_names <- list.files("/capstone/seamissions/data/sau", pattern="*.csv", full.names = TRUE)
 
+# Create empty list for SAU files
 sau_regions <- vector("list", length = length(file_names))
 
 # Read in emissions data files
@@ -466,17 +467,19 @@ for (i in seq_along(file_names)) {
                                mutate(zone = as.numeric(str_sub(file_names[i], 40, 41)),
                                       year = as.numeric(year)) %>%
                                filter(year >= 2015) %>%
-                               left_join(iso_flags, by = c("fishing_entity" = "name_en")) %>%
-                               mutate(flag = ifelse(is.na(iso3_code), fishing_entity, iso3_code))
-                               )
+                               left_join(flag_key, by = c("fishing_entity" = "sau_name")) %>%
+                               mutate(flag = iso3_code))
 }
 
+# Combine SAU files
 sau_catch_data <- bind_rows(sau_regions)
 
+# Summarise SAU data for join
 sau_catch_summary <- sau_catch_data %>%
   group_by(zone, year, flag, scientific_name) %>%
   summarise(sau_catch_tons = sum(tonnes, na.rm = TRUE))
 
+# Join emissions and SAU data
 emissions_sau_joined <- left_join(emissions_partitioned_grouped, sau_catch_summary, by = c("zone", "year", "flag"))
 
 # Warning for missing catch across full dataset
@@ -504,11 +507,14 @@ for(i in seq_along(regions)) {
   catch_after <- sum(joined_region$sau_catch_tons, na.rm = TRUE)
   change_catch <- (catch_before - catch_after)/catch_before
   
+  # Append to vector
   sau_loss[i] <- as.numeric(round(change_catch, 4)) 
   
+  # Print findings
   print(paste0("Zone ", x, " lost ~", round(change_catch*100, 0), "% of catch (in tons)."))
 }
 
+# Create df to compare catch loss between datasets
 percent_loss_df <- data.frame(regions = regions, fao_loss = paste0(round(fao_loss*100, 0), "%"), sau_loss = paste0(round(sau_loss*100, 0), "%"))
 ```
 
@@ -516,15 +522,16 @@ percent_loss_df <- data.frame(regions = regions, fao_loss = paste0(round(fao_los
 
 ```{r}
 #| code-summary: Analysis
+# Create empty vectors
 lost_fao_flags <- character(length(regions))
 lost_sau_flags <- character(length(regions))
 number_fao_flags <- c("")
 number_sau_flags <- c("")
 
-# DIFF FLAGS
-
+# Create dataframe
 lost_flags <- data.frame(regions = regions, lost_fao_flags = lost_fao_flags, number_fao_flags = number_fao_flags,  lost_sau_flags = lost_sau_flags, number_sau_flags = number_sau_flags)
 
+# Fill in dataframe
 for (i in 1:nrow(lost_flags)) {
   
   # Filter for FAO zone
@@ -539,12 +546,16 @@ for (i in 1:nrow(lost_flags)) {
   joined_region <- emissions_sau_joined %>%
     filter(zone == regions[i])
   
+  # Add lost FAO flags by region
   lost_flags$lost_fao_flags[i] <- ifelse(length(setdiff(unique(fao_region$flag), unique(joined_region$flag))) == 0, NA, paste(setdiff(unique(fao_region$flag), unique(joined_region$flag)), collapse = ", "))
   
+  # Calculate number of lost flags
   lost_flags$number_fao_flags[i] <- ifelse(length(setdiff(unique(fao_region$flag), unique(joined_region$flag))) == 0, 0, length(setdiff(unique(fao_region$flag), unique(joined_region$flag))))
   
+  # Add lost SAU flags by region
   lost_flags$lost_sau_flags[i] <- ifelse(length(setdiff(unique(sau_region$flag), unique(joined_region$flag))) == 0, NA, paste(setdiff(unique(sau_region$flag), unique(joined_region$flag)), collapse = ", "))
   
+  # Calculate number of lost flags
   lost_flags$number_sau_flags[i] <- ifelse(length(setdiff(unique(sau_region$flag), unique(joined_region$flag))) == 0, 0, length(setdiff(unique(sau_region$flag), unique(joined_region$flag))))
   
 }

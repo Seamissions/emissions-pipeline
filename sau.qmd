@@ -33,9 +33,7 @@ Import Data
 # add iso flag code
 iso_flags <- read_csv("/capstone/seamissions/data/fao_seafood_production/CL_FI_COUNTRY_GROUPS.csv", show_col_types = FALSE) %>%
   clean_names() %>%
-  select(iso3_code, name_en) %>%
-  # change and to & to match the SAU data
-  mutate(name_en = str_replace_all(name_en, " and ", " & "))
+  select(iso3_code, name_en) 
 
 # Set up import for .csv files
 file_names <- list.files("/capstone/seamissions/data/sau", pattern="*.csv", full.names = TRUE)
@@ -91,3 +89,86 @@ for(x in regions) {
   
 }
 ```
+
+## Make Flag Key
+
+```{r}
+# Add iso3 flag code
+iso_flags <- read_csv("/capstone/seamissions/data/fao_seafood_production/CL_FI_COUNTRY_GROUPS.csv", show_col_types = FALSE) %>%
+  clean_names() %>%
+  mutate(fao_name = name_en) %>%
+  select(iso3_code, fao_name)
+
+flags_to_fix_df <- tibble(sau_name = unique(sau_catch_summary$flag)) %>%
+  filter(nchar(sau_name) != 3) 
+
+flags_to_fix_df$iso3_code <- " "
+
+flags_to_fix_df <- flags_to_fix_df %>%
+  mutate(iso3_code = case_when(
+    sau_name == "Korea (North)" ~ "PRK",
+    sau_name == "Korea (South)" ~ "KOR",
+    sau_name == "Guam (USA)" ~ "GUM",
+    sau_name == "Hong Kong" ~ "HKG",
+    sau_name == "United Kingdom" ~ "GBR",
+    sau_name == "Taiwan" ~ "TWN",
+    sau_name == "Marshall Isl." ~ "MHL",
+    sau_name == "Congo (ex-Zaire)" ~ "COD",
+    sau_name == "Netherlands" ~ "NLD",
+    sau_name == "Curacao" ~ "CUW",
+    sau_name == "Sint Maarten" ~ "SXM",
+    sau_name == "St Martin" ~ "MAF",
+    sau_name == "Venezuela" ~ "VEN",
+    sau_name == "Cape Verde" ~ "CPV",
+    sau_name == "Congo, R. of" ~ "COG",
+    sau_name == "Iran" ~ "IRN",
+    sau_name == "Tanzania" ~ "TZA",
+    sau_name == "Timor Leste" ~ "TLS",
+    sau_name == "Micronesia" ~ "FSM",
+    sau_name == "Anguilla (UK)" ~ "AIA",
+    sau_name == "Saint Pierre & Miquelon (France)" ~ "SPM",
+    sau_name == "Bermuda (UK)" ~ "BMU",
+    sau_name == "Channel Isl. (UK)" ~ "GBR", # was NA, assigned to UK
+    sau_name == "Guadeloupe  (France)" ~ "GLP",
+    sau_name == "Martinique (France)" ~ "MTQ",
+    sau_name == "Aruba (Netherlands)" ~ "ABW",
+    sau_name == "Bonaire (Netherlands)" ~ "BES",
+    sau_name == "British Virgin Isl. (UK)" ~ "VGB",
+    sau_name == "Cayman Isl. (UK)" ~ "CYM",
+    sau_name == "Montserrat (UK)" ~ "MSR",
+    sau_name == "Puerto Rico (USA)" ~ "PRI",
+    sau_name == "Saba and Saint Eustaius (Netherlands)" ~ "BES", # lumped with Bonaire
+    sau_name == "St Barthelemy (France)" ~ "BLM",
+    sau_name == "Turks & Caicos Isl. (UK)" ~ "TCA",
+    sau_name == "US Virgin Isl." ~ "VIR",
+    sau_name == "Ascension Isl. (UK)" ~ "SHN",
+    sau_name == "Saint Helena (UK)" ~ "SHN",
+    sau_name == "Tristan da Cunha Isl. (UK)" ~ "SHN",
+    sau_name == "Falkland Isl. (UK)" ~ "FLK",
+    sau_name == "Brit. Indian Ocean Terr. (UK)" ~ "IOT",
+    sau_name == "Mayotte (France)" ~ "MYT",
+    sau_name == "Réunion (France)" ~ "REU",
+    sau_name == "Christmas Isl. (Australia)" ~ "CXR",
+    sau_name == "Cocos (Keeling) Isl. (Australia)" ~ "CCK",
+    sau_name == "New Caledonia (France)" ~ "NCL",
+    sau_name == "North Marianas (USA)" ~ "MNP",
+    sau_name == "Solomon Isl." ~ "SLB",
+    sau_name == "Tokelau (New Zealand)" ~ "TKL",
+    sau_name == "Wallis & Futuna Isl. (France)" ~ "WLF",
+    sau_name == "Niue (New Zealand)" ~ "NIU",
+    sau_name == "Norfolk Isl. (Australia)" ~ "NFK",
+    sau_name == "Pitcairn (UK)" ~ "PCN",
+    sau_name == "Faeroe Isl. (Denmark)" ~ "DNK", # assumption
+    sau_name == "Azores Isl. (Portugal)" ~ "PRT", # assumption
+    sau_name == "Madeira Isl. (Portugal)" ~ "PRT", # assumption
+    sau_name == "Unknown Fishing Country" ~ "UNK", # UNKNOWN
+    TRUE ~ iso3_code  # Keep other values unchanged
+  ))
+
+flag_key <- left_join(iso_flags, flags_to_fix_df) %>%
+  mutate(sau_name = ifelse(is.na(sau_name), fao_name, sau_name))
+
+write_csv(flag_key, file.path("/capstone/seamissions/checkpoint/flag_key.csv"))
+
+```
+
