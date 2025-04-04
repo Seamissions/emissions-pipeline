@@ -347,7 +347,7 @@ for (i in seq_along(pollutants)) {
   em_after <- sum(emissions_partitioned[[prop_col]], na.rm = TRUE)
   
   # Difference in emissions
-  diff <- -(em_after - em_before)
+  diff <- em_after - em_before
   
   # Percent error
   error <- diff/em_before
@@ -373,7 +373,7 @@ emissions_partitioned_grouped <- emissions_partitioned_no_geo %>%
 ```{r}
 #| code-summary: Checkpoint 
 # Save emissions_partitioned to workbench-2
-st_write(emissions_partitioned, file.path("/capstone/seamissions/checkpoint/emissions_partitioned.gpkg"), delete_dsn = TRUE)
+#st_write(emissions_partitioned, file.path("/capstone/seamissions/checkpoint/emissions_partitioned.gpkg"), delete_dsn = TRUE)
 
 # Read in emissions_zones from workbench-2
 emissions_partitioned <- st_read(file.path("/capstone/seamissions/checkpoint/emissions_partitioned.gpkg"))
@@ -425,7 +425,6 @@ regions <- c(18, 21, 27, 31, 34, 47, 48, 51, 57, 58, 61, 67, 71, 77, 81, 87, 88)
 fao_loss <- c(length(regions))
 
 # Calculate percent catch lost by region
-print("For FAO Data:")
 for(i in seq_along(regions)) {
   # Filter for zone
   fao_region <- fao_catch %>%
@@ -494,7 +493,6 @@ if(change_catch > 0) {
 # SAU catch loss by region
 sau_loss <- c(length(regions))
 
-print("For SAU Data:")
 for(i in seq_along(regions)) {
   # Filter for zone
   sau_region <- sau_catch_summary %>%
@@ -518,7 +516,7 @@ for(i in seq_along(regions)) {
 percent_loss_df <- data.frame(regions = regions, fao_loss = paste0(round(fao_loss*100, 0), "%"), sau_loss = paste0(round(sau_loss*100, 0), "%"))
 ```
 
-### Check for Descrepancies
+### Evaluate Catch Loss
 
 ```{r}
 #| code-summary: Analysis
@@ -557,7 +555,8 @@ for (i in 1:nrow(lost_flags)) {
   
   # Calculate number of lost flags
   lost_flags$number_sau_flags[i] <- ifelse(length(setdiff(unique(sau_region$flag), unique(joined_region$flag))) == 0, 0, length(setdiff(unique(sau_region$flag), unique(joined_region$flag))))
-  
 }
+
+#write_csv(lost_flags, file.path("/capstone/seamissions/checkpoint/lost_flags.csv"))
 ```
 

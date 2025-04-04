@@ -170,5 +170,20 @@ flag_key <- left_join(iso_flags, flags_to_fix_df) %>%
 
 write_csv(flag_key, file.path("/capstone/seamissions/checkpoint/flag_key.csv"))
 
+lost_flags <- lost_flags %>%
+  mutate(lost_fao_flags = str_wrap(lost_fao_flags, width = 40),
+         lost_sau_flags = str_wrap(lost_sau_flags, width = 40))
+
+df <- lost_flags %>%
+  rowwise() %>%
+  mutate(
+    col1_split = str_split(lost_fao_flags, ",\\s*"),
+    col2_split = str_split(lost_sau_flags, ",\\s*"),
+    common_items = list(intersect(unlist(col1_split), unlist(col2_split))),
+    common_str = paste(common_items, collapse = ", ")
+  ) %>%
+  ungroup()
+
+lost_flags$same_flags <- df$common_str
 ```
 
