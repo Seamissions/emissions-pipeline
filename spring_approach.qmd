@@ -24,15 +24,9 @@ This repository hosts the code for the open-source data processing pipeline.
 library(tidyverse)
 library(janitor)
 library(here)
-#library(gghighlight)
 library(lubridate)
-#library(ggwordcloud)
-#library(glue)
 library(sf)
 library(dplyr)
-
-# Turn off scientific notation
-options(scipen=999)
 ```
 
 ## Load data
@@ -359,13 +353,6 @@ for (i in seq_along(pollutants)) {
   warning(paste0("Error over 5% returned for ", {pollutants[i]}, " emissions partitioning. Some emissions may be lost."))
   }
 }
-
-emissions_partitioned_no_geo <- emissions_partitioned %>%
-  st_drop_geometry()
-
-emissions_partitioned_grouped <- emissions_partitioned_no_geo %>%
-  group_by(zone, flag, year) %>%
-  summarise(co2 = sum(prop_co2_mt, na.rm = TRUE))
 ```
 
 ### Checkpoint
@@ -406,6 +393,15 @@ fao_catch <- read_csv(file.path("/capstone/seamissions/data/fao_seafood_producti
   mutate(zone = as.integer(zone),
          year = as.integer(year))
 
+# Drop geometry
+emissions_partitioned_no_geo <- emissions_partitioned %>%
+  st_drop_geometry()
+
+# Group by zone, flag, and year
+emissions_partitioned_grouped <- emissions_partitioned_no_geo %>%
+  group_by(zone, flag, year) %>%
+  summarise(co2 = sum(prop_co2_mt, na.rm = TRUE))
+
 # Join emissions and FAO catch data
 emissions_fao_joined <- left_join(emissions_partitioned_grouped, fao_catch, by = c("zone", "year", "flag"))
 
@@ -441,7 +437,7 @@ for(i in seq_along(regions)) {
   fao_loss[i] <- as.numeric(round(change_catch, 4)) 
   
   # Print findings
-  print(paste0("Zone ", x, " lost ~", round(change_catch*100, 0), "% of catch (in tons)."))
+  print(paste0("Zone ", regions[i], " lost ~", round(change_catch*100, 0), "% of catch (in tons)."))
 }
 ```
 
@@ -509,7 +505,7 @@ for(i in seq_along(regions)) {
   sau_loss[i] <- as.numeric(round(change_catch, 4)) 
   
   # Print findings
-  print(paste0("Zone ", x, " lost ~", round(change_catch*100, 0), "% of catch (in tons)."))
+  print(paste0("Zone ", regions[i], " lost ~", round(change_catch*100, 0), "% of catch (in tons)."))
 }
 
 # Create df to compare catch loss between datasets
@@ -555,6 +551,7 @@ for (i in 1:nrow(lost_flags)) {
   
   # Calculate number of lost flags
   lost_flags$number_sau_flags[i] <- ifelse(length(setdiff(unique(sau_region$flag), unique(joined_region$flag))) == 0, 0, length(setdiff(unique(sau_region$flag), unique(joined_region$flag))))
+  
 }
 
 #write_csv(lost_flags, file.path("/capstone/seamissions/checkpoint/lost_flags.csv"))
