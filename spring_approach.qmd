@@ -142,7 +142,7 @@ for (i in seq_along(pollutants)) {
 # -------- Create "checkpoint" folder if needed --------
 
 # Save emissions dataset to workbench-2
-write_csv(emissions, file.path("/capstone/seamissions/checkpoint/emissions.csv"))
+#write_csv(emissions, file.path("/capstone/seamissions/checkpoint/emissions.csv"))
 
 # Read in emissions dataset
 #emissions <- read_csv(file.path("/capstone/seamissions/checkpoint/emissions.csv"), show_col_types = FALSE)
@@ -365,7 +365,7 @@ for (i in seq_along(pollutants)) {
 #st_write(emissions_partitioned, file.path("/capstone/seamissions/checkpoint/emissions_partitioned.gpkg"), delete_dsn = TRUE)
 
 # Read in emissions_zones from workbench-2
-emissions_partitioned <- st_read(file.path("/capstone/seamissions/checkpoint/emissions_partitioned.gpkg"))
+#emissions_partitioned <- st_read(file.path("/capstone/seamissions/checkpoint/emissions_partitioned.gpkg"))
 ```
 
 ## Join FAO Catch
