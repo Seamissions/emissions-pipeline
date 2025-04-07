@@ -207,10 +207,10 @@ emissions_grid_sf <- st_join(emissions_grid, emissions_sf, left = FALSE) %>%
 #| code-summary: Checkpoint
 #| 
 # Save emissions_grid_sf to workbench-2
-st_write(emissions_grid_sf, file.path("/capstone/seamissions/checkpoint/emissions_grid_sf.gpkg"), delete_dsn = TRUE)
+#st_write(emissions_grid_sf, file.path("/capstone/seamissions/checkpoint/emissions_grid_sf.gpkg"), delete_dsn = TRUE)
 
 # Read in emissions_grid_sf from workbench-2
-emissions_grid_sf <- st_read(file.path("/capstone/seamissions/checkpoint/emissions_grid_sf.gpkg"))
+#emissions_grid_sf <- st_read(file.path("/capstone/seamissions/checkpoint/emissions_grid_sf.gpkg"))
 
 # Save cleaned fao_catch data
 #write_csv(fao_catch, file.path("/capstone/seamissions/checkpoint/fao_catch.csv"))
@@ -239,6 +239,8 @@ if (st_crs(emissions_grid_sf) != st_crs(fao_regions)){
 
 # Find which grid cells intersect with the FAO regions
 emissions_zones <- st_intersection(emissions_grid_sf, fao_regions) 
+
+emissions_zones$area <- as.numeric(st_area(emissions_zones))
 ```
 
 ### Checkpoint
@@ -249,7 +251,7 @@ emissions_zones <- st_intersection(emissions_grid_sf, fao_regions)
 #st_write(emissions_zones, file.path("/capstone/seamissions/checkpoint/emissions_zones.gpkg"), delete_dsn = TRUE)
 
 # Read in emissions_zones from workbench-2
-emissions_zones <- st_read(file.path("/capstone/seamissions/checkpoint/emissions_zones.gpkg"))
+#emissions_zones <- st_read(file.path("/capstone/seamissions/checkpoint/emissions_zones.gpkg"))
 ```
 
 ## Partition emissions by proportional area

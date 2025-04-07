@@ -302,16 +302,16 @@ em_pivot <- emissions %>%
 # -------- Create "checkpoint" folder if needed --------
 
 # Save emissions dataset to workbench-2
-write_csv(emissions, file.path("/capstone/seamissions/checkpoint/emissions.csv"))
+#write_csv(emissions, file.path("/capstone/seamissions/checkpoint/emissions_original.csv"))
 
 # Read in emissions dataset
-#emissions <- read_csv(file.path("/capstone/seamissions/checkpoint/emissions.csv"), show_col_types = FALSE)
+#emissions <- read_csv(file.path("/capstone/seamissions/checkpoint/emissions_original.csv"), show_col_types = FALSE)
 
 # Save pivot dataset to workbench-2
-write_csv(em_pivot, file.path("/capstone/seamissions/checkpoint/em_pivot.csv"))
+#write_csv(em_pivot, file.path("/capstone/seamissions/checkpoint/em_pivot_original.csv"))
 
 # Read in pivot dataset to workbench-2
-#em_pivot <- read_csv(file.path("/capstone/seamissions/checkpoint/em_pivot.csv"), show_col_types = FALSE)
+#em_pivot <- read_csv(file.path("/capstone/seamissions/checkpoint/em_pivot_original.csv"), show_col_types = FALSE)
 ```
 
 # Spatial Join FAO Regions and Emissions
@@ -336,7 +336,15 @@ emissions_filtered <- emissions %>%
   # Group by pixel, year, and flag
   group_by(lat_bin, lon_bin, year, flag) %>% # vessel_class
   # Sum co2 (ADD OTHER POLLUTANTS HERE)
-  summarise(total_co2_mt = sum(total_co2, na.rm = TRUE))
+  summarise(co2_mt = sum(total_co2, na.rm = TRUE),
+            ch4_mt = sum(total_ch4, na.rm = TRUE),
+            n2o_mt = sum(total_n2o, na.rm = TRUE),
+            nox_mt = sum(total_nox, na.rm = TRUE),
+            sox_mt = sum(total_sox, na.rm = TRUE),
+            co_mt = sum(total_co, na.rm = TRUE),
+            vocs_mt = sum(total_vocs, na.rm = TRUE),
+            pm2_5_mt = sum(total_pm2_5, na.rm = TRUE),
+            pm10_mt = sum(total_pm10, na.rm = TRUE))
 
 # Convert lat/long to point geometry (degrees)
 emissions_sf <- emissions_filtered %>%
@@ -349,7 +357,8 @@ emissions_grid <- emissions_sf %>%
   st_make_grid(cellsize = c(1,1),
                what = "polygons") %>%
   st_sf() %>%
-  st_make_valid()
+  st_make_valid() %>%
+  mutate(grid_id = row_number())
   
 # Spatially join emissions data to the grid
 emissions_grid_sf <- st_join(emissions_grid, emissions_sf, left = FALSE) %>%
@@ -366,16 +375,10 @@ emissions_grid_sf <- st_join(emissions_grid, emissions_sf, left = FALSE) %>%
 #| code-summary: Checkpoint
 
 # Save emissions_grid_sf to workbench-2
-#st_write(emissions_grid_sf, file.path("/capstone/seamissions/checkpoint/emissions_grid_sf.gpkg"), delete_dsn = TRUE)
+#st_write(emissions_grid_sf, file.path("/capstone/seamissions/checkpoint/emissions_grid_sf_original.gpkg"), delete_dsn = TRUE)
 
 # Read in emissions_grid_sf from workbench-2
-emissions_grid_sf <- st_read(file.path("/capstone/seamissions/checkpoint/emissions_grid_sf.gpkg"))
-
-# Save cleaned fao_catch data
-#write_csv(fao_catch, file.path("/capstone/seamissions/checkpoint/fao_catch.csv"))
-
-# Read in fao catch data
-fao_catch <- read_csv(file.path("/capstone/seamissions/checkpoint/fao_catch.csv"), show_col_types = FALSE)
+#emissions_grid_sf <- st_read(file.path("/capstone/seamissions/checkpoint/emissions_grid_sf_original.gpkg"))
 ```
 
 ## Run Intersection
@@ -389,7 +392,7 @@ fao_regions <- st_read(file.path("/capstone/seamissions/data/fao_region_shapefil
   # Transform to same crs as grid
   st_transform(st_crs(emissions_grid_sf)) %>%
   # Fix geometries
-  st_make_valid()
+  st_make_valid() 
 
 # Confirm crs match
 if (st_crs(emissions_grid_sf) != st_crs(fao_regions)){
@@ -398,6 +401,8 @@ if (st_crs(emissions_grid_sf) != st_crs(fao_regions)){
 
 # Find which grid cells intersect with the FAO regions
 emissions_zones <- st_intersection(emissions_grid_sf, fao_regions) 
+
+emissions_zones$area <- as.numeric(st_area(emissions_zones))
 ```
 
 ### Checkpoint
@@ -405,10 +410,10 @@ emissions_zones <- st_intersection(emissions_grid_sf, fao_regions)
 ```{r}
 #| code-summary: Checkpoint 
 # Save emissions_zones to workbench-2
-#st_write(emissions_zones, file.path("/capstone/seamissions/checkpoint/emissions_zones.gpkg"), delete_dsn = TRUE)
+#st_write(emissions_zones, file.path("/capstone/seamissions/checkpoint/emissions_zones_original.gpkg"), delete_dsn = TRUE)
 
 # Read in emissions_zones from workbench-2
-emissions_zones <- st_read(file.path("/capstone/seamissions/checkpoint/emissions_zones.gpkg"))
+#emissions_zones <- st_read(file.path("/capstone/seamissions/checkpoint/emissions_zones_original.gpkg"))
 ```
 
 ## Partition emissions by proportional area
@@ -443,11 +448,11 @@ emissions_zones_exploded <- st_cast(emissions_zones_filtered, "MULTIPOLYGON") %>
 
 # Generate areas by grid_id for sub polygons
 emissions_zones_summary_1 <- emissions_zones_exploded %>%
-  group_by(grid_id, geom) %>%
+  group_by(grid_id, geometry) %>%
   summarise(
     number_areas = n_distinct(area),
     .groups = "drop") %>% # keep?
-  mutate(area_summary = as.numeric(st_area(geom))) %>%
+  mutate(area_summary = as.numeric(st_area(geometry))) %>%
   ungroup()
 
 # Add up sub polygon areas for overall grid_id area
@@ -519,10 +524,10 @@ for (i in seq_along(pollutants)) {
 ```{r}
 #| code-summary: Checkpoint 
 # Save emissions_partitioned to workbench-2
-#st_write(emissions_partitioned, file.path("/capstone/seamissions/checkpoint/emissions_partitioned.gpkg"), delete_dsn = TRUE)
+#st_write(emissions_partitioned, file.path("/capstone/seamissions/checkpoint/emissions_partitioned_original.gpkg"), delete_dsn = TRUE)
 
 # Read in emissions_zones from workbench-2
-emissions_partitioned <- st_read(file.path("/capstone/seamissions/checkpoint/emissions_partitioned.gpkg"))
+#emissions_partitioned <- st_read(file.path("/capstone/seamissions/checkpoint/emissions_partitioned_original.gpkg"))
 ```
 
 ## Join FAO Catch
@@ -668,7 +673,7 @@ for(i in seq_along(regions)) {
 }
 
 # Create df to compare catch loss between datasets
-percent_loss_df <- data.frame(regions = regions, fao_loss = paste0(round(fao_loss*100, 0), "%"), sau_loss = paste0(round(sau_loss*100, 0), "%"))
+percent_loss_df_original <- data.frame(regions = regions, fao_loss = paste0(round(fao_loss*100, 0), "%"), sau_loss = paste0(round(sau_loss*100, 0), "%"))
 ```
 
 ### Evaluate Catch Loss
@@ -713,5 +718,6 @@ for (i in 1:nrow(lost_flags)) {
   
 }
 
-#write_csv(lost_flags, file.path("/capstone/seamissions/checkpoint/lost_flags.csv"))
+lost_flags_original <- lost_flags
+write_csv(lost_flags, file.path("/capstone/seamissions/checkpoint/lost_flags_original.csv"))
 ```
