@@ -662,3 +662,117 @@ emissions_zones_no_geo <- emissions_zones %>%
 ```{r}
 anti_join <- multiple_regions[!st_intersects(multiple_regions, emissions_zones_within, sparse = FALSE), ]
 ```
+
+# 4/2/25
+
+```{r}
+unique(st_geometry_type(emissions_zones))
+
+table(st_geometry_type(emissions_zones))
+
+# build in warning to detect other geometry types
+
+emissions_zones_filtered <- emissions_zones %>%
+  filter(st_geometry_type(.) %in% c("POLYGON", "MULTIPOLYGON"))
+
+emissions_zones_exploded <- st_cast(emissions_zones_filtered, "MULTIPOLYGON") %>% 
+  st_cast("POLYGON")
+
+table(st_geometry_type(emissions_zones_exploded))
+
+#emissions_zones_exploded$area_exploded <- as.numeric(st_area(emissions_zones_exploded))
+
+# using grid_id, group_by and then create prop by summing grid_id area
+emissions_zones_summary_1 <- emissions_zones_exploded %>%
+  group_by(grid_id, geom) %>%
+  summarise(
+    #unique_areas = paste(unique(area), collapse = ", "),
+    number_areas = n_distinct(area),
+    #sum_areas = sum(area, na.rm = TRUE),
+    .groups = "drop") %>%
+  mutate(area_summary = as.numeric(st_area(geom))) %>%
+  ungroup()
+
+emissions_zones_summary_2 <- emissions_zones_summary_1 %>%
+  group_by(grid_id) %>%
+  summarise(
+    unique_areas = paste(unique(area_summary), collapse = ", "),
+    number_areas = sum(number_areas),
+    total_unique_area = sum(area_summary, na.rm = TRUE))
+
+grid_id_key <- emissions_zones_summary_2 %>%
+  select(grid_id, total_unique_area) %>%
+  st_drop_geometry()
+
+
+emissions_zones_joined <- left_join(emissions_zones, grid_id_key)
+
+# build in warning for matching rows? ids?
+
+emissions_partitioned <- emissions_zones_joined %>%
+  mutate(prop = area/total_unique_area) %>%
+  mutate(prop_co2_mt = co2_mt * prop,
+         prop_ch4_mt = ch4_mt * prop,
+         prop_n2o_mt = n2o_mt * prop,
+         prop_nox_mt = nox_mt * prop,
+         prop_sox_mt = sox_mt * prop,
+         prop_co_mt = co_mt * prop,
+         prop_vocs_mt = vocs_mt * prop,
+         prop_pm2_5_mt = pm2_5_mt * prop,
+         prop_pm10_mt = pm10_mt * prop)
+
+# check
+sum(emissions_grid_sf$co2_mt) == sum(emissions_partitioned$prop_co2_mt)
+
+(sum(emissions_grid_sf$co2_mt, na.rm = TRUE) - sum(emissions_partitioned$prop_co2_mt))/sum(emissions_grid_sf$co2_mt, na.rm = TRUE)
+
+# 4% loss
+
+sum(emissions_grid_sf$co_mt) == sum(emissions_partitioned$prop_co_mt)
+
+(sum(emissions_grid_sf$co_mt, na.rm = TRUE) - sum(emissions_partitioned$prop_co_mt))/sum(emissions_grid_sf$co_mt, na.rm = TRUE)
+
+# 3.7% loss
+
+## Check for Discrepancies
+
+# List pollutants
+pollutants <- c("co2", 
+                "ch4",
+                "n2o",
+                "nox",
+                "sox",
+                "co",
+                "vocs",
+                "pm2_5",
+                "pm10")
+
+# Check for discrepancies
+for (i in seq_along(pollutants)) {
+  
+  # Assign column names
+  broad_col <- paste0("emissions_", pollutants[i], "_mt")
+  non_broad_col <- paste0("emissions_", pollutants[i], "_non_broadcasting_mt")
+  em_col <- paste0("total_", pollutants[i])
+  
+  # Total emissions before factoring
+  em_before <- sum(broadcasting[[broad_col]], na.rm = TRUE) + sum(non_broadcasting[[non_broad_col]], na.rm = TRUE)
+  
+  # Total emissions after factoring
+  em_after <- sum(emissions[[em_col]], na.rm = TRUE)
+  
+  # Difference in emissions
+  diff <- em_after - em_before
+  
+  # Percent error
+  error <- diff/em_before
+  
+  # Trigger error warning for lost emissions over 0.1%
+  if (error > 0.001) {
+  warning(paste0("Error over 0.1% returned for ", {pollutants[i]}, " emissions partitioning. Some emissions may be lost."))
+  }
+}
+```
+
+```
+
