@@ -202,3 +202,15 @@ for (i in seq_along(regions)){
 full_emissions_fao <- bind_rows(option_1)
 ```
 
+### Checkpoint
+```{r}
+#| code-summary: Checkpoint
+
+# Save FAO emissions dataset to workbench-2
+#write_csv(full_emissions_fao, file.path("/capstone/seamissions/checkpoint/full_emissions_fao.csv"))
+
+# Read in FAO emissions dataset
+#full_emissions_fao <- read_csv(file.path("/capstone/seamissions/checkpoint/full_emissions_fao.csv"), show_col_types = FALSE)
+
+```
+
