@@ -40,6 +40,7 @@ library(dplyr)
 ```{r}
 #| code-summary: Load Data
 emissions_partitioned_grouped <- read_csv(file.path("/capstone/seamissions/checkpoint/emissions_partitioned_grouped.csv"), show_col_types = FALSE)
+
 fao_catch <- read_csv(file.path("/capstone/seamissions/checkpoint/fao_catch.csv"), show_col_types = FALSE)
 ```
 
@@ -203,6 +204,7 @@ full_emissions_fao <- bind_rows(option_1)
 ```
 
 ### Checkpoint
+
 ```{r}
 #| code-summary: Checkpoint
 
@@ -211,6 +213,5 @@ full_emissions_fao <- bind_rows(option_1)
 
 # Read in FAO emissions dataset
 #full_emissions_fao <- read_csv(file.path("/capstone/seamissions/checkpoint/full_emissions_fao.csv"), show_col_types = FALSE)
-
 ```
 
