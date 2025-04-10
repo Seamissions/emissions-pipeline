@@ -44,7 +44,7 @@ emissions_partitioned_grouped <- read_csv(file.path("/capstone/seamissions/check
 fao_catch <- read_csv(file.path("/capstone/seamissions/checkpoint/fao_catch.csv"), show_col_types = FALSE)
 ```
 
-## Partition Emissions by Region, Bind
+## Partition Emissions by Region and Combine
 
 ```{r}
 #| code-summary: Distribute Emissions
@@ -86,6 +86,20 @@ for (i in seq_along(regions)){
     mutate(region_total_tons = sum(country_total_tons, na.rm = TRUE)) %>%
     mutate(prop_fao_catch = country_total_tons/region_total_tons)%>%
     select(-region_total_tons)
+  
+  total_region_catch <- fao_catch %>%
+    filter(zone == regions[i]) %>%
+    group_by(zone, year, flag, species) %>%
+    summarise(country_total_tons_by_species = sum(fao_catch_tons, na.rm = TRUE), .groups = "drop") %>%
+    ungroup() %>%
+    group_by(zone, year) %>%
+    # mutate(country_total_tons = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
+    # ungroup() %>%
+    # group_by(zone, year) %>%
+    mutate(region_total_tons = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
+    mutate(prop_fao_catch = country_total_tons_by_species/region_total_tons) %>%
+    select(-region_total_tons)
+  
   
   # 1.2 Summarise non-broadcasting emissions by Region #
   fao_summary_non_broadcasting <- emissions_partitioned_grouped %>%
@@ -135,7 +149,9 @@ for (i in seq_along(regions)){
     select(year,
            zone,
            flag,
-           country_total_tons,
+           species,
+           country_total_tons_by_species,
+           prop_fao_catch,
            c(colnames(total_region_non_broad_allocation)[str_detect(colnames(total_region_non_broad_allocation), "dist")]))
   
   # Account for emissions transfer in TABLE 1
@@ -159,22 +175,32 @@ for (i in seq_along(regions)){
   # -------- TABLE 3 --------
   # TABLE 3: Full join Tables 1 and 2 (to not lose flags with non-broad emissions but no broad emissions)
   total_region_emissions <- full_join(emissions_partitioned, total_region_non_broad_allocation, by = c("zone", "year", "flag")) %>%
-    mutate(total_co2_mt = rowSums(across(c(co2, dist_non_broad_co2_mt)), na.rm = TRUE),
-           total_ch4_mt = rowSums(across(c(ch4, dist_non_broad_ch4_mt)), na.rm = TRUE),
-           total_n2o_mt = rowSums(across(c(n2o, dist_non_broad_n2o_mt)), na.rm = TRUE),
-           total_nox_mt = rowSums(across(c(nox, dist_non_broad_nox_mt)), na.rm = TRUE),
-           total_sox_mt = rowSums(across(c(sox, dist_non_broad_sox_mt)), na.rm = TRUE),
-           total_co_mt = rowSums(across(c(co, dist_non_broad_co_mt)), na.rm = TRUE),
-           total_vocs_mt = rowSums(across(c(vocs, dist_non_broad_vocs_mt)), na.rm = TRUE),
-           total_pm2_5_mt = rowSums(across(c(pm2_5, dist_non_broad_pm2_5_mt)), na.rm = TRUE),
-           total_pm10_mt = rowSums(across(c(pm10, dist_non_broad_pm10_mt)), na.rm = TRUE))
+    mutate(dist_broad_co2_mt = prop_fao_catch * co2,
+           dist_broad_ch4_mt = prop_fao_catch * ch4,
+           dist_broad_n2o_mt = prop_fao_catch * n2o,
+           dist_broad_nox_mt = prop_fao_catch * nox,
+           dist_broad_sox_mt = prop_fao_catch * sox,
+           dist_broad_co_mt = prop_fao_catch * co,
+           dist_broad_vocs_mt = prop_fao_catch * vocs,
+           dist_broad_pm2_5_mt = prop_fao_catch * pm2_5,
+           dist_broad_pm10_mt = prop_fao_catch * pm10) %>%
+    mutate(total_co2_mt = rowSums(across(c(dist_broad_co2_mt, dist_non_broad_co2_mt)), na.rm = TRUE),
+           total_ch4_mt = rowSums(across(c(dist_broad_ch4_mt, dist_non_broad_ch4_mt)), na.rm = TRUE),
+           total_n2o_mt = rowSums(across(c(dist_broad_n2o_mt, dist_non_broad_n2o_mt)), na.rm = TRUE),
+           total_nox_mt = rowSums(across(c(dist_broad_nox_mt, dist_non_broad_nox_mt)), na.rm = TRUE),
+           total_sox_mt = rowSums(across(c(dist_broad_sox_mt, dist_non_broad_sox_mt)), na.rm = TRUE),
+           total_co_mt = rowSums(across(c(dist_broad_co_mt, dist_non_broad_co_mt)), na.rm = TRUE),
+           total_vocs_mt = rowSums(across(c(dist_broad_vocs_mt, dist_non_broad_vocs_mt)), na.rm = TRUE),
+           total_pm2_5_mt = rowSums(across(c(dist_broad_pm2_5_mt, dist_non_broad_pm2_5_mt)), na.rm = TRUE),
+           total_pm10_mt = rowSums(across(c(dist_broad_pm10_mt, dist_non_broad_pm10_mt)), na.rm = TRUE))
   
   # Keep desired columns
   total_region_emissions <- total_region_emissions %>%
     select(year,
            zone,
            flag,
-           country_total_tons,
+           species,
+           country_total_tons_by_species,
            c(colnames(total_region_emissions)[str_detect(colnames(total_region_emissions), "total")])
     )
   
@@ -196,7 +222,6 @@ for (i in seq_along(regions)){
   
   # Append to vector
   option_1[[i]] <- total_region_emissions
-  
 }
 
 # Full emissions dataset
@@ -214,4 +239,3 @@ full_emissions_fao <- bind_rows(option_1)
 # Read in FAO emissions dataset
 #full_emissions_fao <- read_csv(file.path("/capstone/seamissions/checkpoint/full_emissions_fao.csv"), show_col_types = FALSE)
 ```
-
