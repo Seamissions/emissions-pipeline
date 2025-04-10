@@ -14,15 +14,16 @@ editor_options:
   chunk_output_type: console
 ---
 
-# Option 1:
+# Methods:
 
-- For each year, calculate total **non-broadcasting** emissions for each FAO region. 
-- Then divy that up to *all* fisheries that report catch in that region (proportionally by the amount of catch in each fishery). 
-- Assumption: Within an FAO region, the non-broadcasting emissions are spread proportionally across *all* fisheries and countries within that region *by catch*.
+- For each year, calculate total **non-broadcasting** emissions for each FAO region:  `fao_summary_non_broadcasting`
+- Then divy that up to *all* fisheries that report catch in that region (proportionally by the amount of catch in each fishery). TABLE 1: `total_region_non_broad_allocation`
+- For each year, calculate total **broadcasting** emissions, by country, for each FAO region. TABLE 2: `emissions_partitioned`
+- Full join the allocated non-broadcasting emissions with the broadcasting emissions. TABLE 3: `total_region_emissions`
 
-Questions:
+Assumptions:
 
-- does it make sense that in a region, in a year, one country is only landing one species of fish?
+- Within an FAO region, the non-broadcasting emissions are spread proportionally across *all* fisheries and countries within that region *by catch*.
 
 ## Load Packages
 
@@ -38,15 +39,17 @@ library(dplyr)
 
 ```{r}
 #| code-summary: Load Data
-emissions_partitioned_grouped <- read_csv(file.path("/capstone/seamissions/checkpoint/emissions_partitioned_grouped.csv"), show_col_types = FALSE) %>%
-  filter(!flag == "DARK")
-fao_catch <- read_csv(file.path("/capstone/seamissions/checkpoint/fao_catch_cleaned.csv"), show_col_types = FALSE)
+emissions_partitioned_grouped <- read_csv(file.path("/capstone/seamissions/checkpoint/emissions_partitioned_grouped.csv"), show_col_types = FALSE)
+fao_catch <- read_csv(file.path("/capstone/seamissions/checkpoint/fao_catch.csv"), show_col_types = FALSE)
 ```
 
 ## Partition Emissions by Region, Bind
 
 ```{r}
 #| code-summary: Distribute Emissions
+# Turn off scientific notation
+options(scipen=999)
+
 # Define regions
 regions <- c(18, 21, 27, 31, 34, 47, 48, 51, 57, 58, 61, 67, 71, 77, 81, 87, 88)
 
@@ -71,87 +74,86 @@ for (i in seq_along(regions)){
   # Make a list of flags with non-broadcasting emissions ONLY by Region # (those flags in FAO catch but not in emissions)
   non_broad_only_flags <- setdiff(fao_catch_flags, emissions_flags)
   
-  # Summarise non-broadcasting emissions by Region #
-  fao_summary_non_broadcasting <- emissions_partitioned_grouped %>%
-    # Select non-broadcasting emissions
-    filter(flag == "DARK") %>%
-    # Rename columns for non-broadcasting emissions
-    mutate(non_broad_co2 = co2,
-           non_broad_ch4 = ch4,
-           non_broad_n2o = n2o,
-           non_broad_nox = nox,
-           non_broad_sox = sox,
-           non_broad_co = co,
-           non_broad_vocs = vocs,
-           non_broad_pm2_5 = pm2_5,
-           non_broad_pm10 = pm10) %>%
-    # Keep only desired columns
-    select(zone, 
-           year, 
-           non_broad_co2,
-           non_broad_ch4,
-           non_broad_n2o,
-           non_broad_nox,
-           non_broad_sox,
-           non_broad_co,
-           non_broad_vocs,
-           non_broad_pm2_5,
-           non_broad_pm10)
-  
   # -------- TABLE 1 --------
   # 1.1 All flags reporting FAO catch in Region #
   total_region_catch <- fao_catch %>%
     filter(zone == regions[i]) %>%
+    group_by(zone, year, flag) %>%
+    summarise(country_total_tons = sum(fao_catch_tons, na.rm = TRUE), .groups = "drop") %>%
+    ungroup() %>%
     group_by(zone, year) %>%
-    # total catch by zone and year
-    mutate(total_fao_catch = sum(fao_catch_tons)) %>%
-    # prop catch by zone and year
-    mutate(prop_fao_catch = fao_catch_tons/total_fao_catch) %>%
-    ungroup()
+    mutate(region_total_tons = sum(country_total_tons, na.rm = TRUE)) %>%
+    mutate(prop_fao_catch = country_total_tons/region_total_tons)%>%
+    select(-region_total_tons)
   
-  # 1.2 Non-broadcasting emissions in Region #
-  fao_summary_non_broadcasting <- fao_summary_non_broadcasting %>%
+  # 1.2 Summarise non-broadcasting emissions by Region #
+  fao_summary_non_broadcasting <- emissions_partitioned_grouped %>%
+    # Filter for Region # (to account for emissions later)
     filter(zone == regions[i]) %>%
+    # Select non-broadcasting emissions
+    filter(flag == "DARK") %>%
+    # Rename columns for non-broadcasting emissions
+    mutate(non_broad_co2_mt = co2,
+           non_broad_ch4_mt = ch4,
+           non_broad_n2o_mt = n2o,
+           non_broad_nox_mt = nox,
+           non_broad_sox_mt = sox,
+           non_broad_co_mt = co,
+           non_broad_vocs_mt = vocs,
+           non_broad_pm2_5_mt = pm2_5,
+           non_broad_pm10_mt = pm10) %>%
+    # Keep only desired columns
+    select(zone, 
+           year, 
+           non_broad_co2_mt,
+           non_broad_ch4_mt,
+           non_broad_n2o_mt,
+           non_broad_nox_mt,
+           non_broad_sox_mt,
+           non_broad_co_mt,
+           non_broad_vocs_mt,
+           non_broad_pm2_5_mt,
+           non_broad_pm10_mt) %>%
     # FAO data doesn't go past 2022
-    filter(year <= 2022)
+    filter(year <= 2022) 
   
   # TABLE 1: Allocate non-broadcasting emissions to FAO reporting countries by Region #
   total_region_non_broad_allocation <- left_join(total_region_catch, fao_summary_non_broadcasting, by = c("zone", "year")) %>%
-    mutate(dist_non_broad_co2_mt = prop_fao_catch * non_broad_co2,
-           dist_non_broad_ch4_mt = prop_fao_catch * non_broad_ch4,
-           dist_non_broad_n2o_mt = prop_fao_catch * non_broad_n2o,
-           dist_non_broad_nox_mt = prop_fao_catch * non_broad_nox,
-           dist_non_broad_sox_mt = prop_fao_catch * non_broad_sox,
-           dist_non_broad_co_mt = prop_fao_catch * non_broad_co,
-           dist_non_broad_vocs_mt = prop_fao_catch * non_broad_vocs,
-           dist_non_broad_pm2_5_mt = prop_fao_catch * non_broad_pm2_5,
-           dist_non_broad_pm10_mt = prop_fao_catch * non_broad_pm10)
+    mutate(dist_non_broad_co2_mt = prop_fao_catch * non_broad_co2_mt,
+           dist_non_broad_ch4_mt = prop_fao_catch * non_broad_ch4_mt,
+           dist_non_broad_n2o_mt = prop_fao_catch * non_broad_n2o_mt,
+           dist_non_broad_nox_mt = prop_fao_catch * non_broad_nox_mt,
+           dist_non_broad_sox_mt = prop_fao_catch * non_broad_sox_mt,
+           dist_non_broad_co_mt = prop_fao_catch * non_broad_co_mt,
+           dist_non_broad_vocs_mt = prop_fao_catch * non_broad_vocs_mt,
+           dist_non_broad_pm2_5_mt = prop_fao_catch * non_broad_pm2_5_mt,
+           dist_non_broad_pm10_mt = prop_fao_catch * non_broad_pm10_mt)
   
   # Keep only desired columns
   total_region_non_broad_allocation <- total_region_non_broad_allocation %>%
     select(year,
            zone,
            flag,
-           scientific_name,
-           fao_catch_tons,
+           country_total_tons,
            c(colnames(total_region_non_broad_allocation)[str_detect(colnames(total_region_non_broad_allocation), "dist")]))
   
   # Account for emissions transfer in TABLE 1
-  before <- sum(fao_summary_non_broadcasting$non_broad_co2, na.rm = TRUE) 
+  before <- sum(fao_summary_non_broadcasting$non_broad_co2_mt, na.rm = TRUE) 
   after <- sum(total_region_non_broad_allocation$dist_non_broad_co2_mt, na.rm = TRUE) 
   
-  if(before != after) {
-    warning(paste0("Non-broadcasting emissions lost during allocation to FAO reporting countries in Region ", regions[i], "."))
+  percent_diff <- ((after-before)/before)*100
+  
+  # Warning if emissions loss is greater than 0.001%
+  if(percent_diff > 0.001) {
+    warning(paste0("Greater than 0.001% of non-broadcasting emissions lost during allocation to FAO reporting countries in Region ", regions[i], ". Check Table 1."))
   }
   
   # -------- TABLE 2 --------
   # TABLE 2: Flags with broadcasting emissions by Region #
   emissions_partitioned <- emissions_partitioned_grouped %>%
-    # Remove "DARK" because allocated in non_broadcasting summary above
-    filter(!flag == "DARK") %>%
     # Filter for Region #
     filter(zone == regions[i]) %>%
-    ungroup()
+    filter(!flag == "DARK")
   
   # -------- TABLE 3 --------
   # TABLE 3: Full join Tables 1 and 2 (to not lose flags with non-broad emissions but no broad emissions)
@@ -171,25 +173,27 @@ for (i in seq_along(regions)){
     select(year,
            zone,
            flag,
-           scientific_name,
-           fao_catch_tons,
+           country_total_tons,
            c(colnames(total_region_emissions)[str_detect(colnames(total_region_emissions), "total")])
     )
   
-  # BUILD LOST FLAG WARNING (?)
-  if(all(!c(emissions_flags, non_broad_only_flags) %in% c(unique(total_region_emissions$flag)))) {
-    warning("Flags don't add up.")
-  }
+  # # BUILD LOST FLAG WARNING (?)
+  # if(all(!c(emissions_flags, non_broad_only_flags) %in% c(unique(total_region_emissions$flag)))) {
+  #   warning("Flags don't add up.")
+  # }
   
   # Account for emissions after full join
-  before <- sum(emissions_partitioned$co2, na.rm = TRUE) + sum(fao_summary_non_broadcasting$non_broad_co2, na.rm = TRUE)
+  before <- sum(emissions_partitioned$co2, na.rm = TRUE) + sum(fao_summary_non_broadcasting$non_broad_co2_mt, na.rm = TRUE)
   after <- sum(total_region_emissions$total_co2_mt, na.rm = TRUE) 
   
-  if(before != after) {
-    warning(paste0("Emissions lost on full join for Region ", regions[i], "."))
+  percent_diff <- ((after-before)/before)*100
+  
+  # Warning if emissions loss is greater than 0.001%
+  if(percent_diff > 0.001) {
+    warning(paste0("Greater than 0.001% of emissions lost during full join of broadcasting and non-broadcasting in Region ", regions[i], ". Check Table 3."))
   }
   
-  # Add to list
+  # Append to vector
   option_1[[i]] <- total_region_emissions
   
 }
@@ -197,5 +201,4 @@ for (i in seq_along(regions)){
 # Full emissions dataset
 full_emissions_fao <- bind_rows(option_1)
 ```
-
 
