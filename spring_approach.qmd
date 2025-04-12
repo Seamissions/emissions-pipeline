@@ -15,12 +15,12 @@ editor_options:
 
 # About
 
-This repository hosts the code for the open-source data processing pipeline.
+This repository hosts the code for the open-source emissions data processing pipeline.
 
-## Load packages
+## Load Packages
 
 ```{r}
-#| code-summary: Expand code
+#| code-summary: Load Packages
 library(tidyverse)
 library(janitor)
 library(here)
@@ -29,34 +29,32 @@ library(sf)
 library(dplyr)
 ```
 
-## Load data
+## Load Data
 
 ```{r}
-#| code-summary: Load emissions data
+#| code-summary: Load Data
 
 # Turn off scientific notation
 options(scipen=999)
 
-# Set file path to data folder workbench-2
-pathway <- "/capstone/seamissions/data/meds_capstone_project"
-
-# Set up import for .csv or .xlsx files
-file_names <- list.files(pathway, pattern="*.csv", full.names=TRUE)
+# Set up import for .csv files in capstone data folder on Workbench-2
+file_names <- list.files("/capstone/seamissions/data/meds_capstone_project", pattern="*.csv", full.names=TRUE)
 
 # Read in emissions data files
 for (i in seq_along(file_names)) {
- if(str_detect(file_names[i], "non")) {
+  # Detect "non" to name non-broadcasting
+  if(str_detect(file_names[i], "non")) {
     table_name <- paste("non_broadcasting")
     assign(table_name, read_csv(file_names[i], show_col_types = FALSE) %>%
-          clean_names())
-
+             clean_names())
+    # Detect "ais" to name broadcasting
   } else if (str_detect(file_names[i], "ais")) {
     table_name <- paste("broadcasting")
     assign(table_name, read_csv(file_names[i], show_col_types = FALSE) %>%
-          clean_names())
-    
+             clean_names())
+    # Stop if extra files are detected
   } else {
-    warning("Extra file detected.")
+    stop("Extra file(s) detected.")
   }
 }
 ```
@@ -67,20 +65,22 @@ for (i in seq_along(file_names)) {
 
 ```{r}
 #| code-summary: Clean Data
+
 # Create `year_month` column
 broadcasting <- broadcasting %>%
   mutate(date = lubridate::ymd(month)) %>%
   mutate(year_month = format(date, '%Y-%m'))
   
-# Create `year_month` column 
 non_broadcasting <- non_broadcasting %>%
   mutate(date = lubridate::ymd(month)) %>%
   mutate(year_month = format(date, '%Y-%m')) %>%
   mutate(flag = "DARK")
 
+# Rename pollutant columns in non-broadcasting data to match broadcasting data
 colnames(non_broadcasting)[str_detect(colnames(non_broadcasting), "non_broadcasting")] <- str_remove(colnames(non_broadcasting)[str_detect(colnames(non_broadcasting), "non_broadcasting")], "_non_broadcasting") 
 
-if (unique(colnames(non_broadcasting)[str_detect(colnames(non_broadcasting), "emissions")] == colnames(broadcasting)[str_detect(colnames(broadcasting), "emissions")]) != TRUE) {
+# Warning if pollutant column names don't match (for join)
+if(unique(colnames(non_broadcasting)[str_detect(colnames(non_broadcasting), "emissions")] == colnames(broadcasting)[str_detect(colnames(broadcasting), "emissions")]) != TRUE) {
   warning("Column names don't match.")
 }
 ```
@@ -89,11 +89,14 @@ if (unique(colnames(non_broadcasting)[str_detect(colnames(non_broadcasting), "em
 
 ```{r}
 #| code-summary: Join Broadcasting and Non-Broadcasting Datasets
-# Combine dataframes
-emissions <- bind_rows(broadcasting, non_broadcasting)
 
+# Combine broadcasting and non-broadcasting data
+emissions <- bind_rows(broadcasting, non_broadcasting) %>%
+  select(year_month, everything(), -c(month, date))
+
+# Stop if rows don't add up
 if(nrow(broadcasting) + nrow(non_broadcasting) != nrow(emissions)) {
-  warning("Number of rows doesn't add up, emissions data lost.")
+  stop("Number of rows don't add up, emissions data lost.")
 }
 ```
 
@@ -116,7 +119,7 @@ pollutants <- c("co2",
 # Check for discrepancies
 for (i in seq_along(pollutants)) {
 
-  em_col <- paste0("emissions_", pollutants[1], "_mt")
+  em_col <- paste0("emissions_", pollutants[i], "_mt")
   
   # Total emissions before factoring
   em_before <- sum(broadcasting[[em_col]], na.rm = TRUE) + sum(non_broadcasting[[em_col]], na.rm = TRUE)
@@ -129,7 +132,7 @@ for (i in seq_along(pollutants)) {
   
   # Trigger error warning for lost emissions over 0.1%
   if (diff > 0) {
-    warning(paste0("Non-zero difference returned for ", {pollutants[i]}, ". Some emissions may be lost."))
+    stop(paste0("Non-zero difference returned for ", {pollutants[i]}, ". Some emissions may be lost."))
   }  
 }
 ```
@@ -155,22 +158,14 @@ for (i in seq_along(pollutants)) {
 ```{r}
 #| code-summary: Expand code
 
-# -------- set up projections --------
-# equal earth 8857
-#my_crs <- st_crs("+proj=eqearth +datum=WGS84 +units=m +no_defs")
-
-# OR mollweide projection 54009 (but not recognized)
-#mollweide_proj <- "+proj=moll +lon_0=0 +datum=WGS84 +units=m +no_defs"
-#emissions_sf <- st_set_crs(emissions_sf, mollweide_proj) # transform?
-
 # -------- EMISSIONS --------
 # Filter for desired variables
 emissions_filtered <- emissions %>%
   # Create year column
   mutate(year = as.integer(substr(year_month, 1, 4))) %>%
   # Group by pixel, year, and flag
-  group_by(lat_bin, lon_bin, year, flag) %>% # vessel_class
-  # Sum co2 (ADD OTHER POLLUTANTS HERE)
+  group_by(lat_bin, lon_bin, year, flag) %>% # vessel_class (?)
+  # Sum emissions
   summarise(co2_mt = sum(emissions_co2_mt, na.rm = TRUE),
             ch4_mt = sum(emissions_ch4_mt, na.rm = TRUE),
             n2o_mt = sum(emissions_n2o_mt, na.rm = TRUE),
@@ -192,7 +187,9 @@ emissions_grid <- emissions_sf %>%
   st_make_grid(cellsize = c(1,1),
                what = "polygons") %>%
   st_sf() %>%
+  # Fix invalid geometries
   st_make_valid() %>%
+  # Add grid number to keep track
   mutate(grid_id = row_number())
   
 # Spatially join emissions data to the grid
@@ -205,18 +202,12 @@ emissions_grid_sf <- st_join(emissions_grid, emissions_sf, left = FALSE) %>%
 
 ```{r}
 #| code-summary: Checkpoint
-#| 
+
 # Save emissions_grid_sf to workbench-2
 #st_write(emissions_grid_sf, file.path("/capstone/seamissions/checkpoint/emissions_grid_sf.gpkg"), delete_dsn = TRUE)
 
 # Read in emissions_grid_sf from workbench-2
 #emissions_grid_sf <- st_read(file.path("/capstone/seamissions/checkpoint/emissions_grid_sf.gpkg"))
-
-# Save cleaned fao_catch data
-#write_csv(fao_catch, file.path("/capstone/seamissions/checkpoint/fao_catch.csv"))
-
-# Read in fao catch data
-#fao_catch <- read_csv(file.path("/capstone/seamissions/checkpoint/fao_catch.csv"), show_col_types = FALSE)
 ```
 
 ## Run intersection
@@ -240,6 +231,7 @@ if (st_crs(emissions_grid_sf) != st_crs(fao_regions)){
 # Find which grid cells intersect with the FAO regions
 emissions_zones <- st_intersection(emissions_grid_sf, fao_regions) 
 
+# Create area column (as numeric)
 emissions_zones$area <- as.numeric(st_area(emissions_zones))
 ```
 
@@ -250,7 +242,7 @@ emissions_zones$area <- as.numeric(st_area(emissions_zones))
 # Save emissions_zones to workbench-2
 #st_write(emissions_zones, file.path("/capstone/seamissions/checkpoint/emissions_zones.gpkg"), delete_dsn = TRUE)
 
-# Read in emissions_zones from workbench-2
+## Read in emissions_zones from workbench-2
 #emissions_zones <- st_read(file.path("/capstone/seamissions/checkpoint/emissions_zones.gpkg"))
 ```
 
@@ -258,10 +250,11 @@ emissions_zones$area <- as.numeric(st_area(emissions_zones))
 
 ```{r}
 #| code-summary: Partition emissions 
+
 # Inspect geometry types in emissions_zones
 geom_types <- unique(st_geometry_type(emissions_zones))
 
-# Specify desired geometry types POLYGON or MULTIPOLYGON 
+# Specify desired geometry types: POLYGON or MULTIPOLYGON 
 valid_types <- c("POLYGON", "MULTIPOLYGON")
 
 # Identify unexpected types
@@ -272,8 +265,6 @@ if(length(invalid_types > 0)) {
   warning("Additional geometry types detected.")
 }
 
-#table(st_geometry_type(emissions_zones))
-
 # Remove other geometry types (filter out POINT)
 emissions_zones_filtered <- emissions_zones %>%
   filter(st_geometry_type(.) %in% valid_types) # in valid_types, c("POLYGON", "MULTIPOLYGON")
@@ -282,15 +273,13 @@ emissions_zones_filtered <- emissions_zones %>%
 emissions_zones_exploded <- st_cast(emissions_zones_filtered, "MULTIPOLYGON") %>% 
   st_cast("POLYGON")
 
-#table(st_geometry_type(emissions_zones_exploded))
-
 # Generate areas by grid_id for sub polygons
 emissions_zones_summary_1 <- emissions_zones_exploded %>%
-  group_by(grid_id, geom) %>%
+  group_by(grid_id, geometry) %>%
   summarise(
     number_areas = n_distinct(area),
     .groups = "drop") %>% # keep?
-  mutate(area_summary = as.numeric(st_area(geom))) %>%
+  mutate(area_summary = as.numeric(st_area(geometry))) %>%
   ungroup()
 
 # Add up sub polygon areas for overall grid_id area
@@ -355,6 +344,24 @@ for (i in seq_along(pollutants)) {
   warning(paste0("Error over 5% returned for ", {pollutants[i]}, " emissions partitioning. Some emissions may be lost."))
   }
 }
+
+# Drop geometry
+emissions_partitioned_no_geo <- emissions_partitioned %>%
+  st_drop_geometry()
+
+# Group by zone, flag, and year
+emissions_partitioned_grouped <- emissions_partitioned_no_geo %>%
+  group_by(zone, flag, year) %>%
+  summarise(co2 = sum(prop_co2_mt, na.rm = TRUE),
+            ch4 = sum(prop_ch4_mt, na.rm = TRUE),
+            n2o = sum(prop_n2o_mt, na.rm = TRUE),
+            nox = sum(prop_nox_mt, na.rm = TRUE),
+            sox = sum(prop_sox_mt, na.rm = TRUE),
+            co = sum(prop_co_mt, na.rm = TRUE),
+            vocs = sum(prop_vocs_mt, na.rm = TRUE),
+            pm2_5 = sum(prop_pm2_5_mt, na.rm = TRUE),
+            pm10 = sum(prop_pm10_mt, na.rm = TRUE)) %>%
+  ungroup()
 ```
 
 ### Checkpoint
@@ -366,196 +373,11 @@ for (i in seq_along(pollutants)) {
 
 # Read in emissions_zones from workbench-2
 #emissions_partitioned <- st_read(file.path("/capstone/seamissions/checkpoint/emissions_partitioned.gpkg"))
-```
 
-## Join FAO Catch
+# Save emissions_partitioned_no_geo to workbench-2
+#write_csv(emissions_partitioned_no_geo, file.path("/capstone/seamissions/checkpoint/emissions_partitioned_no_geo.csv"))
 
-```{r}
-#| code-summary: FAO Catch 
-# Import catch data from workbench-2
-fao_catch <- read_csv(file.path("/capstone/seamissions/data/fao_seafood_production/fao_catch.csv"), show_col_types = FALSE) %>%
-  # Select desired columns
-  select(area_code,
-         period,
-         iso3_code,
-         #official_name_en,
-         scientific_name,
-         value) %>%
-  # Rename for consistency
-  rename(zone = area_code,
-         year = period,
-         flag = iso3_code,
-         catch = value
-         #official_name = official_name_en
-         ) %>%
-  # Filter for >2015 to match emissions data
-  filter(year >= 2015) %>%
-  group_by(year, zone, flag, scientific_name) %>% #official_name
-  summarise(fao_catch_tons = sum(catch, na.rm = TRUE)) %>%
-  mutate(zone = as.integer(zone),
-         year = as.integer(year))
-
-# Drop geometry
-emissions_partitioned_no_geo <- emissions_partitioned %>%
-  st_drop_geometry()
-
-# Group by zone, flag, and year
-emissions_partitioned_grouped <- emissions_partitioned_no_geo %>%
-  group_by(zone, flag, year) %>%
-  summarise(co2 = sum(prop_co2_mt, na.rm = TRUE))
-
-# Join emissions and FAO catch data
-emissions_fao_joined <- left_join(emissions_partitioned_grouped, fao_catch, by = c("zone", "year", "flag"))
-
-# Warning for missing catch across full dataset
-catch_before <- sum(fao_catch$fao_catch_tons, na.rm = TRUE)
-catch_after <- sum(emissions_fao_joined$fao_catch_tons, na.rm = TRUE)
-change_catch <- (catch_before - catch_after)/catch_before
-
-if(change_catch > 0) {
-  warning(paste0(change_catch*100, "% of catch (in tons) lost in full dataset during join."))
-}
-
-# Define regions
-regions <- c(18, 21, 27, 31, 34, 47, 48, 51, 57, 58, 61, 67, 71, 77, 81, 87, 88)
-
-# FAO catch loss by region
-fao_loss <- c(length(regions))
-
-# Calculate percent catch lost by region
-for(i in seq_along(regions)) {
-  # Filter for zone
-  fao_region <- fao_catch %>%
-    filter(zone == regions[i])
-  joined_region <- emissions_fao_joined %>%
-    filter(zone == regions[i])
-  
-  # Calculate loss
-  catch_before <- sum(fao_region$fao_catch_tons, na.rm = TRUE)
-  catch_after <- sum(joined_region$fao_catch_tons, na.rm = TRUE)
-  change_catch <- (catch_before - catch_after)/catch_before
-  
-  # Append to vector
-  fao_loss[i] <- as.numeric(round(change_catch, 4)) 
-  
-  # Print findings
-  print(paste0("Zone ", regions[i], " lost ~", round(change_catch*100, 0), "% of catch (in tons)."))
-}
-```
-
-## Join SAU Catch
-
-```{r}
-#| code-summary: SAU Catch 
-# Import FAO-SAU flag key
-flag_key <- read_csv("/capstone/seamissions/checkpoint/flag_key.csv", show_col_types = FALSE)
-
-# Set up import for .csv files
-file_names <- list.files("/capstone/seamissions/data/sau", pattern="*.csv", full.names = TRUE)
-
-# Create empty list for SAU files
-sau_regions <- vector("list", length = length(file_names))
-
-# Read in emissions data files
-for (i in seq_along(file_names)) {
-  table_name <- paste0("sau_region_", str_sub(file_names[i], 40, 41))
-  sau_regions[[i]] <- assign(table_name, read.csv(file_names[i], stringsAsFactors = FALSE, check.names = TRUE) %>%
-                               clean_names() %>%
-                               mutate(zone = as.numeric(str_sub(file_names[i], 40, 41)),
-                                      year = as.numeric(year)) %>%
-                               filter(year >= 2015) %>%
-                               left_join(flag_key, by = c("fishing_entity" = "sau_name")) %>%
-                               mutate(flag = iso3_code))
-}
-
-# Combine SAU files
-sau_catch_data <- bind_rows(sau_regions)
-
-# Summarise SAU data for join
-sau_catch_summary <- sau_catch_data %>%
-  group_by(zone, year, flag, scientific_name) %>%
-  summarise(sau_catch_tons = sum(tonnes, na.rm = TRUE))
-
-# Join emissions and SAU data
-emissions_sau_joined <- left_join(emissions_partitioned_grouped, sau_catch_summary, by = c("zone", "year", "flag"))
-
-# Warning for missing catch across full dataset
-catch_before <- sum(sau_catch_summary$sau_catch_tons, na.rm = TRUE)
-catch_after <- sum(emissions_sau_joined$sau_catch_tons, na.rm = TRUE)
-change_catch <- (catch_before - catch_after)/catch_before
-
-if(change_catch > 0) {
-  warning(paste0(change_catch*100, "% of catch (in tons) lost in full dataset during join."))
-}
-
-# SAU catch loss by region
-sau_loss <- c(length(regions))
-
-for(i in seq_along(regions)) {
-  # Filter for zone
-  sau_region <- sau_catch_summary %>%
-    filter(zone == regions[i])
-  joined_region <- emissions_sau_joined %>%
-    filter(zone == regions[i])
-  
-  # Calculate loss
-  catch_before <- sum(sau_region$sau_catch_tons, na.rm = TRUE)
-  catch_after <- sum(joined_region$sau_catch_tons, na.rm = TRUE)
-  change_catch <- (catch_before - catch_after)/catch_before
-  
-  # Append to vector
-  sau_loss[i] <- as.numeric(round(change_catch, 4)) 
-  
-  # Print findings
-  print(paste0("Zone ", regions[i], " lost ~", round(change_catch*100, 0), "% of catch (in tons)."))
-}
-
-# Create df to compare catch loss between datasets
-percent_loss_df <- data.frame(regions = regions, fao_loss = paste0(round(fao_loss*100, 0), "%"), sau_loss = paste0(round(sau_loss*100, 0), "%"))
-```
-
-### Evaluate Catch Loss
-
-```{r}
-#| code-summary: Analysis
-# Create empty vectors
-lost_fao_flags <- character(length(regions))
-lost_sau_flags <- character(length(regions))
-number_fao_flags <- c("")
-number_sau_flags <- c("")
-
-# Create dataframe
-lost_flags <- data.frame(regions = regions, lost_fao_flags = lost_fao_flags, number_fao_flags = number_fao_flags,  lost_sau_flags = lost_sau_flags, number_sau_flags = number_sau_flags)
-
-# Fill in dataframe
-for (i in 1:nrow(lost_flags)) {
-  
-  # Filter for FAO zone
-  fao_region <- fao_catch %>%
-    filter(zone == regions[i])
-  joined_region <- emissions_fao_joined %>%
-    filter(zone == regions[i])
-  
-  # Filter for SAU zone
-  sau_region <- sau_catch_summary %>%
-    filter(zone == regions[i])
-  joined_region <- emissions_sau_joined %>%
-    filter(zone == regions[i])
-  
-  # Add lost FAO flags by region
-  lost_flags$lost_fao_flags[i] <- ifelse(length(setdiff(unique(fao_region$flag), unique(joined_region$flag))) == 0, NA, paste(setdiff(unique(fao_region$flag), unique(joined_region$flag)), collapse = ", "))
-  
-  # Calculate number of lost flags
-  lost_flags$number_fao_flags[i] <- ifelse(length(setdiff(unique(fao_region$flag), unique(joined_region$flag))) == 0, 0, length(setdiff(unique(fao_region$flag), unique(joined_region$flag))))
-  
-  # Add lost SAU flags by region
-  lost_flags$lost_sau_flags[i] <- ifelse(length(setdiff(unique(sau_region$flag), unique(joined_region$flag))) == 0, NA, paste(setdiff(unique(sau_region$flag), unique(joined_region$flag)), collapse = ", "))
-  
-  # Calculate number of lost flags
-  lost_flags$number_sau_flags[i] <- ifelse(length(setdiff(unique(sau_region$flag), unique(joined_region$flag))) == 0, 0, length(setdiff(unique(sau_region$flag), unique(joined_region$flag))))
-  
-}
-
-#write_csv(lost_flags, file.path("/capstone/seamissions/checkpoint/lost_flags.csv"))
+# Save emissions_partitioned_grouped to workbench-2
+#write_csv(emissions_partitioned_grouped, file.path("/capstone/seamissions/checkpoint/emissions_partitioned_grouped.csv"))
 ```
 
