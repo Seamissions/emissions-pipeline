@@ -1,0 +1,584 @@
+---
+title: "Option 1: SAU"
+author: "Carmen Hoyt"
+date: last-modified
+format:
+  html:
+      toc: true
+      code-fold: true
+editor: visual
+execute:
+  warning: false
+  messages: false
+editor_options: 
+  chunk_output_type: console
+---
+
+# Methods:
+
+- For each year, calculate total **non-broadcasting** emissions for SAU data for each FAO region:  `sau_summary_non_broadcasting`
+- Then divy that up to *all* fisheries that report catch in that region (proportionally by the amount of catch in each fishery). TABLE 1: `total_region_non_broad_allocation`
+- For each year, calculate total **broadcasting** emissions, by country, for SAU data for each FAO region. TABLE 2: `emissions_partitioned`
+- Full join the allocated non-broadcasting emissions with the broadcasting emissions. TABLE 3: `total_region_emissions`
+
+Assumptions:
+
+- Within an FAO region, the non-broadcasting emissions are spread proportionally across *all* fisheries and countries within that region *by catch* in the SAU dataset.
+
+## Load Packages
+
+```{r}
+#| code-summary: Load Packages
+library(tidyverse)
+library(janitor)
+library(here)
+```
+
+## Load Data
+
+```{r}
+#| code-summary: Load Data
+# Read in emissions data
+emissions_partitioned_grouped <- read_csv(file.path("/capstone/seamissions/checkpoint/emissions_partitioned_grouped.csv"), show_col_types = FALSE)
+
+# Read in FAO country code table
+iso_flags <- read_csv("/capstone/seamissions/data/fao_seafood_production/CL_FI_COUNTRY_GROUPS.csv", show_col_types = FALSE) %>%
+  clean_names() %>%
+  select(iso3_code, name_en) 
+
+# Read in flag key
+flag_key <- read_csv(file.path("/capstone/seamissions/checkpoint/flag_key.csv"), show_col_types = FALSE)
+
+# Set up import for .csv files
+file_names <- list.files("/capstone/seamissions/data/sau", pattern="*.csv", full.names = TRUE)
+
+sau_regions <- vector("list", length = length(file_names))
+
+# Read in SAU files by region
+for (i in seq_along(file_names)) {
+  table_name <- paste0("sau_region_", str_sub(file_names[i], 40, 41))
+  sau_regions[[i]] <- assign(table_name, read.csv(file_names[i], stringsAsFactors = FALSE, check.names = TRUE) %>%
+                               clean_names() %>%
+                               mutate(zone = as.numeric(str_sub(file_names[i], 40, 41)),
+                                      year = as.numeric(year)) %>%
+                               filter(year >= 2015) %>%
+                               
+                               # WORK ON THIS
+                               left_join(flag_key, by = c("fishing_entity" = "sau_name")) %>%
+                               rename(flag = iso3_code)
+                               # mutate(flag = ifelse(is.na(iso3_code), fishing_entity, iso3_code))
+                               )
+}
+
+# Bind all regions
+sau_catch_data <- bind_rows(sau_regions)
+
+# Summarise SAU catch
+sau_catch_summary <- sau_catch_data %>%
+  group_by(zone, year, flag, scientific_name) %>%
+  summarise(sau_catch_tons = sum(tonnes, na.rm = TRUE)) %>%
+  rename(species = scientific_name) 
+```
+
+## Partition Emissions by Region and Combine (Option 1)
+
+```{r}
+#| code-summary: Distribute Emissions
+
+# Turn off scientific notation
+options(scipen=999)
+
+# Define regions
+regions <- c(18, 21, 27, 31, 34, 47, 48, 51, 57, 58, 61, 67, 71, 77, 81, 87, 88)
+
+# Create empty vector to append Region #
+option_1 <- vector("list", length = length(regions))
+
+# Partition emissions
+for (i in seq_along(regions)){
+  
+  # Make list of flags in FAO catch data by Region #
+  sau_catch_flags <- sau_catch_summary %>%
+    filter(zone == regions[i])
+  
+  sau_catch_flags <- unique(sau_catch_flags$flag)
+  
+  # Make a list of flags in emissions data by Region #
+  emissions_flags <- emissions_partitioned_grouped %>%
+    filter(zone == regions[i])
+  
+  emissions_flags <- unique(emissions_flags$flag) # TABLE 2: flags with BROADCASTING emissions
+  
+  # Make a list of flags with non-broadcasting emissions ONLY by Region # (those flags in FAO catch but not in emissions)
+  non_broad_only_flags <- setdiff(sau_catch_flags, emissions_flags)
+  
+  # Make a list of broadcasting only flags? check in final df?
+  
+  # -------- TABLE 1 --------
+  # 1.1 All flags reporting FAO catch in Region #
+  total_region_catch <- sau_catch_summary %>%
+    filter(zone == regions[i]) %>%
+    group_by(zone, year, flag, species) %>%
+    summarise(country_total_tons_by_species = sum(sau_catch_tons, na.rm = TRUE), .groups = "drop") %>%
+    ungroup() %>%
+    group_by(zone, year) %>%
+    mutate(region_total_tons = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
+    mutate(prop_sau_catch = country_total_tons_by_species/region_total_tons) %>%
+    select(-region_total_tons)
+  
+  # 1.2 Summarise non-broadcasting emissions by Region #
+  sau_summary_non_broadcasting <- emissions_partitioned_grouped %>%
+    # Filter for Region # (to account for emissions later)
+    filter(zone == regions[i]) %>%
+    # Select non-broadcasting emissions
+    filter(flag == "DARK") %>%
+    # Rename columns for non-broadcasting emissions
+    mutate(non_broad_co2_mt = co2,
+           non_broad_ch4_mt = ch4,
+           non_broad_n2o_mt = n2o,
+           non_broad_nox_mt = nox,
+           non_broad_sox_mt = sox,
+           non_broad_co_mt = co,
+           non_broad_vocs_mt = vocs,
+           non_broad_pm2_5_mt = pm2_5,
+           non_broad_pm10_mt = pm10) %>%
+    # Keep only desired columns
+    select(zone, 
+           year, 
+           non_broad_co2_mt,
+           non_broad_ch4_mt,
+           non_broad_n2o_mt,
+           non_broad_nox_mt,
+           non_broad_sox_mt,
+           non_broad_co_mt,
+           non_broad_vocs_mt,
+           non_broad_pm2_5_mt,
+           non_broad_pm10_mt) %>%
+    # FAO data doesn't go past 2022
+    filter(year <= 2022) 
+  
+  # TABLE 1: Allocate non-broadcasting emissions to FAO reporting countries by Region #
+  total_region_non_broad_allocation <- left_join(total_region_catch, sau_summary_non_broadcasting, by = c("zone", "year")) %>%
+    mutate(dist_non_broad_co2_mt = prop_sau_catch * non_broad_co2_mt,
+           dist_non_broad_ch4_mt = prop_sau_catch * non_broad_ch4_mt,
+           dist_non_broad_n2o_mt = prop_sau_catch * non_broad_n2o_mt,
+           dist_non_broad_nox_mt = prop_sau_catch * non_broad_nox_mt,
+           dist_non_broad_sox_mt = prop_sau_catch * non_broad_sox_mt,
+           dist_non_broad_co_mt = prop_sau_catch * non_broad_co_mt,
+           dist_non_broad_vocs_mt = prop_sau_catch * non_broad_vocs_mt,
+           dist_non_broad_pm2_5_mt = prop_sau_catch * non_broad_pm2_5_mt,
+           dist_non_broad_pm10_mt = prop_sau_catch * non_broad_pm10_mt) %>%
+    select(-country_total_tons_by_species)
+  
+  # Account for emissions transfer in TABLE 1
+  before <- sum(sau_summary_non_broadcasting$non_broad_co2_mt, na.rm = TRUE) 
+  after <- sum(total_region_non_broad_allocation$dist_non_broad_co2_mt, na.rm = TRUE) 
+  
+  percent_diff <- ((after-before)/before)*100
+  
+  # Warning if emissions loss is greater than 0.001%
+  if(percent_diff > 0.001) {
+    warning(paste0("Greater than 0.001% of non-broadcasting emissions lost during allocation to SAU reporting countries in Region ", regions[i], ". Check Table 1."))
+  }
+  
+  # -------- TABLE 2 --------
+  # 2.1: All flags with broadcasting emissions by Region #
+  emissions_partitioned <- emissions_partitioned_grouped %>%
+    # Filter for Region #
+    filter(zone == regions[i]) %>%
+    # Remove non-broadcasting emissions
+    filter(!flag == "DARK") %>%
+    mutate(broad_co2_mt = co2,
+           broad_ch4_mt = ch4,
+           broad_n2o_mt = n2o,
+           broad_nox_mt = nox,
+           broad_sox_mt = sox,
+           broad_co_mt = co,
+           broad_vocs_mt = vocs,
+           broad_pm2_5_mt = pm2_5,
+           broad_pm10_mt = pm10) %>%
+    select(-c(co2, ch4, n2o, nox, sox, co, vocs, pm2_5, pm10))
+  
+  # 2.2 Distribute broadcasting for countries with catch ASSUMPTION: 1 ton = same emissions for all species
+  total_flag_catch <- sau_catch_summary %>%
+    filter(zone == regions[i]) %>%
+    group_by(zone, year, flag, species) %>%
+    summarise(country_total_tons_by_species = sum(sau_catch_tons, na.rm = TRUE), .groups = "drop") %>%
+    ungroup() %>%
+    group_by(zone, year, flag) %>%
+    mutate(country_total_tons = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
+    mutate(prop_species_catch = country_total_tons_by_species/country_total_tons) %>%
+    select(-c(country_total_tons_by_species, country_total_tons)) %>%
+    filter(!is.na(prop_species_catch))
+  
+  # TABLE 2
+  total_region_broad_allocation <- full_join(total_flag_catch, emissions_partitioned, by = c("zone", "year", "flag")) %>%
+    mutate(dist_broad_co2_mt = ifelse(is.na(prop_species_catch), broad_co2_mt, prop_species_catch * broad_co2_mt),
+           dist_broad_ch4_mt = ifelse(is.na(prop_species_catch), broad_ch4_mt, prop_species_catch * broad_ch4_mt),
+           dist_broad_n2o_mt = ifelse(is.na(prop_species_catch), broad_n2o_mt, prop_species_catch * broad_n2o_mt),
+           dist_broad_nox_mt = ifelse(is.na(prop_species_catch), broad_nox_mt, prop_species_catch * broad_nox_mt),
+           dist_broad_sox_mt = ifelse(is.na(prop_species_catch), broad_sox_mt, prop_species_catch * broad_sox_mt),
+           dist_broad_co_mt = ifelse(is.na(prop_species_catch), broad_co_mt, prop_species_catch * broad_co_mt),
+           dist_broad_vocs_mt = ifelse(is.na(prop_species_catch), broad_vocs_mt, prop_species_catch * broad_vocs_mt),
+           dist_broad_pm2_5_mt = ifelse(is.na(prop_species_catch), broad_pm2_5_mt, prop_species_catch * broad_pm2_5_mt),
+           dist_broad_pm10_mt = ifelse(is.na(prop_species_catch), broad_pm10_mt, prop_species_catch * broad_pm10_mt))
+  
+  # -------- TABLE 3 --------
+  # TABLE 3: Full join Tables 1 and 2 (to not lose flags with non-broad emissions but no broad emissions)
+  total_region_emissions <- full_join(total_region_broad_allocation, total_region_non_broad_allocation, by = c("zone", "year", "flag", "species")) %>%
+    #filter(zone == 18) %>%
+    # Sum broadcasting and non-broadcasting emissions
+    mutate(total_co2_mt = rowSums(across(c(dist_broad_co2_mt, dist_non_broad_co2_mt)), na.rm = TRUE),
+           total_ch4_mt = rowSums(across(c(dist_broad_ch4_mt, dist_non_broad_ch4_mt)), na.rm = TRUE),
+           total_n2o_mt = rowSums(across(c(dist_broad_n2o_mt, dist_non_broad_n2o_mt)), na.rm = TRUE),
+           total_nox_mt = rowSums(across(c(dist_broad_nox_mt, dist_non_broad_nox_mt)), na.rm = TRUE),
+           total_sox_mt = rowSums(across(c(dist_broad_sox_mt, dist_non_broad_sox_mt)), na.rm = TRUE),
+           total_co_mt = rowSums(across(c(dist_broad_co_mt, dist_non_broad_co_mt)), na.rm = TRUE),
+           total_vocs_mt = rowSums(across(c(dist_broad_vocs_mt, dist_non_broad_vocs_mt)), na.rm = TRUE),
+           total_pm2_5_mt = rowSums(across(c(dist_broad_pm2_5_mt, dist_non_broad_pm2_5_mt)), na.rm = TRUE),
+           total_pm10_mt = rowSums(across(c(dist_broad_pm10_mt, dist_non_broad_pm10_mt)), na.rm = TRUE))
+  
+  # Keep desired columns
+  total_region_emissions <- total_region_emissions %>%
+    select(year,
+           zone,
+           flag,
+           species,
+           c(colnames(total_region_emissions)[str_detect(colnames(total_region_emissions), "total")])
+    )
+  
+  # Account for emissions after full join
+  before <- sum(emissions_partitioned$broad_co2_mt, na.rm = TRUE) + sum(sau_summary_non_broadcasting$non_broad_co2_mt, na.rm = TRUE)
+  after <- sum(total_region_emissions$total_co2_mt, na.rm = TRUE) 
+  
+  percent_diff <- ((after-before)/before)*100
+  
+  # Warning if emissions loss is greater than 0.001%
+  if(percent_diff > 0.001) {
+    warning(paste0("Greater than 0.001% of emissions lost during full join of broadcasting and non-broadcasting in Region ", regions[i], ". Check Table 3."))
+  }
+  
+  # Append to vector
+  option_1[[i]] <- total_region_emissions
+}
+
+# Full emissions dataset
+full_emissions_sau <- bind_rows(option_1)
+```
+
+### Checkpoint
+
+```{r}
+#| code-summary: Checkpoint
+
+# Save SAU emissions dataset to workbench-2
+#write_csv(full_emissions_sau, file.path("/capstone/seamissions/checkpoint/full_emissions_sau.csv"))
+
+# Read in SAU emissions dataset
+#full_emissions_sau <- read_csv(file.path("/capstone/seamissions/checkpoint/full_emissions_sau.csv"), show_col_types = FALSE)
+```
+
+## Make Flag Key (Extra)
+
+```{r}
+#| code-summary: Flag Key
+#| eval: false
+
+# Load FAO country code table
+iso_flags <- read_csv("/capstone/seamissions/data/fao_seafood_production/CL_FI_COUNTRY_GROUPS.csv", show_col_types = FALSE) %>%
+  clean_names() %>%
+  mutate(fao_name = name_en) %>%
+  select(iso3_code, fao_name)
+
+flags_joined <- left_join(sau_catch_data, iso_flags, by = c("fishing_entity" = "name_en")) %>%
+  #mutate(iso_code = ifelse(is.na(iso3_code), fishing_entity, iso3_code)) %>%
+  select(iso3_code, fishing_entity) %>%
+  distinct() %>%
+  mutate(iso3_code = case_when(
+    fishing_entity == "Korea (North)" ~ "PRK",
+    fishing_entity == "Korea (South)" ~ "KOR",
+    fishing_entity == "Guam (USA)" ~ "GUM",
+    fishing_entity == "Hong Kong" ~ "HKG",
+    fishing_entity == "United Kingdom" ~ "GBR",
+    fishing_entity == "Taiwan" ~ "TWN",
+    fishing_entity == "Marshall Isl." ~ "MHL",
+    fishing_entity == "Congo (ex-Zaire)" ~ "COD",
+    fishing_entity == "Netherlands" ~ "NLD",
+    fishing_entity == "Curacao" ~ "CUW",
+    fishing_entity == "Sint Maarten" ~ "SXM",
+    fishing_entity == "St Martin" ~ "MAF",
+    fishing_entity == "Venezuela" ~ "VEN",
+    fishing_entity == "Cape Verde" ~ "CPV",
+    fishing_entity == "Congo, R. of" ~ "COG",
+    fishing_entity == "Iran" ~ "IRN",
+    fishing_entity == "Tanzania" ~ "TZA",
+    fishing_entity == "Timor Leste" ~ "TLS",
+    fishing_entity == "Micronesia" ~ "FSM",
+    fishing_entity == "Anguilla (UK)" ~ "AIA",
+    fishing_entity == "Saint Pierre & Miquelon (France)" ~ "SPM",
+    fishing_entity == "Bermuda (UK)" ~ "BMU",
+    fishing_entity == "Channel Isl. (UK)" ~ "GBR", # was NA, assigned to UK
+    fishing_entity == "Guadeloupe  (France)" ~ "GLP",
+    fishing_entity == "Martinique (France)" ~ "MTQ",
+    fishing_entity == "Aruba (Netherlands)" ~ "ABW",
+    fishing_entity == "Bonaire (Netherlands)" ~ "BES",
+    fishing_entity == "British Virgin Isl. (UK)" ~ "VGB",
+    fishing_entity == "Cayman Isl. (UK)" ~ "CYM",
+    fishing_entity == "Montserrat (UK)" ~ "MSR",
+    fishing_entity == "Puerto Rico (USA)" ~ "PRI",
+    fishing_entity == "Saba and Saint Eustaius (Netherlands)" ~ "BES", # lumped with Bonaire
+    fishing_entity == "St Barthelemy (France)" ~ "BLM",
+    fishing_entity == "Turks & Caicos Isl. (UK)" ~ "TCA",
+    fishing_entity == "US Virgin Isl." ~ "VIR",
+    fishing_entity == "Ascension Isl. (UK)" ~ "SHN",
+    fishing_entity == "Saint Helena (UK)" ~ "SHN",
+    fishing_entity == "Tristan da Cunha Isl. (UK)" ~ "SHN",
+    fishing_entity == "Falkland Isl. (UK)" ~ "FLK",
+    fishing_entity == "Brit. Indian Ocean Terr. (UK)" ~ "IOT",
+    fishing_entity == "Mayotte (France)" ~ "MYT",
+    fishing_entity == "Réunion (France)" ~ "REU",
+    fishing_entity == "Christmas Isl. (Australia)" ~ "CXR",
+    fishing_entity == "Cocos (Keeling) Isl. (Australia)" ~ "CCK",
+    fishing_entity == "New Caledonia (France)" ~ "NCL",
+    fishing_entity == "North Marianas (USA)" ~ "MNP",
+    fishing_entity == "Solomon Isl." ~ "SLB",
+    fishing_entity == "Tokelau (New Zealand)" ~ "TKL",
+    fishing_entity == "Wallis & Futuna Isl. (France)" ~ "WLF",
+    fishing_entity == "Niue (New Zealand)" ~ "NIU",
+    fishing_entity == "Norfolk Isl. (Australia)" ~ "NFK",
+    fishing_entity == "Pitcairn (UK)" ~ "PCN",
+    fishing_entity == "Faeroe Isl. (Denmark)" ~ "DNK", # assumption
+    fishing_entity == "Azores Isl. (Portugal)" ~ "PRT", # assumption
+    fishing_entity == "Madeira Isl. (Portugal)" ~ "PRT", # assumption
+    fishing_entity == "Unknown Fishing Country" ~ "UNK", # UNKNOWN
+    fishing_entity == "USA" ~ "USA",
+    fishing_entity == "Saint Vincent & the Grenadines" ~ "VCT",
+    fishing_entity == "Antigua & Barbuda" ~ "ATG",
+    fishing_entity == "Saint Kitts & Nevis" ~ "KNA",
+    fishing_entity == "Trinidad & Tobago" ~ "TTO",
+    fishing_entity == "Sao Tome & Principe" ~ "STP",
+    TRUE ~ iso3_code  # Keep other values unchanged
+  ))
+
+flag_key <- full_join(iso_flags, flags_joined, by = "iso3_code") %>%
+  rename(sau_name = fishing_entity,
+         fao_name = name_en)
+
+write_csv(flag_key, file.path("/capstone/seamissions/checkpoint/flag_key.csv"))
+```
+
+
+
+OLD
+
+
+
+OLD
+
+```{r}
+emissions_sau_joined <- left_join(emissions_partitioned_grouped, sau_catch_summary, by = c("zone", "year", "flag"))
+
+# warning for missing catch
+catch_before <- sum(sau_catch_summary$sau_catch_tons, na.rm = TRUE)
+catch_after <- sum(emissions_sau_joined$sau_catch_tons, na.rm = TRUE)
+change_catch <- (catch_before - catch_after)/catch_before
+
+if(change_catch > 0) {
+  warning(paste0(change_catch*100, "% of catch (in tons) lost in full dataset during join."))
+}
+
+# SAU catch loss by region
+regions <- c(18, 21, 27, 31, 34, 47, 48, 51, 57, 58, 61, 67, 71, 77, 81, 87, 88)
+
+for(x in regions) {
+  # Filter for zone
+  sau_region <- sau_catch_summary %>%
+    filter(zone == x)
+  joined_region <- emissions_sau_joined %>%
+    filter(zone == x)
+  
+  # Calculate loss
+  catch_before <- sum(sau_region$sau_catch_tons, na.rm = TRUE)
+  catch_after <- sum(joined_region$sau_catch_tons, na.rm = TRUE)
+  change_catch <- (catch_before - catch_after)/catch_before
+  
+  print(paste0("Zone ", x, " lost ~", round(change_catch*100, 0), "% of catch (in tons)."))
+  
+}
+```
+
+```{r}
+
+
+
+
+
+
+
+# FILL IN MISSING FLAGS
+flag_key <- flags_joined %>%
+  mutate(iso3_code = case_when(
+    sau_name == "Korea (North)" ~ "PRK",
+    sau_name == "Korea (South)" ~ "KOR",
+    sau_name == "Guam (USA)" ~ "GUM",
+    sau_name == "Hong Kong" ~ "HKG",
+    sau_name == "United Kingdom" ~ "GBR",
+    sau_name == "Taiwan" ~ "TWN",
+    sau_name == "Marshall Isl." ~ "MHL",
+    sau_name == "Congo (ex-Zaire)" ~ "COD",
+    sau_name == "Netherlands" ~ "NLD",
+    sau_name == "Curacao" ~ "CUW",
+    sau_name == "Sint Maarten" ~ "SXM",
+    sau_name == "St Martin" ~ "MAF",
+    sau_name == "Venezuela" ~ "VEN",
+    sau_name == "Cape Verde" ~ "CPV",
+    sau_name == "Congo, R. of" ~ "COG",
+    sau_name == "Iran" ~ "IRN",
+    sau_name == "Tanzania" ~ "TZA",
+    sau_name == "Timor Leste" ~ "TLS",
+    sau_name == "Micronesia" ~ "FSM",
+    sau_name == "Anguilla (UK)" ~ "AIA",
+    sau_name == "Saint Pierre & Miquelon (France)" ~ "SPM",
+    sau_name == "Bermuda (UK)" ~ "BMU",
+    sau_name == "Channel Isl. (UK)" ~ "GBR", # was NA, assigned to UK
+    sau_name == "Guadeloupe  (France)" ~ "GLP",
+    sau_name == "Martinique (France)" ~ "MTQ",
+    sau_name == "Aruba (Netherlands)" ~ "ABW",
+    sau_name == "Bonaire (Netherlands)" ~ "BES",
+    sau_name == "British Virgin Isl. (UK)" ~ "VGB",
+    sau_name == "Cayman Isl. (UK)" ~ "CYM",
+    sau_name == "Montserrat (UK)" ~ "MSR",
+    sau_name == "Puerto Rico (USA)" ~ "PRI",
+    sau_name == "Saba and Saint Eustaius (Netherlands)" ~ "BES", # lumped with Bonaire
+    sau_name == "St Barthelemy (France)" ~ "BLM",
+    sau_name == "Turks & Caicos Isl. (UK)" ~ "TCA",
+    sau_name == "US Virgin Isl." ~ "VIR",
+    sau_name == "Ascension Isl. (UK)" ~ "SHN",
+    sau_name == "Saint Helena (UK)" ~ "SHN",
+    sau_name == "Tristan da Cunha Isl. (UK)" ~ "SHN",
+    sau_name == "Falkland Isl. (UK)" ~ "FLK",
+    sau_name == "Brit. Indian Ocean Terr. (UK)" ~ "IOT",
+    sau_name == "Mayotte (France)" ~ "MYT",
+    sau_name == "Réunion (France)" ~ "REU",
+    sau_name == "Christmas Isl. (Australia)" ~ "CXR",
+    sau_name == "Cocos (Keeling) Isl. (Australia)" ~ "CCK",
+    sau_name == "New Caledonia (France)" ~ "NCL",
+    sau_name == "North Marianas (USA)" ~ "MNP",
+    sau_name == "Solomon Isl." ~ "SLB",
+    sau_name == "Tokelau (New Zealand)" ~ "TKL",
+    sau_name == "Wallis & Futuna Isl. (France)" ~ "WLF",
+    sau_name == "Niue (New Zealand)" ~ "NIU",
+    sau_name == "Norfolk Isl. (Australia)" ~ "NFK",
+    sau_name == "Pitcairn (UK)" ~ "PCN",
+    sau_name == "Faeroe Isl. (Denmark)" ~ "DNK", # assumption
+    sau_name == "Azores Isl. (Portugal)" ~ "PRT", # assumption
+    sau_name == "Madeira Isl. (Portugal)" ~ "PRT", # assumption
+    sau_name == "Unknown Fishing Country" ~ "UNK", # UNKNOWN
+    TRUE ~ iso3_code  # Keep other values unchanged
+  ))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+flags_to_fix_df <- tibble(sau_name = unique(sau_catch_summary$flag)) %>%
+  filter(nchar(sau_name) != 3) 
+
+flags_to_fix_df$iso3_code <- " "
+
+flags_to_fix_df <- flags_to_fix_df %>%
+  mutate(iso3_code = case_when(
+    sau_name == "Korea (North)" ~ "PRK",
+    sau_name == "Korea (South)" ~ "KOR",
+    sau_name == "Guam (USA)" ~ "GUM",
+    sau_name == "Hong Kong" ~ "HKG",
+    sau_name == "United Kingdom" ~ "GBR",
+    sau_name == "Taiwan" ~ "TWN",
+    sau_name == "Marshall Isl." ~ "MHL",
+    sau_name == "Congo (ex-Zaire)" ~ "COD",
+    sau_name == "Netherlands" ~ "NLD",
+    sau_name == "Curacao" ~ "CUW",
+    sau_name == "Sint Maarten" ~ "SXM",
+    sau_name == "St Martin" ~ "MAF",
+    sau_name == "Venezuela" ~ "VEN",
+    sau_name == "Cape Verde" ~ "CPV",
+    sau_name == "Congo, R. of" ~ "COG",
+    sau_name == "Iran" ~ "IRN",
+    sau_name == "Tanzania" ~ "TZA",
+    sau_name == "Timor Leste" ~ "TLS",
+    sau_name == "Micronesia" ~ "FSM",
+    sau_name == "Anguilla (UK)" ~ "AIA",
+    sau_name == "Saint Pierre & Miquelon (France)" ~ "SPM",
+    sau_name == "Bermuda (UK)" ~ "BMU",
+    sau_name == "Channel Isl. (UK)" ~ "GBR", # was NA, assigned to UK
+    sau_name == "Guadeloupe  (France)" ~ "GLP",
+    sau_name == "Martinique (France)" ~ "MTQ",
+    sau_name == "Aruba (Netherlands)" ~ "ABW",
+    sau_name == "Bonaire (Netherlands)" ~ "BES",
+    sau_name == "British Virgin Isl. (UK)" ~ "VGB",
+    sau_name == "Cayman Isl. (UK)" ~ "CYM",
+    sau_name == "Montserrat (UK)" ~ "MSR",
+    sau_name == "Puerto Rico (USA)" ~ "PRI",
+    sau_name == "Saba and Saint Eustaius (Netherlands)" ~ "BES", # lumped with Bonaire
+    sau_name == "St Barthelemy (France)" ~ "BLM",
+    sau_name == "Turks & Caicos Isl. (UK)" ~ "TCA",
+    sau_name == "US Virgin Isl." ~ "VIR",
+    sau_name == "Ascension Isl. (UK)" ~ "SHN",
+    sau_name == "Saint Helena (UK)" ~ "SHN",
+    sau_name == "Tristan da Cunha Isl. (UK)" ~ "SHN",
+    sau_name == "Falkland Isl. (UK)" ~ "FLK",
+    sau_name == "Brit. Indian Ocean Terr. (UK)" ~ "IOT",
+    sau_name == "Mayotte (France)" ~ "MYT",
+    sau_name == "Réunion (France)" ~ "REU",
+    sau_name == "Christmas Isl. (Australia)" ~ "CXR",
+    sau_name == "Cocos (Keeling) Isl. (Australia)" ~ "CCK",
+    sau_name == "New Caledonia (France)" ~ "NCL",
+    sau_name == "North Marianas (USA)" ~ "MNP",
+    sau_name == "Solomon Isl." ~ "SLB",
+    sau_name == "Tokelau (New Zealand)" ~ "TKL",
+    sau_name == "Wallis & Futuna Isl. (France)" ~ "WLF",
+    sau_name == "Niue (New Zealand)" ~ "NIU",
+    sau_name == "Norfolk Isl. (Australia)" ~ "NFK",
+    sau_name == "Pitcairn (UK)" ~ "PCN",
+    sau_name == "Faeroe Isl. (Denmark)" ~ "DNK", # assumption
+    sau_name == "Azores Isl. (Portugal)" ~ "PRT", # assumption
+    sau_name == "Madeira Isl. (Portugal)" ~ "PRT", # assumption
+    sau_name == "Unknown Fishing Country" ~ "UNK", # UNKNOWN
+    TRUE ~ iso3_code  # Keep other values unchanged
+  ))
+
+flag_key <- left_join(iso_flags, flags_to_fix_df) %>%
+  mutate(sau_name = ifelse(is.na(sau_name), fao_name, sau_name))
+
+write_csv(flag_key, file.path("/capstone/seamissions/checkpoint/flag_key.csv"))
+
+lost_flags <- lost_flags %>%
+  mutate(lost_fao_flags = str_wrap(lost_fao_flags, width = 40),
+         lost_sau_flags = str_wrap(lost_sau_flags, width = 40))
+
+df <- lost_flags %>%
+  rowwise() %>%
+  mutate(
+    col1_split = str_split(lost_fao_flags, ",\\s*"),
+    col2_split = str_split(lost_sau_flags, ",\\s*"),
+    common_items = list(intersect(unlist(col1_split), unlist(col2_split))),
+    common_str = paste(common_items, collapse = ", ")
+  ) %>%
+  ungroup()
+
+lost_flags$same_flags <- df$common_str
+```
+
+```{r}
+
+```
+
