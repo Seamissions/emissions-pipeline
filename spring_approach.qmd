@@ -69,7 +69,9 @@ for (i in seq_along(file_names)) {
 # Create `year_month` column
 broadcasting <- broadcasting %>%
   mutate(date = lubridate::ymd(month)) %>%
-  mutate(year_month = format(date, '%Y-%m'))
+  mutate(year_month = format(date, '%Y-%m')) %>%
+  # Replace NA values with "UNK"
+  mutate(flag = ifelse(is.na(flag), "UNK", flag))
   
 non_broadcasting <- non_broadcasting %>%
   mutate(date = lubridate::ymd(month)) %>%
@@ -174,7 +176,9 @@ emissions_filtered <- emissions %>%
             co_mt = sum(emissions_co_mt, na.rm = TRUE),
             vocs_mt = sum(emissions_vocs_mt, na.rm = TRUE),
             pm2_5_mt = sum(emissions_pm2_5_mt, na.rm = TRUE),
-            pm10_mt = sum(emissions_pm10_mt, na.rm = TRUE))
+            pm10_mt = sum(emissions_pm10_mt, na.rm = TRUE)) %>%
+  # Filter years to match non-broadcasting emissions
+  filter(year > 2015)
 
 # Convert lat/long to point geometry (degrees)
 emissions_sf <- emissions_filtered %>%
