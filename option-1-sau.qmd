@@ -77,7 +77,8 @@ sau_catch_data <- bind_rows(sau_regions)
 sau_catch_summary <- sau_catch_data %>%
   group_by(zone, year, flag, scientific_name) %>%
   summarise(sau_catch_tons = sum(tonnes, na.rm = TRUE)) %>%
-  rename(species = scientific_name) 
+  rename(species = scientific_name) %>%
+  filter(year > 2015)
 ```
 
 ## Partition Emissions by Region and Combine (Option 1)
@@ -98,20 +99,20 @@ option_1 <- vector("list", length = length(regions))
 for (i in seq_along(regions)){
   
   # Make list of flags in FAO catch data by Region #
-  sau_catch_flags <- sau_catch_summary %>%
-    filter(zone == regions[i])
-  
-  sau_catch_flags <- unique(sau_catch_flags$flag)
-  
-  # Make a list of flags in emissions data by Region #
-  emissions_flags <- emissions_partitioned_grouped %>%
-    filter(zone == regions[i])
-  
-  emissions_flags <- unique(emissions_flags$flag) # TABLE 2: flags with BROADCASTING emissions
-  
-  # Make a list of flags with non-broadcasting emissions ONLY by Region # (those flags in FAO catch but not in emissions)
-  non_broad_only_flags <- setdiff(sau_catch_flags, emissions_flags)
-  
+  # sau_catch_flags <- sau_catch_summary %>%
+  #   filter(zone == regions[i])
+  # 
+  # sau_catch_flags <- unique(sau_catch_flags$flag)
+  # 
+  # # Make a list of flags in emissions data by Region #
+  # emissions_flags <- emissions_partitioned_grouped %>%
+  #   filter(zone == regions[i])
+  # 
+  # emissions_flags <- unique(emissions_flags$flag) # TABLE 2: flags with BROADCASTING emissions
+  # 
+  # # Make a list of flags with non-broadcasting emissions ONLY by Region # (those flags in FAO catch but not in emissions)
+  # non_broad_only_flags <- setdiff(sau_catch_flags, emissions_flags)
+  # 
   # Make a list of broadcasting only flags? check in final df?
   
   # -------- TABLE 1 --------
@@ -124,7 +125,8 @@ for (i in seq_along(regions)){
     group_by(zone, year) %>%
     mutate(region_total_tons = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
     mutate(prop_sau_catch = country_total_tons_by_species/region_total_tons) %>%
-    select(-region_total_tons)
+    select(-region_total_tons) %>%
+    filter(country_total_tons_by_species > 0)
   
   # 1.2 Summarise non-broadcasting emissions by Region #
   sau_summary_non_broadcasting <- emissions_partitioned_grouped %>%
@@ -208,6 +210,7 @@ for (i in seq_along(regions)){
     group_by(zone, year, flag) %>%
     mutate(country_total_tons = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
     mutate(prop_species_catch = country_total_tons_by_species/country_total_tons) %>%
+    filter(country_total_tons_by_species > 0) %>%
     select(-c(country_total_tons_by_species, country_total_tons)) %>%
     filter(!is.na(prop_species_catch))
   
@@ -365,220 +368,5 @@ flag_key <- full_join(iso_flags, flags_joined, by = "iso3_code") %>%
          fao_name = name_en)
 
 write_csv(flag_key, file.path("/capstone/seamissions/checkpoint/flag_key.csv"))
-```
-
-
-
-OLD
-
-
-
-OLD
-
-```{r}
-emissions_sau_joined <- left_join(emissions_partitioned_grouped, sau_catch_summary, by = c("zone", "year", "flag"))
-
-# warning for missing catch
-catch_before <- sum(sau_catch_summary$sau_catch_tons, na.rm = TRUE)
-catch_after <- sum(emissions_sau_joined$sau_catch_tons, na.rm = TRUE)
-change_catch <- (catch_before - catch_after)/catch_before
-
-if(change_catch > 0) {
-  warning(paste0(change_catch*100, "% of catch (in tons) lost in full dataset during join."))
-}
-
-# SAU catch loss by region
-regions <- c(18, 21, 27, 31, 34, 47, 48, 51, 57, 58, 61, 67, 71, 77, 81, 87, 88)
-
-for(x in regions) {
-  # Filter for zone
-  sau_region <- sau_catch_summary %>%
-    filter(zone == x)
-  joined_region <- emissions_sau_joined %>%
-    filter(zone == x)
-  
-  # Calculate loss
-  catch_before <- sum(sau_region$sau_catch_tons, na.rm = TRUE)
-  catch_after <- sum(joined_region$sau_catch_tons, na.rm = TRUE)
-  change_catch <- (catch_before - catch_after)/catch_before
-  
-  print(paste0("Zone ", x, " lost ~", round(change_catch*100, 0), "% of catch (in tons)."))
-  
-}
-```
-
-```{r}
-
-
-
-
-
-
-
-# FILL IN MISSING FLAGS
-flag_key <- flags_joined %>%
-  mutate(iso3_code = case_when(
-    sau_name == "Korea (North)" ~ "PRK",
-    sau_name == "Korea (South)" ~ "KOR",
-    sau_name == "Guam (USA)" ~ "GUM",
-    sau_name == "Hong Kong" ~ "HKG",
-    sau_name == "United Kingdom" ~ "GBR",
-    sau_name == "Taiwan" ~ "TWN",
-    sau_name == "Marshall Isl." ~ "MHL",
-    sau_name == "Congo (ex-Zaire)" ~ "COD",
-    sau_name == "Netherlands" ~ "NLD",
-    sau_name == "Curacao" ~ "CUW",
-    sau_name == "Sint Maarten" ~ "SXM",
-    sau_name == "St Martin" ~ "MAF",
-    sau_name == "Venezuela" ~ "VEN",
-    sau_name == "Cape Verde" ~ "CPV",
-    sau_name == "Congo, R. of" ~ "COG",
-    sau_name == "Iran" ~ "IRN",
-    sau_name == "Tanzania" ~ "TZA",
-    sau_name == "Timor Leste" ~ "TLS",
-    sau_name == "Micronesia" ~ "FSM",
-    sau_name == "Anguilla (UK)" ~ "AIA",
-    sau_name == "Saint Pierre & Miquelon (France)" ~ "SPM",
-    sau_name == "Bermuda (UK)" ~ "BMU",
-    sau_name == "Channel Isl. (UK)" ~ "GBR", # was NA, assigned to UK
-    sau_name == "Guadeloupe  (France)" ~ "GLP",
-    sau_name == "Martinique (France)" ~ "MTQ",
-    sau_name == "Aruba (Netherlands)" ~ "ABW",
-    sau_name == "Bonaire (Netherlands)" ~ "BES",
-    sau_name == "British Virgin Isl. (UK)" ~ "VGB",
-    sau_name == "Cayman Isl. (UK)" ~ "CYM",
-    sau_name == "Montserrat (UK)" ~ "MSR",
-    sau_name == "Puerto Rico (USA)" ~ "PRI",
-    sau_name == "Saba and Saint Eustaius (Netherlands)" ~ "BES", # lumped with Bonaire
-    sau_name == "St Barthelemy (France)" ~ "BLM",
-    sau_name == "Turks & Caicos Isl. (UK)" ~ "TCA",
-    sau_name == "US Virgin Isl." ~ "VIR",
-    sau_name == "Ascension Isl. (UK)" ~ "SHN",
-    sau_name == "Saint Helena (UK)" ~ "SHN",
-    sau_name == "Tristan da Cunha Isl. (UK)" ~ "SHN",
-    sau_name == "Falkland Isl. (UK)" ~ "FLK",
-    sau_name == "Brit. Indian Ocean Terr. (UK)" ~ "IOT",
-    sau_name == "Mayotte (France)" ~ "MYT",
-    sau_name == "Réunion (France)" ~ "REU",
-    sau_name == "Christmas Isl. (Australia)" ~ "CXR",
-    sau_name == "Cocos (Keeling) Isl. (Australia)" ~ "CCK",
-    sau_name == "New Caledonia (France)" ~ "NCL",
-    sau_name == "North Marianas (USA)" ~ "MNP",
-    sau_name == "Solomon Isl." ~ "SLB",
-    sau_name == "Tokelau (New Zealand)" ~ "TKL",
-    sau_name == "Wallis & Futuna Isl. (France)" ~ "WLF",
-    sau_name == "Niue (New Zealand)" ~ "NIU",
-    sau_name == "Norfolk Isl. (Australia)" ~ "NFK",
-    sau_name == "Pitcairn (UK)" ~ "PCN",
-    sau_name == "Faeroe Isl. (Denmark)" ~ "DNK", # assumption
-    sau_name == "Azores Isl. (Portugal)" ~ "PRT", # assumption
-    sau_name == "Madeira Isl. (Portugal)" ~ "PRT", # assumption
-    sau_name == "Unknown Fishing Country" ~ "UNK", # UNKNOWN
-    TRUE ~ iso3_code  # Keep other values unchanged
-  ))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-flags_to_fix_df <- tibble(sau_name = unique(sau_catch_summary$flag)) %>%
-  filter(nchar(sau_name) != 3) 
-
-flags_to_fix_df$iso3_code <- " "
-
-flags_to_fix_df <- flags_to_fix_df %>%
-  mutate(iso3_code = case_when(
-    sau_name == "Korea (North)" ~ "PRK",
-    sau_name == "Korea (South)" ~ "KOR",
-    sau_name == "Guam (USA)" ~ "GUM",
-    sau_name == "Hong Kong" ~ "HKG",
-    sau_name == "United Kingdom" ~ "GBR",
-    sau_name == "Taiwan" ~ "TWN",
-    sau_name == "Marshall Isl." ~ "MHL",
-    sau_name == "Congo (ex-Zaire)" ~ "COD",
-    sau_name == "Netherlands" ~ "NLD",
-    sau_name == "Curacao" ~ "CUW",
-    sau_name == "Sint Maarten" ~ "SXM",
-    sau_name == "St Martin" ~ "MAF",
-    sau_name == "Venezuela" ~ "VEN",
-    sau_name == "Cape Verde" ~ "CPV",
-    sau_name == "Congo, R. of" ~ "COG",
-    sau_name == "Iran" ~ "IRN",
-    sau_name == "Tanzania" ~ "TZA",
-    sau_name == "Timor Leste" ~ "TLS",
-    sau_name == "Micronesia" ~ "FSM",
-    sau_name == "Anguilla (UK)" ~ "AIA",
-    sau_name == "Saint Pierre & Miquelon (France)" ~ "SPM",
-    sau_name == "Bermuda (UK)" ~ "BMU",
-    sau_name == "Channel Isl. (UK)" ~ "GBR", # was NA, assigned to UK
-    sau_name == "Guadeloupe  (France)" ~ "GLP",
-    sau_name == "Martinique (France)" ~ "MTQ",
-    sau_name == "Aruba (Netherlands)" ~ "ABW",
-    sau_name == "Bonaire (Netherlands)" ~ "BES",
-    sau_name == "British Virgin Isl. (UK)" ~ "VGB",
-    sau_name == "Cayman Isl. (UK)" ~ "CYM",
-    sau_name == "Montserrat (UK)" ~ "MSR",
-    sau_name == "Puerto Rico (USA)" ~ "PRI",
-    sau_name == "Saba and Saint Eustaius (Netherlands)" ~ "BES", # lumped with Bonaire
-    sau_name == "St Barthelemy (France)" ~ "BLM",
-    sau_name == "Turks & Caicos Isl. (UK)" ~ "TCA",
-    sau_name == "US Virgin Isl." ~ "VIR",
-    sau_name == "Ascension Isl. (UK)" ~ "SHN",
-    sau_name == "Saint Helena (UK)" ~ "SHN",
-    sau_name == "Tristan da Cunha Isl. (UK)" ~ "SHN",
-    sau_name == "Falkland Isl. (UK)" ~ "FLK",
-    sau_name == "Brit. Indian Ocean Terr. (UK)" ~ "IOT",
-    sau_name == "Mayotte (France)" ~ "MYT",
-    sau_name == "Réunion (France)" ~ "REU",
-    sau_name == "Christmas Isl. (Australia)" ~ "CXR",
-    sau_name == "Cocos (Keeling) Isl. (Australia)" ~ "CCK",
-    sau_name == "New Caledonia (France)" ~ "NCL",
-    sau_name == "North Marianas (USA)" ~ "MNP",
-    sau_name == "Solomon Isl." ~ "SLB",
-    sau_name == "Tokelau (New Zealand)" ~ "TKL",
-    sau_name == "Wallis & Futuna Isl. (France)" ~ "WLF",
-    sau_name == "Niue (New Zealand)" ~ "NIU",
-    sau_name == "Norfolk Isl. (Australia)" ~ "NFK",
-    sau_name == "Pitcairn (UK)" ~ "PCN",
-    sau_name == "Faeroe Isl. (Denmark)" ~ "DNK", # assumption
-    sau_name == "Azores Isl. (Portugal)" ~ "PRT", # assumption
-    sau_name == "Madeira Isl. (Portugal)" ~ "PRT", # assumption
-    sau_name == "Unknown Fishing Country" ~ "UNK", # UNKNOWN
-    TRUE ~ iso3_code  # Keep other values unchanged
-  ))
-
-flag_key <- left_join(iso_flags, flags_to_fix_df) %>%
-  mutate(sau_name = ifelse(is.na(sau_name), fao_name, sau_name))
-
-write_csv(flag_key, file.path("/capstone/seamissions/checkpoint/flag_key.csv"))
-
-lost_flags <- lost_flags %>%
-  mutate(lost_fao_flags = str_wrap(lost_fao_flags, width = 40),
-         lost_sau_flags = str_wrap(lost_sau_flags, width = 40))
-
-df <- lost_flags %>%
-  rowwise() %>%
-  mutate(
-    col1_split = str_split(lost_fao_flags, ",\\s*"),
-    col2_split = str_split(lost_sau_flags, ",\\s*"),
-    common_items = list(intersect(unlist(col1_split), unlist(col2_split))),
-    common_str = paste(common_items, collapse = ", ")
-  ) %>%
-  ungroup()
-
-lost_flags$same_flags <- df$common_str
-```
-
-```{r}
-
 ```
 

@@ -1,0 +1,1013 @@
+---
+title: "FAO Regions"
+format: html
+editor: visual
+editor_options: 
+  chunk_output_type: console
+---
+
+# FAO Regions
+
+### Load packages
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(here)
+library(gghighlight)
+library(lubridate)
+library(ggwordcloud)
+library(glue)
+library(sf)
+library(dplyr)
+```
+
+### Import and clean data
+
+```{r}
+# Turn off scientific notation
+options(scipen=999)
+
+# -------- EMISSIONS --------
+#filepath <- paste0(project_directory, "/checkpoint/emissions.csv")
+
+# import emissions data
+# workbench-2
+emissions <- read_csv(file.path("/capstone/seamissions/checkpoint/emissions.csv"), show_col_types = FALSE)
+
+# local
+#emissions <- read_csv(file.path("/Users/carmenhoyt/Documents/UCSB/Capstone/Data/checkpoint/emissions.csv"), show_col_types = FALSE)
+
+# equal earth 8857
+#my_crs <- st_crs("+proj=eqearth +datum=WGS84 +units=m +no_defs")
+
+# OR mollweide projection 54009 but not recognized
+#mollweide_proj <- "+proj=moll +lon_0=0 +datum=WGS84 +units=m +no_defs"
+#emissions_sf <- st_set_crs(emissions_sf, mollweide_proj) # transform?
+
+# filter for desired variables
+emissions_filtered <- emissions %>%
+  # make year column
+  mutate(year = as.integer(substr(year_month, 1, 4))) %>%
+  # group by pixel, year, and vessel_class(?)
+  group_by(lat_bin, lon_bin, year, flag, vessel_class) %>%
+  # sum co2 (ADD OTHER POLLUTANTS HERE)
+  summarise(total_co2_mt = sum(total_co2, na.rm = TRUE))
+
+# convert lat/long to point geometry
+emissions_sf <- emissions_filtered %>%
+  # add lat and lon bin to preserve for merge 
+  dplyr::mutate(lat = lat_bin, lon = lon_bin) %>%
+  st_as_sf(coords = c("lon", "lat"), crs = 4326) # import as WGS (unit = degrees)
+
+# create grid throughout extent of emissions_sf from point geometry
+emissions_grid <- emissions_sf %>%
+  st_make_grid(cellsize = c(1,1),
+               what = "polygons") %>%
+  st_sf() %>%
+  st_make_valid()
+  
+# spatially join emissions data to the grid
+emissions_grid_sf <- st_join(emissions_grid, emissions_sf, left = FALSE) %>%
+  # transform to Equal Earth
+  st_transform(6933)
+
+# add area column before intersection
+emissions_grid_sf$area_before <- st_area(emissions_grid_sf)
+
+# -------- FAO REGIONS --------
+# import regions data (set same crs)
+# workbench-2
+fao_regions <- st_read(file.path("/capstone/seamissions/fao_region_shapefile")) %>%
+  # transform to same crs as grid
+  st_transform(st_crs(emissions_grid_sf)) %>%
+  # fix geometries
+  st_make_valid()
+
+# local
+# fao_regions <- st_read(file.path("/Users/carmenhoyt/Documents/UCSB/Capstone/Data/fao_region_shapefile")) %>%
+#   st_transform(st_crs(emissions_grid_sf)) %>%
+#   st_make_valid()
+
+# confirm crs match
+st_crs(emissions_grid_sf) == st_crs(fao_regions)
+
+# -------- FAO CATCH --------
+# import catch data
+# workbench-2
+fao_catch <- read_csv(file.path("/capstone/seamissions/checkpoint/fao_catch.csv"), show_col_types = FALSE) %>%
+  # select desired columns
+  select(area_code,
+         period,
+         iso3_code,
+         official_name_en,
+         scientific_name,
+         value) %>%
+  # rename for consistency
+  rename(zone = area_code,
+         year = period,
+         flag = iso3_code,
+         catch = value,
+         official_name = official_name_en) %>%
+  # filter for >2015 to match emissions data
+  filter(year >= 2015) %>%
+  group_by(year, zone, flag, scientific_name, official_name) %>%
+  summarise(total_catch_t = sum(catch, na.rm = TRUE)) %>%
+  mutate(zone = as.integer(zone),
+         year = as.integer(year))
+
+# local
+#fao_catch <- read_csv(file.path("/Users/carmenhoyt/Documents/UCSB/Capstone/Data/checkpoint/fao_catch.csv"), show_col_types = FALSE)
+
+# -------- CHECKPOINT --------
+# save locally
+#st_write(emissions_grid_sf, here("checkpoint", "emissions_grid_sf.gpkg"))
+
+# save to server
+#st_write(emissions_grid_sf, file.path("/capstone/seamissions/checkpoint/emissions_grid_sf.gpkg"), delete_dsn = TRUE)
+
+#st_write(fao_regions, file.path("/capstone/seamissions/checkpoint/fao_regions/fao_regions.shp"), delete_dsn = TRUE)
+```
+
+```{r}
+# cut out grid cells that overlap with zones (st_intersection)
+emissions_zones <- st_intersection(emissions_grid_sf, fao_regions) #sparse = FALSE)
+
+emissions_zones_intersect <- st_intersects(emissions_grid_sf, fao_regions)
+
+# add area column after intersection
+emissions_zones$area_after <- st_area(emissions_zones)
+
+# calculate area proportion
+emissions_zones <- emissions_zones %>%
+  mutate(area_prop = as.numeric(area_after/area_before)) %>%
+  # multiply emissions by proportion
+  mutate(co2_prop = total_co2 * area_prop) %>%
+  select(-c(total_co2, area_prop, area_before, area_after))
+
+# drop geometry
+emissions_zones_no_geo <- emissions_zones %>%
+  st_drop_geometry()
+
+# -------- CHECKPOINT --------
+#write_csv(emissions_zones_no_geo, file.path("/capstone/seamissions/checkpoint/emissions_zones_no_geo_vessel.csv"))
+#st_write(emissions_zones, file.path("/capstone/seamissions/checkpoint/emissions_zones.gpkg"))
+#write_csv(fao_catch_cleaned, file.path("/capstone/seamissions/checkpoint/fao_catch_cleaned.csv"))
+
+emissions_zones_no_geo <- read_csv(file.path("/capstone/seamissions/checkpoint/emissions_zones_no_geo.csv"), show_col_types = FALSE)
+
+#fao_catch <- read_csv(file.path("/capstone/seamissions/checkpoint/fao_catch_cleaned.csv"), show_col_types = FALSE)
+
+```
+
+```{r}
+# take a look
+test <- emissions_zones_no_geo %>%
+  group_by(zone, year, flag) %>%
+  summarise(co2 = sum(co2_prop))
+
+# visualize co2 by region
+emissions_zones %>%
+  group_by(zone, year) %>%
+  summarise(co2 = sum(co2_prop)) %>%
+  group_by(zone) %>%
+  summarise(mean_co2 = mean(co2)) %>%
+  ggplot() +
+    geom_sf(aes(fill = mean_co2)) +
+  labs(fill = "Mean CO2 (mt)") +
+  scale_fill_viridis_c(direction = -1) +
+  theme_void()
+```
+
+## Decision points:
+
+-   what attributes do we want to filter emissions for? do just `flag`, `year`, and `pollutants` make sense? maybe vessel class, but we cannot confidently say vessel class == species
+-   what attributes do we want to filter fao catch data for? just `flag`, `year`, and `catch`?
+-   how do we want to treat flag mis-match? merge flags?
+-   how do we want to join catch and emissions? which is the primary dataset and how does that affect "lost" emissions
+
+FAO flags **NOT** in emissions:
+
+-   IOT (British Indian Ocean Territory)
+-   CSK (Czechoslovakia)
+-   ETH (Ethiopia)
+-   GUM (Guam)
+-   LSO (Lesotho)
+-   MYT (Mayotte)
+-   ANT (Netherlands Antilles)
+-   NFK (Norfold Island)
+-   BLM (Saint Barthelemy)
+-   MAF (Saint Martin (french))
+-   SRB (Serbia)
+-   SCG (Serbia and Montenegro)
+-   SXM (Sint Maarten (dutch))
+-   SVK (Slovakia)
+-   SSD (South Sudan)
+-   SJM (Svalbard and Jan Mayen Islands)
+-   TLS (Timor-Leste)
+-   TKL (Tokelau)
+-   UGA (Uganda)
+-   SUN (Un. Sov. Soc. Rep.)
+-   ESH (Western Sahara)
+-   YUG (Yugoslavia SFR)
+-   EAZ (United Republic of Tanzania, Zanzibar)
+
+Emissions flags **NOT** in FAO:
+
+-   UNK (unknown)
+-   VAT (Holy See)
+-   CXR (Christmas Island)
+-   CCK (Cocos (Keeling) Islands)
+
+### Proof of concept for Zone 31:
+
+```{r}
+# filter for zone 31
+zone_31 <- emissions_zones %>%
+  filter(zone == 31)
+
+joined_31 <- left_join(zone_31, fao_catch, by = c("year", "flag", "zone")) %>%
+  select(-c("lat_bin", "lon_bin"))
+
+zone_31 <- emissions_zones_intersect %>%
+  filter(zone == 31)
+
+plot(st_geometry(zone_31))
+
+plot(st)
+
+# cut out grid cells that overlap with zone 31
+#emissions_zone_31 <- st_intersection(emissions_grid_sf, zone_31) #sparse = FALSE)
+
+# add area column
+#emissions_zone_31$area_after <- st_area(emissions_zone_31)
+
+# emissions_zone_31 <- zone_31 %>%
+#   mutate(area_prop = as.numeric(area_after/area_before)) %>%
+#   mutate(co2_prop = total_co2 * area_prop) %>%
+#   select(-c(total_co2, area_prop, area_before, area_after))
+
+# look at area breakdown to see if makes sense (mostly 1s)
+# areas_31 <- emissions_zone_31 %>%
+#   group_by(area_prop) %>%
+#   summarise(count = n()) %>%
+#   arrange(desc(count))
+
+# Find which grid polygons intersect with the large polygon
+overlapping_pixels <- st_intersects(emissions_grid_sf, zone_31, sparse = FALSE)
+
+# Select grid polygons that have an intersection (TRUE values)
+full_grid_31 <- emissions_grid_sf[overlapping_pixels, ]
+
+# visualize the overlapping grid (st_intersects)
+plot(st_geometry(zone_31))
+plot(st_geometry(full_grid_31), add = TRUE)
+
+# visualize the cut grid (st_intersection)
+plot(st_geometry(zone_31))
+plot(st_geometry(emissions_zone_31), add = TRUE)
+```
+
+```{r}
+# -------- ZONE 31 FAO EMISSIONS --------
+emissions_zone_31_no_geo <- emissions_zone_31 %>%
+  st_drop_geometry()
+
+fao_catch_cleaned_31 <- fao_catch_cleaned %>%
+  filter(zone == 31)
+
+# decision point
+joined_31 <- left_join(emissions_zone_31_no_geo, fao_catch_cleaned_31, by = c("year", "flag", "zone"))
+
+joined_31 <- left_join(fao_catch_cleaned_31, emissions_zone_31_no_geo, by = c("year", "flag", "zone"))
+```
+
+### Zone 41:
+
+```{r}
+# -------- 41 --------
+# filter for zone 41
+zone_31 <- fao_regions %>%
+  filter(zone == 31)
+
+emissions_zone_31 <- st_intersects(emissions_grid_sf, zone_31, sparse = FALSE) # sparse = FALSE)
+
+plot(st_geometry(zone_31))
+plot(st_geometry(emissions_zone_31_tion), add = TRUE)
+plot(st_geometry(emissions_zone_31), add = TRUE)
+
+emissions_zone_31 <- emissions_zone_31 %>%
+  st_as_sf()
+
+emissions_zone_31_tion <- st_intersection(emissions_grid_sf, zone_31)
+
+sf2_intersections <- zone_31[unlist(emissions_zone_31), ]
+plot(st_geometry(sf2_intersections))  # Now works
+
+
+
+# cut out grid cells that overlap with zone 41
+emissions_zone_41 <- st_intersects(emissions_grid_sf, zone_41) # sparse = FALSE)
+
+plot(st_geometryemissions_zone_41)
+
+
+# add area column
+emissions_zone_41$area_after <- st_area(emissions_zone_41)
+
+emissions_zone_41 <- emissions_zone_41 %>%
+  mutate(area_prop = as.numeric(area_after/area_before)) %>%
+  mutate(co2_prop = total_co2 * area_prop) %>%
+  select(-c(total_co2, area_prop, area_before, area_after))
+
+# look at area breakdown to see if makes sense (mostly 1s)
+# areas_41 <- emissions_zone_41 %>%
+#   group_by(area) %>%
+#   summarise(count = n()) %>%
+#   arrange(desc(count))
+
+# Find which grid polygons intersect with the large polygon
+overlapping_pixels <- st_intersects(emissions_grid_sf, zone_41, sparse = FALSE)
+
+# Select grid polygons that have an intersection (TRUE values)
+full_grid_41 <- emissions_grid_sf[overlapping_pixels, ]
+
+# visualize the overlapping grid (st_intersects)
+plot(st_geometry(zone_41))
+plot(st_geometry(full_grid_41), add = TRUE)
+
+# visualize the cut grid (st_intersection)
+plot(st_geometry(zone_41))
+plot(st_geometry(emissions_zone_41), add = TRUE)
+```
+
+```{r}
+#| code-summary: Expand code
+
+# Define emissions as sf object
+# emissions_sf <- emissions %>%
+#   st_as_sf(coords = c("lon_bin", "lat_bin"), crs = "54009") #4326 
+
+# --- Prepare emissions and FAO data ----
+emissions_sf <- emissions %>%
+  # add lat and lon bin to preserve for merge 
+  dplyr::mutate(lat = lat_bin, lon = lon_bin) %>%
+  st_as_sf(coords = c("lon", "lat"), crs = "54009")  
+
+# for sequoia
+#fao_regions <- st_read(file.path("/home/emlab/projects/current-projects/ocean-ghg-fisheries/data/raw/world_fao_zones/world_fao_zones.shp"), crs = st_crs(emissions_sf)) #|> st_make_valid()
+
+# for workbench
+fao_regions <- st_read(file.path("/capstone/seamissions/data/fao_region_shapefile"), crs = st_crs(emissions_sf))
+```
+
+```{r}
+# ---- Extract fao zone for emissions points ----
+
+# Find which grid cell each point falls into
+point_grid_intersections <- st_intersects(points, grid)
+
+# Assign the grid cell ID to each point
+points$grid_id <- sapply(point_grid_intersections, function(x) ifelse(length(x) > 0, x[1], NA))
+```
+
+1578367
+
+```{r}
+
+# subset sf for speed
+subset_sf <- emissions_sf %>%
+  filter(lat_bin %in% c(36:40)) %>%
+  filter(lon_bin %in% c(-40:-45))
+
+# ---- Step 1: Convert lat/long points to grid of polygons (1x1 degree cells) & make a key ----
+emissions_grid <- subset_sf %>%
+  # select lat & lon columns
+  dplyr::select(lat_bin, lon_bin)
+
+plot(st_geometry(emissions_grid))
+
+#joined_grid <- st_join(emissions_grid, fao_regions, left = FALSE)
+#unique(joined_grid$zone)
+
+# check this step!
+joined_grid <- st_join(emissions_grid, fao_regions, left = TRUE, join = st_intersection)
+  
+  # ---- Step 2: Find overlap between the grid cells and FAO zones using st_intersection ----
+fao_intersections <- st_intersection(emissions_grid, fao_regions)
+plot(fao_intersections)
+
+# check it out
+# Convert to sf to handle attributes and geometry together
+fao_intersections <- st_as_sf(fao_intersections)
+
+# Add area column to fao_intersections
+joined_grid$area <- st_area(joined_gid)
+
+# Now select the relevant columns (fao_zone, geometry, area)
+fao_intersections <- fao_intersections %>%
+  dplyr::select(fao_zone = zone, geometry, area)
+
+# ---- Step 3: Join zones back to emissions ----
+emissions_sf <- emissions_sf %>%
+  st_join(fao_intersections) 
+```
+
+```{r}
+emissions_sf <- emissions_sf %>%
+  st_drop_geometry()
+```
+
+```{r}
+# plot grid
+plot(st_geometry(emissions_grid), main = "Emissions Grid")
+```
+
+## Side quest
+
+```{r}
+#| code-summary: Expand code
+# Define emissions as sf object
+emissions_sf_2 <- emissions %>%
+  filter(lat_bin >= 0 & lat_bin <= 10) %>%
+  filter(lon_bin >= 0 & lon_bin <= 10) %>%
+  st_as_sf(coords = c("lon_bin", "lat_bin"), crs = "54009") # Change CRS later
+  
+# convert lat/long points to grid of polygons
+emissions_grid_2 <- emissions_sf_2 %>%
+  st_make_grid(cellsize = c(1,1),
+               what = "polygons")
+
+points_2 <- emissions %>%
+  filter(lat_bin >= 0 & lat_bin <= 10) %>%
+  filter(lon_bin >= 0 & lon_bin <= 10) %>%
+  st_as_sf(coords = c("lon_bin", "lat_bin"), crs = "54009")
+
+
+test <- emissions %>%
+  filter(lat_bin == 8) %>%
+  filter(lon_bin == 8)
+
+# check it out
+plot(st_geometry(emissions_grid_2), main = "Emissions Grid")
+plot(st_geometry(points_2), add = TRUE)
+```
+
+#### Check CRS and projections
+
+-   Check FAO and emissions grid, make sure they match and re-project if needed
+
+```{r}
+
+emissions_grid <- emissions_sf %>%
+  st_make_grid(cellsize = c(1,1),
+               what = "polygons")
+
+st_crs(fao_regions) == st_crs(emissions_grid)
+
+zone_31 <- fao_regions %>%
+  filter(zone ==31)
+#plot(zone_31)
+
+#intersecting_points <- emissions_sf[st_intersects(emissions_sf, zone_31, sparse = FALSE), ]
+zone_31_grid <- st_intersection(emissions_grid, zone_31, sparse = FALSE)
+
+plot(zone_31_grid)
+
+zone_31_grid$area <- st_area(zone_31_grid)
+
+unique(zone_31_grid$area)
+```
+
+```{r}
+# still mis-match?!
+plot(zone_31, main = "FAO Zone 31", col = "gray90")
+plot(zone_31_grid, add = TRUE)
+
+st_crs(zone_31) == st_crs(zone_31_grid) #TRUE
+
+```
+
+# START HERE
+
+-   it takes forever to run
+-   resulting df saved to checkpoints to make imports easier and skip steps
+
+### Assemble emissions data
+
+```{r}
+#| code-summary: Assemble emissions sf data
+# read in emissions data from local checkpoint
+#emissions <- read_csv(here("checkpoint", "emissions.csv"), show_col_types = FALSE)
+
+# read in emissions data from server checkpoint
+emissions <- read_csv(file.path("/capstone/seamissions/data/checkpoint/emissions.csv"))
+
+# convert emissions to spatial object(?)
+emissions_sf <- emissions %>%
+  # add lat and lon bin to preserve for merge 
+  dplyr::mutate(lat = lat_bin, lon = lon_bin) %>%
+  st_as_sf(coords = c("lon", "lat"), crs = 54009) # CRS not working for Carmen
+
+# read in fao regions (assign same CRS as emissions_sf)
+fao_regions <- st_read(file.path("/capstone/seamissions/data/fao_region_shapefile"), crs = st_crs(emissions_sf))
+
+# create grid throughout extent of emissions_sf
+emissions_grid <- emissions_sf %>%
+  st_make_grid(cellsize = c(1,1),
+               what = "polygons")
+
+# convert the grid to an sf object
+emissions_grid_sf <- st_sf(geometry = emissions_grid)
+
+# spatially join emissions data to the grid
+emissions_grid_sf <- st_join(emissions_grid_sf, emissions_sf, left = FALSE)
+
+# If a grid cell has no emissions data, it will be removed when left = FALSE.
+# If you want all grid cells, even empty ones, use left = TRUE.
+
+# -------- CHECKPOINT --------
+# save locally
+st_write(emissions_grid_sf, here("checkpoint", "emissions_grid_sf.gpkg"))
+
+# save to server
+st_write(emissions_grid_sf, file.path("/capstone/seamissions/data/checkpoint/emissions_grid_sf.gpkg"))
+```
+
+#### Assemble FAO catch data
+
+```{r}
+#| code-summary: Assemble FAO catch data
+# ---- FAO seafood production data ---
+fao_capture_quantity <- read_csv(here::here("/capstone/seamissions/data/fao_seafood_production/Capture_Quantity.csv"), show_col_types = FALSE) |> clean_names()
+
+fao_country_groups <- read_csv(here::here("/capstone/seamissions/data/fao_seafood_production/CL_FI_COUNTRY_GROUPS.csv"), show_col_types = FALSE)|> clean_names()
+
+fao_species_groups <- read_csv(here::here("/capstone/seamissions/data/fao_seafood_production/CL_FI_SPECIES_GROUPS.csv"), show_col_types = FALSE)|> clean_names()
+
+fao_symbol <- read_csv(here::here("/capstone/seamissions/data/fao_seafood_production/CL_FI_SYMBOL_SDMX.csv"), show_col_types = FALSE) |> clean_names()
+fao_waterarea <- read_csv(here::here("/capstone/seamissions/data/fao_seafood_production/CL_FI_WATERAREA_GROUPS.csv"), show_col_types = FALSE)|> clean_names()
+
+# --- Clean Data ----
+fao_country_groups_clean <- fao_country_groups |>
+  select(un_code, iso3_code, name_en, continent_group_en, official_name_en)
+
+fao_species_groups_clean <- fao_species_groups |>
+  select(x3a_code, taxonomic_code, identifier, scientific_name, contains("_en"))
+
+fao_waterarea_clean <- fao_waterarea |>
+  select(code, contains("_en"))
+
+# ---- Left join capture and country groups ----
+fao_capture_join <- left_join(fao_capture_quantity, fao_country_groups_clean, by = join_by(country_un_code == un_code)) 
+
+fao_capture_join <- left_join(fao_capture_join, fao_species_groups_clean, by = join_by(iso3_code == x3a_code))
+
+fao_capture_join <- left_join(fao_capture_join, fao_waterarea_clean, by = join_by(area_code == code))
+
+# clean
+fao_catch <- fao_capture_join %>%
+  select(area_code,
+         period,
+         iso3_code,
+         official_name_en,
+         scientific_name,
+         value) %>%
+  rename(zone = area_code,
+         year = period,
+         flag = iso3_code,
+         catch = value) %>%
+  # filter for >2015
+  filter(year >= 2015) %>%
+  group_by(year, zone, flag, scientific_name, official_name_en) %>%
+  summarise(total_catch = sum(catch, na.rm = TRUE)) %>%
+  mutate(across(c(zone, year), as.factor))
+
+# -------- CHECKPOINT --------
+# save locally
+write_csv(fao_catch, here("checkpoint", "fao_catch.csv"))
+
+# save to server 
+write_csv(fao_catch, file.path("/capstone/seamissions/data/checkpoint/fao_catch.csv"))
+```
+
+### This is proof of concept for zone 31:
+
+```{r}
+#| code-summary: Isolate Zone 31
+# filter for zone 31
+zone_31 <- fao_regions %>%
+  filter(zone == 31)
+
+# confirm crs match
+st_crs(emissions_grid_sf) == st_crs(zone_31) # TRUE
+
+# cut out grid cells that overlap with zone 31
+emissions_zone_31 <- st_intersection(emissions_grid_sf, zone_31, sparse = FALSE)
+
+# add area column
+emissions_zone_31$area <- st_area(emissions_zone_31)
+
+# look at area breakdown to see if makes sense (mostly 1s)
+areas <- emissions_zone_31 %>%
+  group_by(area) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count))
+
+# calculate co2 by pixel for zone 31 viz
+zone_31_co2 <- emissions_zone_31 %>%
+  group_by(lat_bin, lon_bin) %>%
+  summarize(co2 = sum(total_co2))
+
+# visualize co2 by pixel for zone 31
+ggplot(zone_31_co2) +
+  geom_sf(aes(fill = co2)) +
+  theme_minimal()
+
+# prep to merge with fao data
+# prep_emissions_zone_31 <- emissions_zone_31 %>%
+#   group_by(zone, year_month, flag) %>%
+#   summarise(countries = n())
+
+# -------- CHECKPOINT --------
+# save locally
+st_write(emissions_zone_31, here("checkpoint", "emissions_zone_31.gpkg"))
+
+# save to server
+st_write(emissions_zone_31, file.path("/capstone/seamissions/data/checkpoint/emissions_zone_31.gpkg"))
+```
+
+### This is proof of concept for zone 41:
+
+```{r}
+#| code-summary: Isolate Zone 31
+
+#fao_regions <- st_cast(fao_regions, "POLYGON") %>%
+ # st_make_valid()
+
+mollweide_proj <- "+proj=moll +lon_0=0 +datum=WGS84 +units=m +no_defs"
+
+emissions_grid_sf <- st_set_crs(emissions_grid_sf, mollweide_proj)
+
+emissions_grid_sf <- st_set_crs(emissions_grid_sf, 8857)
+
+# remove warning?
+emissions_grid_sf <- st_make_valid(emissions_grid_sf)
+
+fao_regions <- st_read(file.path("/capstone/seamissions/data/fao_region_shapefile"), crs = st_crs(emissions_grid_sf))
+
+# filter for zone 31
+zone_41 <- fao_regions %>%
+  filter(zone == 41)
+
+# confirm crs match
+st_crs(emissions_grid_sf) == st_crs(zone_41) # TRUE
+
+# cut out grid cells that overlap with zone 31
+emissions_zone_41 <- st_intersection(emissions_grid_sf, zone_41, sparse = FALSE)
+
+# add area column
+emissions_zone_41$area <- st_area(emissions_zone_41)
+
+# look at area breakdown to see if makes sense (mostly 1s)
+areas <- emissions_zone_41 %>%
+  group_by(area) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count))
+
+
+st_write(emissions_grid_sf, here("checkpoint", "emissions_grid_sf.gpkg"))
+
+st_write(emissions_grid_sf, file.path("/capstone/seamissions/data/checkpoint/emissions_grid_sf.gpkg"))
+
+plot(emissions_zone_41)
+
+
+# visualize co2 by pixel for zone 41
+# ggplot(emissions_zone_41) +
+#   geom_sf() +
+#   theme_minimal()
+
+# -------- CHECKPOINT --------
+# save locally
+st_write(emissions_zone_41, here("checkpoint", "emissions_zone_41.gpkg"))
+
+# save to server
+st_write(emissions_zone_41, file.path("/capstone/seamissions/data/checkpoint/emissions_zone_41.gpkg"))
+```
+
+### Full join (takes SO much time)
+
+```{r}
+#| code-summary: Join all data
+# -------- FULL join --------
+
+# clean emissions_grid_sf first??
+
+# join
+emissions_regions <- st_intersection(emissions_grid_sf, fao_regions, sparse = FALSE)
+
+# add area column
+emissions_regions$area <- st_area(emissions_regions)
+
+# -------- CHECKPOINT --------
+#save locally
+st_write(emissions_regions, here("checkpoint", "emissions_regions.gpkg"))
+
+# save to server
+st_write(emissions_regions, file.path("/capstone/seamissions/data/checkpoint/emissions_regions.gpkg"))
+```
+
+### Attempt to merge emissions and FAO catch data
+
+*make sure flags match in FAO and GFW datasets*
+
+FAO flags **NOT** in emissions:
+
+-   IOT (British Indian Ocean Territory)
+-   CSK (Czechoslovakia)
+-   ETH (Ethiopia)
+-   GUM (Guam)
+-   LSO (Lesotho)
+-   MYT (Mayotte)
+-   ANT (Netherlands Antilles)
+-   NFK (Norfold Island)
+-   BLM (Saint Barthelemy)
+-   MAF (Saint Martin (french))
+-   SRB (Serbia)
+-   SCG (Serbia and Montenegro)
+-   SXM (Sint Maarten (dutch))
+-   SVK (Slovakia)
+-   SSD (South Sudan)
+-   SJM (Svalbard and Jan Mayen Islands)
+-   TLS (Timor-Leste)
+-   TKL (Tokelau)
+-   UGA (Uganda)
+-   SUN (Un. Sov. Soc. Rep.)
+-   ESH (Western Sahara)
+-   YUG (Yugoslavia SFR)
+-   EAZ (United Republic of Tanzania, Zanzibar)
+
+Emissions flags **NOT** in FAO:
+
+-   UNK (unknown)
+-   VAT (Holy See)
+-   CXR (Christmas Island)
+-   CCK (Cocos (Keeling) Islands)
+
+```{r}
+#| code-summary: Another approach
+
+# filter/group emissions sf data to reduce compute time
+emissions_sf_2 <- emissions_sf %>%
+  #filter(lat_bin > 0) %>% # remove later
+  #filter(lon_bin > 0) %>% # remove later
+  mutate(year = as.integer(substr(year_month, 1, 4))) %>%
+  select(-year_month) %>%
+  group_by(year, lat_bin, lon_bin, flag) %>%
+  summarise(total_co2 = sum(total_co2, na.rm = TRUE))
+
+# check for lost emissions
+sum(emissions_grid_sf$total_co2, na.rm = TRUE) == sum(emissions_grid_sf_merge$total_co2, na.rm = TRUE)
+
+# assign FAO regions to filtered/grouped df
+emissions_regions <- st_intersection(emissions_grid_sf_2, fao_regions, sparse = FALSE)
+
+# add area column
+emissions_regions$area <- st_area(emissions_regions)
+
+# spatially join emissions data to the grid
+emissions_grid_sf_2 <- st_join(emissions_regions, emissions_sf_2, left = FALSE)
+
+emissions_regions <- emissions_regions %>%
+  mutate(prop_total_co2 = (area * total_co2)) %>%
+  select(-c("area", "total_co2", "lat_bin", "lon_bin")) %>%
+  st_drop_geometry()
+
+# merge emissions data with FAO catch data
+catch_emissions <- left_join(emissions_regions, fao_catch, by = c("flag", "year"))
+
+# -------- CHECKPOINT --------
+# save locally
+write_csv(catch_emissions, here("checkpoint", "catch_emissions.csv"))
+
+# save to server
+write_csv(catch_emissions, file.path("/capstone/seamissions/data/checkpoint/catch_emissions.csv"))
+```
+
+### Attempt to merge emissions with FAO catch data for zone 31
+
+```{r}
+#| code-summary: Merge emissions and FAO catch data
+# flags in fao catch but not emissions for zone 31
+diff_flag <- anti_join(fao_catch_31, emissions_zone_31, by = "flag") 
+
+# replace year_month with year
+emissions_zone_31 <- emissions_zone_31 %>%
+  mutate(year = as.integer(substr(year_month, 1, 4))) %>%
+  select(-year_month) %>%
+  mutate(prop_total_co2 = (area * total_co2)) %>%
+  select(-c("area", "total_co2", "lat_bin", "lon_bin")) %>%
+  st_drop_geometry()
+
+# join by zone, year, and flag
+catch_emissions_zone_31 <- left_join(emissions_zone_31, fao_catch, by = c("zone", "year", "flag")) #relationship = "many-to-many")
+
+# drop geometry
+#catch_emissions_zone_31_no_geo <- catch_emissions_zone_31 %>%
+  #st_drop_geometry()
+
+# ------- CHECKPOINT --------
+st_write(catch_emissions_zone_31, here("checkpoint", "catch_emissions_zone_31.gpkg"))
+
+write_csv(catch_emissions_zone_31_no_geo, here("checkpoint", "catch_emissions_zone_31_no_geo.csv"))
+```
+
+Flags in FAO catch but **not** emissions (for Zone 31):
+
+-   AIA (Anguilla)
+-   BHS (Bahamas)
+-   BRB (Barbados)
+-   CUB (Cuba)
+-   DMA (Dominica)
+-   GUF (French Guiana)
+-   GLP (Guadeloupe)
+-   GTM (Guatemala)
+-   GUY (Guyana)
+-   HND (Honduras)
+-   ITA (Italy)
+-   MTQ (Martinique)
+-   MSR (Montserrat)
+-   ANT (Netherlands Antilles)
+-   PHL (Philippines)
+-   PRI (Puerto Rico)
+-   BLM (Saint Barthelemy)
+-   LCA (Saint Lucia)
+-   MAF (Saint Martin (french))
+-   SXM (Sint Maarten (dutch))
+-   SUR (Suriname)
+-   SUN (Un. Sov. Soc. Rep.)
+-   VIR (US Virgin Islands)
+
+#### Explore
+
+```{r}
+unique(fao_zone_31_merged_no_geo$scientific_name)
+
+
+sample <- fao_zone_31_merged_no_geo %>%
+  filter(scientific_name == "Panulirus spp") # spiny lobster
+
+sample_viz <- sample %>%
+  group_by(year, flag) %>%
+  summarise(sum_co2 = sum(total_co2),
+            sum_counts = sum(count)) %>%
+  mutate(cost = sum_co2/sum_counts)
+
+sample_2 <- fao_zone_31_merged_no_geo %>%
+  filter(scientific_name == "Setipinna phasa") # 
+
+sample_2_viz <- sample_2 %>%
+  group_by(year, flag) %>%
+  summarise(sum_co2 = sum(total_co2),
+            sum_counts = sum(count)) %>%
+  mutate(cost = sum_co2/sum_counts)
+
+top <- fao_zone_31_merged_no_geo %>%
+  group_by(flag, scientific_name) %>%
+  summarise(counts = n()) %>%
+  #filter(scientific_name == "Austrolabrus maculatus") %>%
+  arrange(desc(counts))
+
+sample_3 <- fao_zone_31_merged_no_geo %>%
+  filter(scientific_name == "Austrolabrus maculatus") # black spotted parrotfish?
+
+sample_3_viz <- sample_3 %>%
+  group_by(year, flag) %>%
+  summarise(sum_co2 = sum(total_co2),
+            sum_counts = sum(count)) %>%
+  mutate(cost = sum_co2/sum_counts)  
+
+
+unique(fao_zone_31_merged_no_geo$flag)
+```
+
+-   Assign FAO regions to emissions
+-   Assign majority pixel to region as a test then, assign by proportion
+
+```{r}
+# View the filtered results
+#print(multiple_regions)
+
+region_31 <- fao_regions %>%
+  filter(zone == 31)
+
+region_34 <- fao_regions %>%
+  filter(zone == 34)
+
+region_77 <- fao_regions %>%
+  filter(zone == 77)
+
+region_21 <- fao_regions %>%
+  filter(zone == 21)
+
+region_27 <- fao_regions %>%
+  filter(zone == 27)
+
+
+grid_31 <- multiple_regions %>%
+  filter(str_detect(region, "31"))
+
+grid_31_27 <- grid_31 %>%
+  filter(str_detect(region, "27"))
+
+#[1] "34,31"    "77,31"    "31,21"    "31,21,27" "34,31,27"
+
+plot(st_geometry(region_31), col = "cornflowerblue")
+plot(st_geometry(region_34), col = "lightblue", add = TRUE)
+plot(st_geometry(region_77), col = "navyblue", add = TRUE)
+plot(st_geometry(region_21), col = "lightgreen", add = TRUE)
+plot(st_geometry(region_27), col = "darkgreen", add = TRUE)
+#plot(st_geometry(grid_31), add = TRUE)
+plot(st_geometry(grid_31_27))
+
+
+bb <- st_bbox(grid_31_27)
+
+plot(st_geometry(region_31), col = "cornflowerblue", xlim = bb[c(1,3)], ylim = bb[c(2,4)])
+plot(st_geometry(region_27), col = "lightgreen", xlim = bb[c(1,3)], ylim = bb[c(2,4)], add = TRUE)
+plot(st_geometry(region_34), col = "lightblue", xlim = bb[c(1,3)], ylim = bb[c(2,4)], add = TRUE)
+plot(st_geometry(grid_31_27), add = TRUE)
+
+
+grid_77 <- grid_31 %>%
+  filter(str_detect(region, "77"))
+
+bb <- st_bbox(grid_77)
+
+plot(st_geometry(region_77), col = "lightgreen", xlim = bb[c(1,3)], ylim = bb[c(2,4)])
+plot(st_geometry(region_31), col = "cornflowerblue", xlim = bb[c(1,3)], ylim = bb[c(2,4)], add = TRUE)
+plot(st_geometry(grid_77), add = TRUE)
+
+
+
+region_81 <- fao_regions %>%
+  filter(zone == 81)
+
+region_57 <- fao_regions %>%
+  filter(zone == 57)
+
+
+grid_81 <- multiple_regions %>%
+  filter(str_detect(region, "81"))
+
+grid_81 <- emissions_zones %>%
+  filter(region == 81)
+
+region_71 <- fao_regions %>%
+  filter(zone ==71)
+
+
+
+# Bounding box in Equal Earth projection (EPSG:8857)
+australia_nz_bbox <- c(
+  xmin = 900000,   # Covers Western Australia
+  xmax = 2300000,  # Covers New Zealand's easternmost islands
+  ymin = -6500000, # Covers Tasmania and southernmost NZ
+  ymax = -2500000  # Covers northern Australia
+)
+
+bb <- st_bbox(region_57)
+
+
+new_xmin <- 11000000  # Move western boundary even closer to Australia's east coast
+new_xmax <- 12300000  # Move eastern boundary even closer to New Zealand
+bbox_adjusted <- c(xmin = new_xmin, ymin = -6005522, xmax = new_xmax, ymax = 2928172)
+
+plot(st_geometry(region_81), col = "cornflowerblue", xlim = bbox_adjusted[c(1,3)], ylim = bbox_adjusted[c(2,4)])
+plot(st_geometry(region_57), col = "lightgreen", xlim = bbox_adjusted[c(1,3)], ylim = bbox_adjusted[c(2,4)], add = TRUE)
+plot(st_geometry(region_71), col = "lavender", xlim = bbox_adjusted[c(1,3)], ylim = bbox_adjusted[c(2,4)], add = TRUE)
+#plot(st_geometry(grid_81), add = TRUE)
+
+
+```
+
+```{r}
+# cut out grid cells that overlap with zones (st_intersection)
+emissions_zones <- st_intersection(emissions_grid_sf, fao_regions) #sparse = FALSE)
+
+# add area column after intersection
+emissions_zones$area_after <- st_area(emissions_zones)
+
+# calculate area proportion
+emissions_zones <- emissions_zones %>%
+  mutate(area_prop = as.numeric(area_after/area_before)) %>%
+  # multiply emissions by proportion
+  mutate(co2_prop = total_co2 * area_prop) %>%
+  select(-c(total_co2, area_prop, area_before, area_after))
+
+# drop geometry
+emissions_zones_no_geo <- emissions_zones %>%
+  st_drop_geometry()
+
+```

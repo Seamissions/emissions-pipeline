@@ -384,4 +384,3 @@ emissions_partitioned_grouped <- emissions_partitioned_no_geo %>%
 # Save emissions_partitioned_grouped to workbench-2
 #write_csv(emissions_partitioned_grouped, file.path("/capstone/seamissions/checkpoint/emissions_partitioned_grouped.csv"))
 ```
-
