@@ -62,6 +62,10 @@ year_emissions <- flag_match %>%
   ungroup() %>%
   mutate(prop = round(emissions/total_emissions*100, 1)) %>%
   select(-total_emissions)
+
+year_emissions_avg <- year_emissions %>%
+  group_by(match) %>%
+  summarise(avg = mean(prop))
 ```
 
 3.  Emissions to Different Country
@@ -74,12 +78,14 @@ to_country_emissions <- flag_match %>%
             emissions = sum(emissions_co2_mt, na.rm = TRUE)) %>%
   group_by(flag) %>%
   mutate(total_emissions = sum(emissions, na.rm = TRUE)) %>%
-  mutate(percent_underreported_flags = round(emissions/total_emissions*100, 1)) %>%
+  mutate(percent_emissions_leaving_by_flag = round(emissions/total_emissions*100, 1)) %>%
   filter(match == FALSE) %>%
   ungroup()
 
 to_country_emissions %>%
   filter(flag == "PAN")
+
+write_csv(to_country_emissions, file.path("/capstone/seamissions/checkpoint/emissions_leaving.csv"))
 ```
 
 4.  Emissions from Different Country
@@ -92,10 +98,12 @@ from_country_emissions <- flag_match %>%
             emissions = sum(emissions_co2_mt, na.rm = TRUE)) %>%
   group_by(top_visited_country_iso3) %>%
   mutate(total_emissions = sum(emissions, na.rm = TRUE)) %>%
-  mutate(percent_overreported_flag = round(emissions/total_emissions*100, 1)) %>%
+  mutate(percent_emissions_coming_by_flag = round(emissions/total_emissions*100, 1)) %>%
   filter(match == FALSE) %>%
   rename(flag = top_visited_country_iso3) %>%
   ungroup()
+
+write_csv(from_country_emissions, file.path("/capstone/seamissions/checkpoint/emissions_coming.csv"))
 ```
 
 Visualize

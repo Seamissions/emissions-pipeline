@@ -48,8 +48,12 @@ sau_summary <- full_emissions_sau %>%
   summarise(sau_total_co2_mt = sum(total_co2_mt, na.rm = TRUE))
 
 region_year_flag_comparison_table <- full_join(fao_summary, sau_summary, by = c("zone", "year", "flag")) %>%
-  mutate(percent_underreported_co2_sau = round((fao_total_co2_mt/sau_total_co2_mt)*100, 2),
-         tonnage_underreported_co2_sau = round(fao_total_co2_mt - sau_total_co2_mt, 2))
+  mutate(percent_reported_co2 =round((fao_total_co2_mt/sau_total_co2_mt)*100, 2),
+         tonnage_discrepancy_co2 = round(fao_total_co2_mt - sau_total_co2_mt, 2))  %>%
+  group_by(zone, year) %>%
+  arrange(tonnage_discrepancy_co2, .by_group = TRUE)
+
+write_csv(region_year_flag_comparison_table, file.path("/capstone/seamissions/checkpoint/region_year_flag_comparison_table.csv"))
 
 # Global comparison by flag
 fao_summary <- full_emissions_fao %>%
@@ -60,13 +64,16 @@ sau_summary <- full_emissions_sau %>%
   group_by(flag) %>%
   summarise(sau_total_co2_mt = sum(total_co2_mt, na.rm = TRUE))
 
-gloabl_flag_comparison_table <- full_join(fao_summary, sau_summary, by = "flag") %>%
-  mutate(percent_reported_co2_sau = round((fao_total_co2_mt/sau_total_co2_mt)*100, 2),
-         tonnage_reported_co2_sau = round(fao_total_co2_mt - sau_total_co2_mt, 2))
+global_flag_comparison_table <- full_join(fao_summary, sau_summary, by = "flag") %>%
+  mutate(percent_reported_co2 = round((fao_total_co2_mt/sau_total_co2_mt)*100, 2),
+         tonnage_discrepancy_co2 = round(fao_total_co2_mt - sau_total_co2_mt, 2)) %>%
+  arrange(desc(tonnage_discrepancy_co2), .by_group = TRUE)
   # full_join(to_country_emissions, by = "flag") %>%
   # select(-c(match, vessels, emissions, total_emissions)) %>%
   # full_join(from_country_emissions, by = "flag") %>%
   # select(-c(match, vessels, emissions, total_emissions)) 
+
+write_csv(global_flag_comparison_table, file.path("/capstone/seamissions/checkpoint/global_flag_comparison_table.csv"))
 
 # Regional comparison by flag
 fao_summary <- full_emissions_fao %>%
@@ -78,16 +85,31 @@ sau_summary <- full_emissions_sau %>%
   summarise(sau_total_co2_mt = sum(total_co2_mt, na.rm = TRUE))
 
 zone_flag_comparison_table <- full_join(fao_summary, sau_summary, by = c("zone", "flag")) %>%
-  mutate(percent_underreported_co2_sau = round((fao_total_co2_mt/sau_total_co2_mt)*100, 2),
-         tonnage_underreported_co2_sau = round(fao_total_co2_mt - sau_total_co2_mt, 2))
+  mutate(percent_reported_co2 = round((fao_total_co2_mt/sau_total_co2_mt)*100, 2),
+         tonnage_discrepancy_co2 = round(fao_total_co2_mt - sau_total_co2_mt, 2)) %>%
+  group_by(zone) %>%
+  arrange(tonnage_discrepancy_co2, .by_group = TRUE)
+
+write_csv(zone_flag_comparison_table, file.path("/capstone/seamissions/checkpoint/zone_flag_comparison_table.csv"))
+
+```
+
+# Make Species Key
+
+```{r}
+ 
+```
+
+# Including flag analysis information:
+
+```{r}
+global_flag_comparison_table_2 <- global_flag_comparison_table %>%
+  left_join(to_country_emissions, by = "flag") %>%
+  select(-c(match, vessels, emissions, total_emissions))
 ```
 
 
-
-
-
-
-
+By species?
 
 
 ```{r}

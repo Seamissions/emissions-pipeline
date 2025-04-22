@@ -43,7 +43,7 @@ Assumptions:
 library(tidyverse)
 library(janitor)
 library(here)
-library(dplyr)
+#library(dplyr)
 ```
 
 ## Load Data
@@ -153,7 +153,7 @@ for (i in seq_along(regions)){
   
   # Warning if emissions loss is greater than 0.001%
   if(percent_diff > 0.001) {
-    warning(paste0("Greater than 0.001% of non-broadcasting emissions lost during allocation to FAO reporting countries in Region ", regions[i], ". Check Table 1."))
+    stop(paste0("Greater than 0.001% of non-broadcasting emissions lost during allocation to FAO reporting countries in Region ", regions[i], ". Check Table 1."))
   }
   
   # -------- TABLE 2 --------
@@ -184,7 +184,7 @@ for (i in seq_along(regions)){
     mutate(country_total_tons = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
     mutate(prop_species_catch = country_total_tons_by_species/country_total_tons) %>%
     filter(country_total_tons_by_species > 0) %>%
-    select(-c(country_total_tons_by_species, country_total_tons)) %>%
+    select(-c(country_total_tons)) %>% #country_total_tons_by_species
     filter(!is.na(prop_species_catch))
   
   # TABLE 2
@@ -233,7 +233,7 @@ for (i in seq_along(regions)){
   
   # Warning if emissions loss is greater than 0.001%
   if(percent_diff > 0.001) {
-    warning(paste0("Greater than 0.001% of emissions lost during full join of broadcasting and non-broadcasting in Region ", regions[i], ". Check Table 3."))
+    stop(paste0("Greater than 0.001% of emissions lost during full join of broadcasting and non-broadcasting in Region ", regions[i], ". Check Table 3."))
   }
   
   # Append to vector
@@ -250,7 +250,7 @@ full_emissions_fao <- bind_rows(option_1)
 #| code-summary: Checkpoint
 
 # Save FAO emissions dataset to workbench-2
-#write_csv(full_emissions_fao, file.path("/capstone/seamissions/checkpoint/full_emissions_fao.csv"))
+write_csv(full_emissions_fao, file.path("/capstone/seamissions/checkpoint/full_emissions_fao.csv"))
 
 # Read in FAO emissions dataset
 #full_emissions_fao <- read_csv(file.path("/capstone/seamissions/checkpoint/full_emissions_fao.csv"), show_col_types = FALSE)
