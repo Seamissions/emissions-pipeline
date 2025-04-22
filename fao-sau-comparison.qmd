@@ -96,8 +96,55 @@ write_csv(zone_flag_comparison_table, file.path("/capstone/seamissions/checkpoin
 
 # Make Species Key
 
+[The current International Standard Statistical Classification of Aquatic Animals and Plants (ISSCAAP) in use from 2000](https://www.fao.org/fishery/docs/DOCUMENT/cwp/handbook/annex/AnnexS2listISSCAAP2000.pdf)
+
+[Species Codes](https://www.fao.org/fishery/static/ASFIS/ASFIS_References_2024_EN.pdf)
+
+The seven functional groups are: 1. Pisces, 2. Mollusca, 3. Crustacea, 4. Mammalia, 5. Amphibia-ReptileAves, 6. Invertabrata aquatica, 7. Plantae aquaticae
+
 ```{r}
- 
+fao_species_groups <- read_csv(here::here("/capstone/seamissions/data/fao_seafood_production/CL_FI_SPECIES_GROUPS.csv"), show_col_types = FALSE)|> clean_names()
+
+isscaap_codes <- read_csv(file.path("/capstone/seamissions/data/ISSCAAP_codes/ASFIS_sp_2024.csv"), show_col_types = FALSE) %>% 
+  clean_names() %>%
+  select(scientific_name, family)
+
+# %>%
+#   mutate(family_code = substr(taxonomic_code, 5, 7)) %>%
+#   select(-taxonomic_code) %>%
+#   distinct()
+
+fao_species_filtered <- fao_species_groups %>%
+  select(taxonomic_code, name_en, scientific_name, major_group, yearbook_group_en) %>%
+  mutate(functional_group = as.integer(substr(taxonomic_code, 1, 1)),
+         genus_species_code = substr(taxonomic_code, 8, 12)) %>%
+  mutate(family = case_when(genus_species_code == "XXXXX" ~ scientific_name),
+         genus = case_when(str_count(genus_species_code, "X") == 2 ~ sub(" .*", "", scientific_name)))
+
+
+  mutate(species = case_when(str_count(genus_species_code, "X") == 0 ~ sci))
+  
+fao_species_filtered <- fao_species_groups %>%
+  select(taxonomic_code, name_en, scientific_name, major_group) %>%
+  mutate(genus_species_code = substr(taxonomic_code, 8, 12)
+         #family_code = substr(taxonomic_code, 5, 7)
+         ) %>%
+ # left_join(isscaap_codes, by = "scientific_name") %>%
+         #species_code = substr(taxonomic_code, 11, 12)) %>%
+  mutate(family = ifelse(genus_species_code == "XXXXX", scientific_name, NA),
+         genus = case_when(genus_species_code == "XXXXX" ~ NA,
+                           TRUE ~ word(scientific_name, 1)),
+         genus_species = ifelse(str_count(genus_species_code, "X") == 0, scientific_name, NA)) 
+
+full_emissions_fao_species <- full_emissions_fao %>%
+  left_join(fao_species_filtered, by = "taxonomic_code") %>%
+  select(-c(taxonomic_code, genus_species_code, genus, scientific_name)) %>% 
+  relocate(name_en, major_group, family, genus_species, .after = flag)
+
+write_csv(full_emissions_fao_species, file.path("/capstone/seamissions/checkpoint/full_emissions_fao_species.csv"))
+
+
+unique(full_emissions_fao_species$major_group)
 ```
 
 # Including flag analysis information:
