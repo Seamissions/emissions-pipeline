@@ -55,6 +55,15 @@ fao_species_groups_clean <- fao_species_groups |>
 
 ## Join FAO Data
 
+`taxonomic_code` differs
+i.e. Argentine anchovy:
+121006000206 FAO
+1210600206 species_key
+
+used identifier (FAO) = identifier (species_key)
+
+[ISSCAAP groups](https://www.fao.org/fishery/static/ASFIS/ISSCAAP.pdf)
+
 ```{r}
 #| code-summary: Join Data
 # Left join country groups
@@ -72,6 +81,7 @@ fao_catch <- fao_capture_join %>%
   select(area_code,
          period,
          iso3_code,
+         # This will be the species identifier in the final dataset
          identifier,
          major_group,
          # scientific_name,
@@ -101,27 +111,3 @@ fao_cleaned <- fao_catch %>%
 #write_csv(fao_cleaned, file.path("/capstone/seamissions/checkpoint/fao_cleaned_identifier.csv"))
 ```
 
-## Species Key
-
-`taxonomic_code` differs
-i.e. Argentine anchovy:
-121006000206 FAO
-1210600206 species_key
-
-used identifier (FAO) = identifier (species_key)
-
-```{r}
-#| code-summary: Species Key
-species_key <- read_csv(file.path("/capstone/seamissions/data/master_species_key.csv"), show_col_types = FALSE)
-
-fao_identifiers <- data.frame(identifier = unique(fao_cleaned$identifier))
-
-fao_species <- left_join(fao_identifiers, species_key, by = "identifier") %>%
-  select(identifier, name_en, scientific_name, major_group, isscaap_group, isscaap)
-
-#check 
-sum(is.na(fao_species$identifier))
-```
-
-
-Flag key assembly

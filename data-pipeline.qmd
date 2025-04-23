@@ -335,6 +335,9 @@ emissions_partitioned_grouped <- emissions_partitioned_no_geo %>%
             pm2_5 = sum(prop_pm2_5_mt, na.rm = TRUE),
             pm10 = sum(prop_pm10_mt, na.rm = TRUE)) %>%
   ungroup()
+
+# Save for SAU analysis
+write_csv(emissions_partitioned_grouped, file.path("/capstone/seamissions/checkpoint/emissions_partitioned_grouped.csv"))
 ```
 
 # Join Emissions and Catch Data

@@ -75,10 +75,37 @@ sau_catch_data <- bind_rows(sau_regions)
 
 # Summarise SAU catch
 sau_catch_summary <- sau_catch_data %>%
-  group_by(zone, year, flag, scientific_name) %>%
+  group_by(zone, year, flag, commercial_group) %>% #scientific_name
   summarise(sau_catch_tons = sum(tonnes, na.rm = TRUE)) %>%
-  rename(species = scientific_name) %>%
+  rename(species = commercial_group) %>% #scientific_name
   filter(year > 2015)
+```
+
+## Assign Species Groups to ISSCAAP Categories
+
+```{r}
+species_key <- read_csv(file.path("/capstone/seamissions/data/master_species_key.csv"), show_col_types = FALSE) %>%
+   select(identifier, name_en, scientific_name, major_group, isscaap_group, isscaap)
+
+# SAU groups to assign
+sau_groups <- data.frame(sau_groups = unique(sau_catch_summary$species)) %>%
+  mutate(isscaap_group = case_when(
+    sau_groups == "Cod-likes" ~ "Cods, hakes, haddocks",
+    sau_groups == "Flatfishes" ~ "",
+    sau_groups == "Herring-likes" ~ "Herrings, sardines, anchovies",
+    sau_groups == "Other fishes & inverts" ~ "",
+    sau_groups == "Salmon, smelts, etc" ~ "Salmons, trouts, smelts",
+    sau_groups == "Scorpionfishes" ~ "",
+    sau_groups == "Crustaceans" ~ "", # multiple options
+    sau_groups == "Molluscs" ~ "", # multiple options
+    sau_groups == "Perch-likes" ~ "",
+    sau_groups == "Sharks & rays" ~ "Sharks, rays, chimaeras",
+    sau_groups == "Tuna & billfishes" ~ "Tunas, bonitos, billfishes",
+    sau_groups == "Anchovies" ~ "Herrings, sardines, anchovies"
+  ))
+
+sau_common_name <- data.frame(sau_common_name = unique(sau_catch_data$common_name))
+
 ```
 
 ## Partition Emissions by Region and Combine (Option 1)
