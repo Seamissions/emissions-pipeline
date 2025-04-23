@@ -2,23 +2,28 @@
 
 ### Authors
 Carmen Hoyt [@ceh58](https://github.com/ceh58)
+
 Nicole Pepper [@nicolelpepper](https://github.com/nicolelpepper)
+
 Stephen Carroll [@stephenccodes](https://github.com/stephenccodes)
+
 Josh Mull [@llumj](https://github.com/llumj)
 
 ### About
 
 This repository hosts the code for assigning broadcasting and non-broadcasting emissions estimates (in metric tons) for 9 pollutants (CO2, CH4, N2O, NOX, SOX, CO, VOCs, PM2.5, PM10) to FAO catch (in metric tons).
 
-Emissions data is available from 2016 onward, and FAO catch data is available up through 2022. 
-
 ### Data
 
-Data must be downloaded separately and locally accessible in the corresponding folders below.
+Data must be downloaded separately and be locally accessible in the corresponding folders below.
 
 [Emissions]
 
+Emissions data is available from 2016 onward in near-real-time.
+
 [FAO Seafood Production](https://www.fao.org/fishery/en/collection/capture?lang=en)
+
+FAO catch data is available up through 2022.
 
 [FAO Region Shapefile](https://www.marineregions.org/gazetteer.php?p=details&id=22541)
 
