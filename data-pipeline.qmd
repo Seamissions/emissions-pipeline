@@ -344,7 +344,7 @@ emissions_partitioned_grouped <- emissions_partitioned_no_geo %>%
 ```{r}
 #| code-summary: Load FAO Catch Data
 # Pre-assembled, see data-assembly.qmd
-fao_catch <- read_csv(file.path("/capstone/seamissions/checkpoint/fao_cleaned_taxonomic_code.csv"), show_col_types = FALSE)
+fao_catch <- read_csv(file.path("/capstone/seamissions/checkpoint/fao_cleaned_identifier.csv"), show_col_types = FALSE)
 ```
 
 ## Partition Emissions by Region and Combine
@@ -365,7 +365,7 @@ for (i in seq_along(regions)){
   # 1.1 All flags reporting FAO catch in Region #
   total_region_catch <- fao_catch %>%
     filter(zone == regions[i]) %>%
-    group_by(zone, year, flag, taxonomic_code) %>%
+    group_by(zone, year, flag, species_identifier) %>%
     summarise(country_total_tons_by_species = sum(fao_catch_tons, na.rm = TRUE), .groups = "drop") %>%
     ungroup() %>%
     group_by(zone, year) %>%
@@ -450,7 +450,7 @@ for (i in seq_along(regions)){
   # 2.2 Distribute broadcasting for countries with catch ASSUMPTION: 1 ton = same emissions for all species
   total_flag_catch <- fao_catch %>%
     filter(zone == regions[i]) %>%
-    group_by(zone, year, flag, taxonomic_code) %>%
+    group_by(zone, year, flag, species_identifier) %>%
     summarise(country_total_tons_by_species = sum(fao_catch_tons, na.rm = TRUE), .groups = "drop") %>%
     ungroup() %>%
     group_by(zone, year, flag) %>%
@@ -472,9 +472,11 @@ for (i in seq_along(regions)){
            dist_broad_pm2_5_mt = ifelse(is.na(prop_species_catch), broad_pm2_5_mt, prop_species_catch * broad_pm2_5_mt),
            dist_broad_pm10_mt = ifelse(is.na(prop_species_catch), broad_pm10_mt, prop_species_catch * broad_pm10_mt))
   
+  # fill taxonomic code NA with "non-catch associated emissions"
+  
   # -------- TABLE 3 --------
   # TABLE 3: Full join Tables 1 and 2 (to not lose flags with non-broad emissions but no broad emissions)
-  total_region_emissions <- full_join(total_region_broad_allocation, total_region_non_broad_allocation, by = c("zone", "year", "flag", "taxonomic_code")) %>%
+  total_region_emissions <- full_join(total_region_broad_allocation, total_region_non_broad_allocation, by = c("zone", "year", "flag", "species_identifier")) %>%
     #filter(zone == 18) %>%
     # Sum broadcasting and non-broadcasting emissions
     mutate(total_co2_mt = rowSums(across(c(dist_broad_co2_mt, dist_non_broad_co2_mt)), na.rm = TRUE),
@@ -492,7 +494,7 @@ for (i in seq_along(regions)){
     select(year,
            zone,
            flag,
-           taxonomic_code,
+           species_identifier,
            country_total_tons_by_species,
            c(colnames(total_region_emissions)[str_detect(colnames(total_region_emissions), "total")])
     )
@@ -516,5 +518,7 @@ for (i in seq_along(regions)){
 
 # Full emissions dataset
 full_emissions_fao <- bind_rows(option_1)
+
+write_csv(full_emissions_fao, file.path("/capstone/seamissions/checkpoint/full_emissions_fao.csv"))
 ```
 

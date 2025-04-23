@@ -41,22 +41,29 @@ fao_country_groups <- read_csv(here("/capstone/seamissions/data/fao_seafood_prod
 fao_species_groups <- read_csv(here::here("/capstone/seamissions/data/fao_seafood_production/CL_FI_SPECIES_GROUPS.csv"), show_col_types = FALSE)|> clean_names()
 ```
 
-## Join FAO Data
+## Clean Data
 
 ```{r}
-#| code-summary: Join Data
+#| code-summary: Clean Data
 # --- Clean Data ----
 fao_country_groups_clean <- fao_country_groups |>
   select(un_code, iso3_code, name_en, continent_group_en, official_name_en)
 
 fao_species_groups_clean <- fao_species_groups |>
-  select(x3a_code, taxonomic_code, identifier, scientific_name, contains("_en"))
+  select(x3a_code, taxonomic_code, identifier, scientific_name, contains("_en"), major_group)
+```
 
-# Left join country and species groups
+## Join FAO Data
+
+```{r}
+#| code-summary: Join Data
+# Left join country groups
 fao_capture_join <- left_join(fao_capture_quantity, fao_country_groups_clean, by = join_by(country_un_code == un_code)) 
 
+# Left join species groups
 fao_capture_join <- left_join(fao_capture_join, fao_species_groups_clean, by = join_by(species_alpha_3_code == x3a_code))
 
+# Define regions
 regions <- c(18, 21, 27, 31, 34, 47, 48, 51, 57, 58, 61, 67, 71, 77, 81, 87, 88)
 
 # Clean resulting dataset
@@ -65,17 +72,20 @@ fao_catch <- fao_capture_join %>%
   select(area_code,
          period,
          iso3_code,
-         taxonomic_code,
-         scientific_name,
-         name_en.y,
+         identifier,
+         major_group,
+         # scientific_name,
+         # name_en.y,
          value) %>%
   # Rename columns for consistency
   rename(zone = area_code,
          year = period,
          flag = iso3_code,
-         catch = value,
-         species = scientific_name,
-         common_name = name_en.y) %>%
+         species_identifier = identifier,
+         catch = value
+         # species = scientific_name,
+         # common_name = name_en.y
+         ) %>%
   # Filter for >2015 to match emissions data
   filter(year > 2015) %>%
   filter(zone %in% regions) %>%
@@ -83,10 +93,34 @@ fao_catch <- fao_capture_join %>%
          year = as.integer(year))
 
 fao_cleaned <- fao_catch %>%
-  group_by(zone, year, flag, taxonomic_code) %>%
+  # Filter out mammals(?), plants, and reptiles
+  filter(major_group %in% c("PISCES", "CRUSTACEA", "MOLLUSCA", "INVERTEBRATA AQUATICA")) %>%
+  group_by(zone, year, flag, species_identifier) %>%
   summarise(fao_catch_tons = sum(catch, na.rm = TRUE), .groups = "drop")
 
-write_csv(fao_cleaned, file.path("/capstone/seamissions/checkpoint/fao_cleaned_taxonomic_code.csv"))
+#write_csv(fao_cleaned, file.path("/capstone/seamissions/checkpoint/fao_cleaned_identifier.csv"))
+```
+
+## Species Key
+
+`taxonomic_code` differs
+i.e. Argentine anchovy:
+121006000206 FAO
+1210600206 species_key
+
+used identifier (FAO) = identifier (species_key)
+
+```{r}
+#| code-summary: Species Key
+species_key <- read_csv(file.path("/capstone/seamissions/data/master_species_key.csv"), show_col_types = FALSE)
+
+fao_identifiers <- data.frame(identifier = unique(fao_cleaned$identifier))
+
+fao_species <- left_join(fao_identifiers, species_key, by = "identifier") %>%
+  select(identifier, name_en, scientific_name, major_group, isscaap_group, isscaap)
+
+#check 
+sum(is.na(fao_species$identifier))
 ```
 
 

@@ -16,14 +16,14 @@ editor_options:
 
 # Methods:
 
-- For each year, calculate total **non-broadcasting** emissions for SAU data for each FAO region:  `sau_summary_non_broadcasting`
-- Then divy that up to *all* fisheries that report catch in that region (proportionally by the amount of catch in each fishery). TABLE 1: `total_region_non_broad_allocation`
-- For each year, calculate total **broadcasting** emissions, by country, for SAU data for each FAO region. TABLE 2: `emissions_partitioned`
-- Full join the allocated non-broadcasting emissions with the broadcasting emissions. TABLE 3: `total_region_emissions`
+-   For each year, calculate total **non-broadcasting** emissions for SAU data for each FAO region: `sau_summary_non_broadcasting`
+-   Then divy that up to *all* fisheries that report catch in that region (proportionally by the amount of catch in each fishery). TABLE 1: `total_region_non_broad_allocation`
+-   For each year, calculate total **broadcasting** emissions, by country, for SAU data for each FAO region. TABLE 2: `emissions_partitioned`
+-   Full join the allocated non-broadcasting emissions with the broadcasting emissions. TABLE 3: `total_region_emissions`
 
 Assumptions:
 
-- Within an FAO region, the non-broadcasting emissions are spread proportionally across *all* fisheries and countries within that region *by catch* in the SAU dataset.
+-   Within an FAO region, the non-broadcasting emissions are spread proportionally across *all* fisheries and countries within that region *by catch* in the SAU dataset.
 
 ## Load Packages
 
@@ -369,4 +369,3 @@ flag_key <- full_join(iso_flags, flags_joined, by = "iso3_code") %>%
 
 write_csv(flag_key, file.path("/capstone/seamissions/checkpoint/flag_key.csv"))
 ```
-

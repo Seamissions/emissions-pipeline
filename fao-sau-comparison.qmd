@@ -4,6 +4,17 @@ format: html
 editor: visual
 ---
 
+## Load Packages
+
+```{r}
+#| code-summary: Load Packages
+library(tidyverse)
+library(janitor)
+library(here)
+library(lubridate)
+library(sf)
+```
+
 ## Load Data
 
 ```{r}
@@ -53,7 +64,7 @@ region_year_flag_comparison_table <- full_join(fao_summary, sau_summary, by = c(
   group_by(zone, year) %>%
   arrange(tonnage_discrepancy_co2, .by_group = TRUE)
 
-write_csv(region_year_flag_comparison_table, file.path("/capstone/seamissions/checkpoint/region_year_flag_comparison_table.csv"))
+#write_csv(region_year_flag_comparison_table, file.path("/capstone/seamissions/checkpoint/region_year_flag_comparison_table.csv"))
 
 # Global comparison by flag
 fao_summary <- full_emissions_fao %>%
@@ -73,7 +84,7 @@ global_flag_comparison_table <- full_join(fao_summary, sau_summary, by = "flag")
   # full_join(from_country_emissions, by = "flag") %>%
   # select(-c(match, vessels, emissions, total_emissions)) 
 
-write_csv(global_flag_comparison_table, file.path("/capstone/seamissions/checkpoint/global_flag_comparison_table.csv"))
+#write_csv(global_flag_comparison_table, file.path("/capstone/seamissions/checkpoint/global_flag_comparison_table.csv"))
 
 # Regional comparison by flag
 fao_summary <- full_emissions_fao %>%
@@ -90,8 +101,17 @@ zone_flag_comparison_table <- full_join(fao_summary, sau_summary, by = c("zone",
   group_by(zone) %>%
   arrange(tonnage_discrepancy_co2, .by_group = TRUE)
 
-write_csv(zone_flag_comparison_table, file.path("/capstone/seamissions/checkpoint/zone_flag_comparison_table.csv"))
+#write_csv(zone_flag_comparison_table, file.path("/capstone/seamissions/checkpoint/zone_flag_comparison_table.csv"))
 
+
+# global catch by flag
+fao_summary <- full_emissions_fao %>%
+  group_by(flag) %>%
+  summarise(fao_catch_tons = sum(country_total_tons_by_species, na.rm = TRUE))
+
+sau_summary <- full_emissions_sau %>%
+  group_by(flag) %>%
+  summarise(sau_catch_tons = sum(country_total_tons_by_species, na.rm = TRUE))
 ```
 
 # Make Species Key
@@ -103,48 +123,7 @@ write_csv(zone_flag_comparison_table, file.path("/capstone/seamissions/checkpoin
 The seven functional groups are: 1. Pisces, 2. Mollusca, 3. Crustacea, 4. Mammalia, 5. Amphibia-ReptileAves, 6. Invertabrata aquatica, 7. Plantae aquaticae
 
 ```{r}
-fao_species_groups <- read_csv(here::here("/capstone/seamissions/data/fao_seafood_production/CL_FI_SPECIES_GROUPS.csv"), show_col_types = FALSE)|> clean_names()
-
-isscaap_codes <- read_csv(file.path("/capstone/seamissions/data/ISSCAAP_codes/ASFIS_sp_2024.csv"), show_col_types = FALSE) %>% 
-  clean_names() %>%
-  select(scientific_name, family)
-
-# %>%
-#   mutate(family_code = substr(taxonomic_code, 5, 7)) %>%
-#   select(-taxonomic_code) %>%
-#   distinct()
-
-fao_species_filtered <- fao_species_groups %>%
-  select(taxonomic_code, name_en, scientific_name, major_group, yearbook_group_en) %>%
-  mutate(functional_group = as.integer(substr(taxonomic_code, 1, 1)),
-         genus_species_code = substr(taxonomic_code, 8, 12)) %>%
-  mutate(family = case_when(genus_species_code == "XXXXX" ~ scientific_name),
-         genus = case_when(str_count(genus_species_code, "X") == 2 ~ sub(" .*", "", scientific_name)))
-
-
-  mutate(species = case_when(str_count(genus_species_code, "X") == 0 ~ sci))
-  
-fao_species_filtered <- fao_species_groups %>%
-  select(taxonomic_code, name_en, scientific_name, major_group) %>%
-  mutate(genus_species_code = substr(taxonomic_code, 8, 12)
-         #family_code = substr(taxonomic_code, 5, 7)
-         ) %>%
- # left_join(isscaap_codes, by = "scientific_name") %>%
-         #species_code = substr(taxonomic_code, 11, 12)) %>%
-  mutate(family = ifelse(genus_species_code == "XXXXX", scientific_name, NA),
-         genus = case_when(genus_species_code == "XXXXX" ~ NA,
-                           TRUE ~ word(scientific_name, 1)),
-         genus_species = ifelse(str_count(genus_species_code, "X") == 0, scientific_name, NA)) 
-
-full_emissions_fao_species <- full_emissions_fao %>%
-  left_join(fao_species_filtered, by = "taxonomic_code") %>%
-  select(-c(taxonomic_code, genus_species_code, genus, scientific_name)) %>% 
-  relocate(name_en, major_group, family, genus_species, .after = flag)
-
-write_csv(full_emissions_fao_species, file.path("/capstone/seamissions/checkpoint/full_emissions_fao_species.csv"))
-
-
-unique(full_emissions_fao_species$major_group)
+check <- left_join(full_emissions_fao, fao_species, by = "identifier")
 ```
 
 # Including flag analysis information:
