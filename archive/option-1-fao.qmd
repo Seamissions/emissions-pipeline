@@ -16,25 +16,25 @@ editor_options:
 
 # Methods:
 
-- For each year, calculate total **non-broadcasting** emissions for each FAO region: 
+-   For each year, calculate total **non-broadcasting** emissions for each FAO region:
 
 `fao_summary_non_broadcasting`
 
-- Then divy that up to *all* fisheries that report catch in that region (proportionally by the amount of catch in each fishery). 
+-   Then divy that up to *all* fisheries that report catch in that region (proportionally by the amount of catch in each fishery).
 
 TABLE 1: `total_region_non_broad_allocation`
 
-- For each year, calculate total **broadcasting** emissions, by country, for each FAO region. 
+-   For each year, calculate total **broadcasting** emissions, by country, for each FAO region.
 
 TABLE 2: `emissions_partitioned`
 
-- Full join the allocated non-broadcasting emissions with the broadcasting emissions. 
+-   Full join the allocated non-broadcasting emissions with the broadcasting emissions.
 
 TABLE 3: `total_region_emissions`
 
 Assumptions:
 
-- Within an FAO region, the non-broadcasting emissions are spread proportionally across *all* fisheries and countries within that region *by catch*.
+-   Within an FAO region, the non-broadcasting emissions are spread proportionally across *all* fisheries and countries within that region *by catch*.
 
 ## Load Packages
 

@@ -55,10 +55,7 @@ fao_species_groups_clean <- fao_species_groups |>
 
 ## Join FAO Data
 
-`taxonomic_code` differs
-i.e. Argentine anchovy:
-121006000206 FAO
-1210600206 species_key
+`taxonomic_code` differs i.e. Argentine anchovy: 121006000206 FAO 1210600206 species_key
 
 used identifier (FAO) = identifier (species_key)
 
@@ -110,4 +107,3 @@ fao_cleaned <- fao_catch %>%
 
 #write_csv(fao_cleaned, file.path("/capstone/seamissions/checkpoint/fao_cleaned_identifier.csv"))
 ```
-

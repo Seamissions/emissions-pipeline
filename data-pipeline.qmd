@@ -356,7 +356,7 @@ fao_catch <- read_csv(file.path("/capstone/seamissions/checkpoint/fao_cleaned_id
 #| code-summary: Distribute Emissions
 
 # Define regions
-regions <- c(18, 21, 27, 31, 34, 47, 48, 51, 57, 58, 61, 67, 71, 77, 81, 87, 88)
+regions <- c(18, 21, 27, 31, 34, 37, 41, 47, 48, 51, 57, 58, 61, 67, 71, 77, 81, 87, 88)
 
 # Create empty vector to append Region #
 option_1 <- vector("list", length = length(regions))
@@ -404,22 +404,37 @@ for (i in seq_along(regions)){
            non_broad_co_mt,
            non_broad_vocs_mt,
            non_broad_pm2_5_mt,
-           non_broad_pm10_mt) %>%
+           non_broad_pm10_mt)
     # FAO data doesn't go past 2022
-    filter(year <= 2022) 
+    #filter(year <= 2022) 
   
   # TABLE 1: Allocate non-broadcasting emissions to FAO reporting countries by Region #
-  total_region_non_broad_allocation <- left_join(total_region_catch, fao_summary_non_broadcasting, by = c("zone", "year")) %>%
-    mutate(dist_non_broad_co2_mt = prop_fao_catch * non_broad_co2_mt,
-           dist_non_broad_ch4_mt = prop_fao_catch * non_broad_ch4_mt,
-           dist_non_broad_n2o_mt = prop_fao_catch * non_broad_n2o_mt,
-           dist_non_broad_nox_mt = prop_fao_catch * non_broad_nox_mt,
-           dist_non_broad_sox_mt = prop_fao_catch * non_broad_sox_mt,
-           dist_non_broad_co_mt = prop_fao_catch * non_broad_co_mt,
-           dist_non_broad_vocs_mt = prop_fao_catch * non_broad_vocs_mt,
-           dist_non_broad_pm2_5_mt = prop_fao_catch * non_broad_pm2_5_mt,
-           dist_non_broad_pm10_mt = prop_fao_catch * non_broad_pm10_mt) %>%
-    select(-country_total_tons_by_species)
+  total_region_non_broad_allocation <- full_join(total_region_catch, fao_summary_non_broadcasting, by = c("zone", "year")) %>%
+    mutate(dist_non_broad_co2_mt = ifelse(is.na(prop_fao_catch), non_broad_co2_mt, prop_fao_catch * non_broad_co2_mt),
+           dist_non_broad_ch4_mt = ifelse(is.na(prop_fao_catch), non_broad_ch4_mt, prop_fao_catch * non_broad_ch4_mt),
+           dist_non_broad_n2o_mt = ifelse(is.na(prop_fao_catch), non_broad_ch4_mt, prop_fao_catch * non_broad_n2o_mt),
+           dist_non_broad_nox_mt = ifelse(is.na(prop_fao_catch), non_broad_nox_mt, prop_fao_catch * non_broad_nox_mt),
+           dist_non_broad_sox_mt = ifelse(is.na(prop_fao_catch), non_broad_sox_mt, prop_fao_catch * non_broad_sox_mt),
+           dist_non_broad_co_mt = ifelse(is.na(prop_fao_catch), non_broad_co_mt, prop_fao_catch * non_broad_co_mt),
+           dist_non_broad_vocs_mt = ifelse(is.na(prop_fao_catch), non_broad_vocs_mt, prop_fao_catch * non_broad_vocs_mt),
+           dist_non_broad_pm2_5_mt = ifelse(is.na(prop_fao_catch), non_broad_pm2_5_mt, prop_fao_catch * non_broad_pm2_5_mt),
+           dist_non_broad_pm10_mt = ifelse(is.na(prop_fao_catch), non_broad_pm10_mt, prop_fao_catch * non_broad_pm10_mt)
+           ) %>%
+    #select(-country_total_tons_by_species) %>%
+    select(zone,
+           year,
+           flag,
+           species_identifier,
+           country_total_tons_by_species,
+           dist_non_broad_co2_mt,
+           dist_non_broad_ch4_mt,
+           dist_non_broad_n2o_mt,
+           dist_non_broad_nox_mt,
+           dist_non_broad_sox_mt,
+           dist_non_broad_co_mt,
+           dist_non_broad_vocs_mt,
+           dist_non_broad_pm2_5_mt,
+           dist_non_broad_pm10_mt) 
   
   # Account for emissions transfer in TABLE 1
   before <- sum(fao_summary_non_broadcasting$non_broad_co2_mt, na.rm = TRUE) 
@@ -473,7 +488,8 @@ for (i in seq_along(regions)){
            dist_broad_co_mt = ifelse(is.na(prop_species_catch), broad_co_mt, prop_species_catch * broad_co_mt),
            dist_broad_vocs_mt = ifelse(is.na(prop_species_catch), broad_vocs_mt, prop_species_catch * broad_vocs_mt),
            dist_broad_pm2_5_mt = ifelse(is.na(prop_species_catch), broad_pm2_5_mt, prop_species_catch * broad_pm2_5_mt),
-           dist_broad_pm10_mt = ifelse(is.na(prop_species_catch), broad_pm10_mt, prop_species_catch * broad_pm10_mt))
+           dist_broad_pm10_mt = ifelse(is.na(prop_species_catch), broad_pm10_mt, prop_species_catch * broad_pm10_mt)) %>%
+    select(-country_total_tons_by_species)
   
   # fill taxonomic code NA with "non-catch associated emissions"
   
@@ -490,16 +506,24 @@ for (i in seq_along(regions)){
            total_co_mt = rowSums(across(c(dist_broad_co_mt, dist_non_broad_co_mt)), na.rm = TRUE),
            total_vocs_mt = rowSums(across(c(dist_broad_vocs_mt, dist_non_broad_vocs_mt)), na.rm = TRUE),
            total_pm2_5_mt = rowSums(across(c(dist_broad_pm2_5_mt, dist_non_broad_pm2_5_mt)), na.rm = TRUE),
-           total_pm10_mt = rowSums(across(c(dist_broad_pm10_mt, dist_non_broad_pm10_mt)), na.rm = TRUE))
+           total_pm10_mt = rowSums(across(c(dist_broad_pm10_mt, dist_non_broad_pm10_mt)), na.rm = TRUE)) %>%
+  mutate(species_identifier = ifelse(is.na(species_identifier), 99999999, species_identifier))
   
   # Keep desired columns
   total_region_emissions <- total_region_emissions %>%
-    select(year,
-           zone,
+    select(zone,
+           year,
            flag,
            species_identifier,
            country_total_tons_by_species,
-           c(colnames(total_region_emissions)[str_detect(colnames(total_region_emissions), "total")])
+           total_co2_mt,
+           total_ch4_mt,
+           total_n2o_mt,
+           total_nox_mt,
+           total_sox_mt,
+           total_co_mt,
+           total_pm2_5_mt,
+           total_pm10_mt
     )
   
   # BUILD SPECIES TABLE for zone, year, flag, species, catch_tons
@@ -515,12 +539,28 @@ for (i in seq_along(regions)){
     stop(paste0("Greater than 0.001% of emissions lost during full join of broadcasting and non-broadcasting in Region ", regions[i], ". Check Table 3."))
   }
   
+  check <- emissions_partitioned_grouped %>%
+    # Filter for Region #
+    filter(zone == regions[i])
+
+  before <- sum(check$co2, na.rm = TRUE)
+  after <- sum(total_region_emissions$total_co2_mt, na.rm = TRUE)
+  
+  percent_diff <- ((after-before)/before)*100
+  
+  # Warning if emissions loss is greater than 0.001%
+  if(percent_diff > 0.001) {
+    stop(paste0("Greater than 0.001% of emissions lost during full partitioning in Region ", regions[i], "."))
+  }
+  
   # Append to vector
   option_1[[i]] <- total_region_emissions
 }
 
 # Full emissions dataset
 full_emissions_fao <- bind_rows(option_1)
+
+# WARNING TO DETECT ALL REGIONS?
 
 write_csv(full_emissions_fao, file.path("/capstone/seamissions/checkpoint/full_emissions_fao.csv"))
 ```
