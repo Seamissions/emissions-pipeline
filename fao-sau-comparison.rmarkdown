@@ -14,6 +14,7 @@ editor_options:
   chunk_output_type: console
 ---
 
+
 # About
 
 This document compares FAO emissions results to SAU emissions results.
@@ -33,6 +34,7 @@ Assumptions:
 
 ### Load Packages
 
+
 ```{r}
 #| code-summary: Load Packages
 library(tidyverse)
@@ -43,7 +45,9 @@ library(sf)
 library(gghighlight)
 ```
 
+
 ### Load Data
+
 
 ```{r}
 #| code-summary: Load Data
@@ -90,7 +94,9 @@ sau_catch_summary <- sau_catch_data %>%
   filter(year > 2015)
 ```
 
+
 ### Partition Emissions by Region and Combine
+
 
 ```{r}
 #| code-summary: Distribute Emissions
@@ -290,9 +296,11 @@ full_emissions_sau <- bind_rows(option_1)
 write_csv(full_emissions_sau, file.path("/capstone/seamissions/checkpoint/full_emissions_sau.csv"))
 ```
 
+
 # Compare Results
 
 ## Load Data
+
 
 ```{r}
 #| code-summary: Load Data
@@ -300,7 +308,9 @@ full_emissions_fao <- read_csv(file.path("/capstone/seamissions/checkpoint/full_
 #full_emissions_sau <- read_csv(file.path("/capstone/seamissions/checkpoint/full_emissions_sau.csv"), show_col_types = FALSE)
 ```
 
+
 ## Overall Emissions and Catch Comparisons
+
 
 ```{r}
 #| code-summary: Overall
@@ -331,9 +341,11 @@ fao_total_emissions_catch <- total_co2_fao/fao_total_catch
 sau_total_emissions_catch <- total_co2_sau/sau_total_catch
 ```
 
+
 ## Emissions/Unit Catch
 
 ### Flag
+
 
 ```{r}
 #| code-summary: Flag
@@ -376,7 +388,9 @@ flag_emissions_catch_comparison %>%
 write_csv(flag_emissions_catch_comparison, file.path("/capstone/seamissions/checkpoint/flag_emissions_catch_comparison.csv"))
 ```
 
+
 ### Zone
+
 
 ```{r}
 #| code-summary: Region
@@ -437,7 +451,9 @@ zone_18 <- full_join(zone_18_fao, zone_18_sau, by = c("flag"))
 write_csv(zone_18, file.path("/capstone/seamissions/checkpoint/zone_18.csv"))
 ```
 
+
 ### Zone and Flag
+
 
 ```{r}
 # code-summary: Zone and Flag
@@ -463,7 +479,9 @@ zone_flag_emissions_catch <- full_join(fao_summary, sau_summary, by = c("zone", 
 # VISUALIZE
 ```
 
+
 ### ISSCAAP Group
+
 
 ```{r}
 #| code-summary: ISSCAAP Group
@@ -494,9 +512,11 @@ fao_summary %>%
   theme_minimal()
 ```
 
+
 ## Agency
 
 ### Regional Comparison by Flag
+
 
 ```{r}
 #| code-summary: Region and Flag
@@ -521,7 +541,9 @@ zone_flag_comparison_table <- full_join(fao_summary, sau_summary, by = c("zone",
 #write_csv(zone_flag_comparison_table, file.path("/capstone/seamissions/checkpoint/zone_flag_comparison_table.csv"))
 ```
 
+
 ### Regional Comparison by Flag and Year
+
 
 ```{r}
 #| code-summary: Region, Flag, and Year
@@ -546,7 +568,9 @@ zone_year_flag_comparison_table <- full_join(fao_summary, sau_summary, by = c("z
 #write_csv(zone_year_flag_comparison_table, file.path("/capstone/seamissions/checkpoint/zone_year_flag_comparison_table.csv"))
 ```
 
+
 ### Flag
+
 
 ```{r}
 #| code-summary: Global Flags
@@ -620,7 +644,9 @@ flag_catch_comparison %>%
   theme_minimal()
 ```
 
+
 ### Region
+
 
 ```{r}
 #| code-summary: Region
@@ -652,7 +678,9 @@ zone_catch_comparison %>%
   theme_minimal()
 ```
 
+
 ### Year
+
 
 ```{r}
 #| code-summary: Year
@@ -684,6 +712,7 @@ year_catch_comparison%>%
   theme_minimal()
 ```
 
+
 # Join Species Key
 
 [The current International Standard Statistical Classification of Aquatic Animals and Plants (ISSCAAP) in use from 2000](https://www.fao.org/fishery/docs/DOCUMENT/cwp/handbook/annex/AnnexS2listISSCAAP2000.pdf)
@@ -691,6 +720,7 @@ year_catch_comparison%>%
 [Taxonomic Code](https://www.fao.org/fishery/static/ASFIS/ASFIS_References_2024_EN.pdf)
 
 The seven functional groups are: 1. Pisces, 2. Mollusca, 3. Crustacea, 4. Mammalia, 5. Amphibia-ReptileAves, 6. Invertabrata aquatica, 7. Plantae aquaticae
+
 
 ```{r}
 #| code-summary: Species Key
@@ -707,7 +737,9 @@ full_emissions_fao_species <- left_join(full_emissions_fao, species_key, by = c(
 write_csv(full_emissions_fao_species, file.path("/capstone/seamissions/checkpoint/full_emissions_fao_species.csv"))
 ```
 
+
 ## Visualizations
+
 
 ```{r}
 #| code-summary: Visualize
@@ -821,3 +853,4 @@ full_emissions_fao_species %>%
 
 
 ```
+
