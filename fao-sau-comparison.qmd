@@ -95,7 +95,7 @@ sau_catch_summary <- sau_catch_data %>%
 #| code-summary: Distribute Emissions
 
 # Turn off scientific notation
-options(scipen=999)
+options(scipen = 999)
 
 # Define regions
 regions <- c(18, 21, 27, 31, 34, 37, 41, 47, 48, 51, 57, 58, 61, 67, 71, 77, 81, 87, 88)
@@ -286,7 +286,7 @@ for (i in seq_along(regions)){
 full_emissions_sau <- bind_rows(option_1)
 
 # Save SAU emissions dataset to workbench-2
-#write_csv(full_emissions_sau, file.path("/capstone/seamissions/checkpoint/full_emissions_sau.csv"))
+write_csv(full_emissions_sau, file.path("/capstone/seamissions/checkpoint/full_emissions_sau.csv"))
 ```
 
 # Compare Results
@@ -299,30 +299,37 @@ full_emissions_fao <- read_csv(file.path("/capstone/seamissions/checkpoint/full_
 #full_emissions_sau <- read_csv(file.path("/capstone/seamissions/checkpoint/full_emissions_sau.csv"), show_col_types = FALSE)
 ```
 
-## Regional Comparison by Flag
+## Overall Emissions and Catch Comparisons
 
 ```{r}
-#| code-summary: Region and Flag
-# emissions_partitioned_grouped_filtered <- emissions_partitioned_grouped %>%
-#   filter(year <= 2022)
-
-# Make sure these numbers match
+#| code-summary: Overall
+# -------- Total emissions comparison --------
+# Make sure total emissions match
 total_co2 <- sum(emissions_partitioned_grouped$co2, na.rm = TRUE)
 total_co2_fao <- sum(full_emissions_fao$total_co2_mt, na.rm = TRUE)
 total_co2_sau <- sum(full_emissions_sau$total_co2_mt, na.rm = TRUE)
 
-# Filter for years with FAO/SAU overlap 2016-2019
+if (total_co2_fao != total_co2_sau) {
+  stop("Total emissions in FAO do not match total emissions in SAU.")
+}
+
+# -------- Total catch comparison --------
+# Filter for years with FAO/SAU overlap (2016-2019)
 full_emissions_fao_filtered <- full_emissions_fao %>%
   filter(year <= 2019)
 
 full_emissions_sau_filtered <- full_emissions_sau %>%
   filter(year <= 2019)
 
-# -------- Total catch comparison --------
+# Compare total catch to determine underreporting
 fao_total_catch <- sum(full_emissions_fao_filtered$country_total_tons_by_species, na.rm = TRUE)
 sau_total_catch <- sum(full_emissions_sau_filtered$country_total_tons_by_species, na.rm = TRUE)
+```
 
+## Regional Comparison by Flag
 
+```{r}
+#| code-summary: Region and Flag
 # Summarise FAO data
 fao_summary <- full_emissions_fao_filtered %>%
   group_by(zone, flag) %>%
@@ -359,14 +366,14 @@ sau_summary <- full_emissions_sau_filtered %>%
   summarise(sau_total_co2_mt = sum(total_co2_mt, na.rm = TRUE))
 
 # Join summaries
-region_year_flag_comparison_table <- full_join(fao_summary, sau_summary, by = c("zone", "year", "flag")) %>%
+zone_year_flag_comparison_table <- full_join(fao_summary, sau_summary, by = c("zone", "year", "flag")) %>%
   mutate(percent_reported_co2 =round((fao_total_co2_mt/sau_total_co2_mt)*100, 2),
          tonnage_discrepancy_co2 = round(fao_total_co2_mt - sau_total_co2_mt, 2))  %>%
   group_by(zone, year) %>%
   arrange(tonnage_discrepancy_co2, .by_group = TRUE)
 
 # Save table
-write_csv(region_year_flag_comparison_table, file.path("/capstone/seamissions/checkpoint/region_year_flag_comparison_table.csv"))
+write_csv(zone_year_flag_comparison_table, file.path("/capstone/seamissions/checkpoint/zone_year_flag_comparison_table.csv"))
 ```
 
 ## Compare Flags Globally
@@ -385,35 +392,15 @@ sau_summary <- full_emissions_sau_filtered %>%
   summarise(sau_total_co2_mt = sum(total_co2_mt, na.rm = TRUE))
 
 # Join summaries
-global_flag_emissions_comparison <- full_join(fao_summary, sau_summary, by = "flag") %>%
+flag_emissions_comparison <- full_join(fao_summary, sau_summary, by = "flag") %>%
   mutate(percent_reported_co2 = round((fao_total_co2_mt/sau_total_co2_mt)*100, 2),
          tonnage_discrepancy_co2 = round(fao_total_co2_mt - sau_total_co2_mt, 2)) %>%
   arrange(desc(tonnage_discrepancy_co2), .by_group = TRUE)
 
+# Save table
+write_csv(flag_emissions_comparison, file.path("/capstone/seamissions/checkpoint/flag_emissions_comparison.csv"))
 
-# fao_summary %>%
-#   arrange(desc(fao_total_co2_mt)) %>%
-#   slice(1:10) %>%
-#   ggplot(aes(reorder(flag, -fao_total_co2_mt), fao_total_co2_mt)) +
-#   geom_col() +
-#   scale_y_continuous(labels = scales::comma) +
-#   labs(x = "Flag",
-#        y = "Emissions CO2 (metric tons)",
-#        title = "Top 10 Global Emittors (FAO)") +
-#   theme_minimal()
-# 
-# sau_summary %>%
-#   arrange(desc(sau_total_co2_mt)) %>%
-#   slice(1:10) %>%
-#   ggplot(aes(reorder(flag, -sau_total_co2_mt), sau_total_co2_mt)) +
-#   geom_col() +
-#   scale_y_continuous(labels = scales::comma) +
-#   labs(x = "Flag",
-#        y = "Emissions CO2 (metric tons)",
-#        title = "Top 10 Global Emittors (SAU)") +
-#   theme_minimal()
-
-global_flag_emissions_comparison %>%
+flag_emissions_comparison %>%
   select(flag, fao_total_co2_mt, sau_total_co2_mt) %>%
   pivot_longer(cols = 2:3, names_to = "entity", values_to = "co2_emissions_mt") %>%
   arrange(desc(co2_emissions_mt)) %>%
@@ -428,8 +415,6 @@ global_flag_emissions_comparison %>%
        title = "Emissions Disparity by Flag") +
   theme_minimal()
 
-# Save table
-#write_csv(global_flag_comparison_table, file.path("/capstone/seamissions/checkpoint/global_flag_comparison_table.csv"))
 
 # -------- Catch ---------
 # Summarise FAO catch by flag
@@ -442,13 +427,15 @@ sau_summary <- full_emissions_sau_filtered %>%
   group_by(flag) %>%
   summarise(sau_catch_tons = sum(country_total_tons_by_species, na.rm = TRUE))
 
-global_flag_catch_comparison <- full_join(fao_summary, sau_summary, by = "flag") %>%
+flag_catch_comparison <- full_join(fao_summary, sau_summary, by = "flag") %>%
   mutate(percent_reported_catch = round((fao_catch_tons/sau_catch_tons)*100, 2),
          tonnage_discrepancy_catch = round(fao_catch_tons - sau_catch_tons, 2)) %>%
   arrange(desc(tonnage_discrepancy_catch), .by_group = TRUE)
 
+# Save table
+write_csv(flag_catch_comparison, file.path("/capstone/seamissions/checkpoint/flag_catch_comparison.csv"))
 
-global_flag_catch_comparison %>%
+flag_catch_comparison %>%
   select(flag, fao_catch_tons, sau_catch_tons) %>%
   pivot_longer(cols = 2:3, names_to = "entity", values_to = "catch_tons") %>%
   arrange(desc(catch_tons)) %>%
@@ -460,42 +447,14 @@ global_flag_catch_comparison %>%
   labs(x = "Flag",
        y = "Catch (tons)",
        fill = "Agency",
-       title = "Flag Catch Disparity by Reporting Agency") +
+       title = "Catch Disparity by Flag") +
   theme_minimal()
 ```
 
-## Regional Comparison
+## Regional Catch Comparison
 
 ```{r}
-# -------- Emissions --------
-# Summarise FAO emissions by region
-fao_summary <- full_emissions_fao_filtered %>%
-  group_by(zone) %>%
-  summarise(fao_total_co2_mt = sum(total_co2_mt, na.rm = TRUE))
-
-# Summarise SAU emissions by flag
-sau_summary <- full_emissions_sau_filtered %>%
-  group_by(zone) %>%
-  summarise(sau_total_co2_mt = sum(total_co2_mt, na.rm = TRUE))
-
-# Join summaries
-global_region_emissions_comparison <- full_join(fao_summary, sau_summary, by = "zone") %>%
-  pivot_longer(cols = 2:3, names_to = "entity", values_to = "co2_emissions_mt") %>%
-  arrange(desc(co2_emissions_mt))
-
-global_region_emissions_comparison %>%
-  slice(1:12) %>%
-  ggplot(aes(reorder(zone, -co2_emissions_mt), co2_emissions_mt, fill = entity)) +
-           geom_bar(stat = "identity", position = "dodge") +
-  scale_y_continuous(labels = scales::comma) +
-  scale_fill_manual(labels = c("FAO", "SAU"), values = c("cornflowerblue", "firebrick")) +
-  labs(x = "Zone",
-       y = "CO2 Emissions (metric tons)",
-       fill = "Agency",
-       title = "Emissions Disparity by Region") +
-  theme_minimal()
-  
-# -------- Catch ---------
+#| code-summary: Regional Catch
 # Summarise FAO catch by region
 fao_summary <- full_emissions_fao_filtered %>%
   group_by(zone) %>%
@@ -507,56 +466,27 @@ sau_summary <- full_emissions_sau_filtered %>%
   summarise(sau_catch_tons = sum(country_total_tons_by_species, na.rm = TRUE))
 
 zone_catch_comparison <- full_join(fao_summary, sau_summary, by = "zone") %>%
+  mutate(diff = sau_catch_tons - fao_catch_tons) %>%
   pivot_longer(cols = 2:3, names_to = "entity", values_to = "catch_tons") %>%
-  arrange(desc(catch_tons)) %>%
-  slice(1:14)
+  arrange(desc(diff))
 
-zone_catch_comparison%>%
-  ggplot(aes(reorder(zone, -catch_tons), catch_tons, fill = entity)) +
-           geom_bar(stat = "identity", position = "dodge") +
+zone_catch_comparison %>%
+  # Order zones by disparity
+  ggplot(aes(x = fct_reorder(as.character(zone), diff, .desc = TRUE), y = catch_tons, fill = entity)) +
+  geom_bar(stat = "identity", position = "dodge") +
   scale_y_continuous(labels = scales::comma) +
   scale_fill_manual(labels = c("FAO", "SAU"), values = c("cornflowerblue", "firebrick")) +
-  labs(x = "Zone",
+  labs(x = "Major Fishing Area",
        y = "Catch (tons)",
        fill = "Agency",
-       title = "Regional Catch Disparity by Reporting Agency") +
+       title = "Catch Disparity by Major Fishing Area") +
   theme_minimal()
-
 ```
 
 ## Year Comparison
 
-SAU only goes to 2019!!
-
 ```{r}
-# -------- Emissions --------
-# Summarise FAO emissions by region
-fao_summary <- full_emissions_fao_filtered %>%
-  group_by(year) %>%
-  summarise(fao_total_co2_mt = sum(total_co2_mt, na.rm = TRUE))
-
-# Summarise SAU emissions by flag
-sau_summary <- full_emissions_sau_filtered %>%
-  group_by(year) %>%
-  summarise(sau_total_co2_mt = sum(total_co2_mt, na.rm = TRUE))
-
-# Join summaries
-year_emissions_comparison <- full_join(fao_summary, sau_summary, by = "year") %>%
-  pivot_longer(cols = 2:3, names_to = "entity", values_to = "co2_emissions_mt") %>%
-  arrange(desc(co2_emissions_mt))
-
-year_emissions_comparison %>%
-  slice(1:20) %>%
-  ggplot(aes(as.factor(year), co2_emissions_mt, fill = entity)) +
-           geom_bar(stat = "identity", position = "dodge") +
-  scale_y_continuous(labels = scales::comma) +
-  scale_fill_manual(labels = c("FAO", "SAU"), values = c("cornflowerblue", "firebrick")) +
-  labs(x = "",
-       y = "CO2 Emissions (metric tons)",
-       fill = "Agency",
-       title = "Emissions Disparity by Reporting Agency Over Time") +
-  theme_minimal()
-  
+#| code-summary: Yearly Catch
 # -------- Catch ---------
 # Summarise FAO catch by region
 fao_summary <- full_emissions_fao_filtered %>%
@@ -583,11 +513,7 @@ year_catch_comparison%>%
        fill = "Agency",
        title = "Regional Catch Disparity by Reporting Agency") +
   theme_minimal()
-
 ```
-
-
-
 
 ## Compare Each Pollutant
 
