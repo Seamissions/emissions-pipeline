@@ -565,3 +565,18 @@ full_emissions_fao <- bind_rows(option_1)
 write_csv(full_emissions_fao, file.path("/capstone/seamissions/checkpoint/full_emissions_fao.csv"))
 ```
 
+## Final Check
+
+```{r}
+#| code-summary: Final Check
+# Make sure total emissions match
+total_co2 <- sum(emissions_partitioned_grouped$co2, na.rm = TRUE)
+total_co2_fao <- sum(full_emissions_fao$total_co2_mt, na.rm = TRUE)
+
+percent_diff <- ((total_co2_fao-total_co2)/total_co2)*100
+  
+if(percent_diff > 0.001) {
+  warning("Emissions lost in FAO proportioning.")
+}
+```
+
