@@ -511,7 +511,7 @@ year_catch_comparison%>%
   labs(x = "Zone",
        y = "Catch (tons)",
        fill = "Agency",
-       title = "Regional Catch Disparity by Reporting Agency") +
+       title = "Catch Disparity by Year") +
   theme_minimal()
 ```
 
@@ -544,7 +544,7 @@ The seven functional groups are: 1. Pisces, 2. Mollusca, 3. Crustacea, 4. Mammal
 # Import species key
 species_key <- read_csv(file.path("/capstone/seamissions/data/master_species_key.csv"), show_col_types = FALSE) %>%
    select(identifier, name_en, scientific_name, major_group, isscaap_group, isscaap) %>%
-  add_row(identifier = 99999999, name_en = "non-catch associated emissions", scientific_name = "non-catch associated emissions", major_group = "non-catch associated emissions", isscaap_group = "non-catch associated emissions", isscaap = 99999999)
+  add_row(identifier = 99999999, name_en = "no_fao_species_catch_data", scientific_name = "no_fao_species_catch_data", major_group = "no_fao_species_catch_data", isscaap_group = "no_fao_species_catch_data", isscaap = 99999999)
 
 # Join to FAO data
 full_emissions_fao_species <- left_join(full_emissions_fao, species_key, by = c("species_identifier" = "identifier")) %>%
@@ -560,7 +560,10 @@ write_csv(full_emissions_fao_species, file.path("/capstone/seamissions/checkpoin
 #| code-summary: Visualize
 
 # Graph by ISSCAAP group
-fao_full_emissions_species %>%
+full_emissions_fao_species %>%
+  # Remove emissions from "no-fao-species-catch-data"
+  filter(!isscaap == 99999999) %>%
+  # Group by ISSCAAP group
   group_by(isscaap_group) %>%
   summarise(co2 = sum(total_co2_mt, na.rm = TRUE)) %>%
   filter(!is.na(isscaap_group)) %>%
@@ -571,4 +574,49 @@ ggplot(aes(reorder(as.factor(isscaap_group), co2), co2)) +
   labs(x = "ISSCAAP Groups",
     y = "CO2 Emissions (mt)") +
   theme_minimal()
+
+
+# Emissions per unit catch over time for a group (facet region?)
+full_emissions_fao_species %>%
+  # Remove emissions from "no-fao-species-catch-data"
+  filter(!isscaap == 99999999) %>%
+  group_by(year, isscaap_group) %>%
+  summarise(emissions_unit_catch = sum(total_co2, na.rm = TRUE)/sum(country_total_tons_by_species, na.rm = TRUE)) %>%
+  arrange(desc(emissions_unit_catch)) %>%
+  slice(1:6) %>%
+  ggplot(aes(year, emissions_unit_catch, color = isscaap_group)) +
+  geom_line() +
+  scale_y_continuous(labels = scales::comma) +
+  labs(x = "",
+    y = "CO2 Emissions (tons)/Unit Catch (tons)",
+    color = "ISSCAAP Group",
+    title = "Top 5 ISSCAAP Groups by Emissions/Unit Catch") +
+  theme_minimal()
+  
+# Emissions/unit catch ISSCAAP Group by Region over time
+full_emissions_fao_species %>%
+  # Remove emissions from "no-fao-species-catch-data"
+  filter(!isscaap == 99999999) %>%
+  group_by(zone, year, isscaap_group) %>%
+  summarise(emissions_unit_catch = sum(total_co2, na.rm = TRUE)/sum(country_total_tons_by_species, na.rm = TRUE)) %>%
+  #arrange(desc(emissions_unit_catch)) %>%
+  slice_max(order_by = desc(emissions_unit_catch), n = 3) %>%
+  ggplot(aes(year, emissions_unit_catch, color = isscaap_group)) +
+  geom_line() +
+  facet_wrap(~zone, scales = "free_y") +
+  scale_y_continuous(labels = scales::comma) +
+  labs(x = "",
+    y = "CO2 Emissions (mt)",
+    color = "",
+    title = "Top 3 ISSCAAP Groups by Emissions/Unit Catch per Major Fishing Area") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+
+# For a specific zone:
+
+# For a specific isscaap group:
+
+
+
 ```
