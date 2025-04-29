@@ -70,7 +70,7 @@ fao_capture_join <- left_join(fao_capture_quantity, fao_country_groups_clean, by
 fao_capture_join <- left_join(fao_capture_join, fao_species_groups_clean, by = join_by(species_alpha_3_code == x3a_code))
 
 # Define regions
-regions <- c(18, 21, 27, 31, 34, 37, 41 47, 48, 51, 57, 58, 61, 67, 71, 77, 81, 87, 88)
+regions <- c(18, 21, 27, 31, 34, 37, 41, 47, 48, 51, 57, 58, 61, 67, 71, 77, 81, 87, 88)
 
 # Clean resulting dataset
 fao_catch <- fao_capture_join %>%
@@ -105,5 +105,5 @@ fao_cleaned <- fao_catch %>%
   group_by(zone, year, flag, species_identifier) %>%
   summarise(fao_catch_tons = sum(catch, na.rm = TRUE), .groups = "drop")
 
-#write_csv(fao_cleaned, file.path("/capstone/seamissions/checkpoint/fao_cleaned_identifier.csv"))
+write_csv(fao_cleaned, file.path("/capstone/seamissions/checkpoint/fao_cleaned_identifier.csv"))
 ```
