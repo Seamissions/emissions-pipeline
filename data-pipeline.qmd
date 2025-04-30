@@ -194,7 +194,7 @@ emissions_grid_sf <- st_join(emissions_grid, emissions_sf, left = FALSE) %>%
   st_transform(6933)
 
 # Save for dashboard
-st_write(emissions_grid_sf, file.path("/capstone/seamissions/checkpoint/emissions_grid_sf.gpkg"))
+st_write(emissions_grid_sf, file.path("/capstone/seamissions/checkpoint/emissions_grid_sf.gpkg"), delete_dsn = TRUE)
 ```
 
 ## Load FAO Regions Shapefile and Run Intersection
@@ -298,7 +298,7 @@ emissions_partitioned <- emissions_zones_joined %>%
 for (i in seq_along(pollutants)) {
   
   # Assign column names
-  sf_col <- paste0(pollutants[i], "_mt")
+  sf_col <- paste0("emissions_", pollutants[i], "_mt")
   prop_col <- paste0("prop_", pollutants[i], "_mt")
   
   # Total emissions before factoring
