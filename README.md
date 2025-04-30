@@ -67,7 +67,8 @@ Data must be downloaded separately and be locally accessible in the correspondin
 │   │    │   └── SAU FAO 77 v50-1.csv
 │   │    └── master_species_key.csv
 │   └── processed/
-│        └── full_emissions_fao.csv 
+│        ├── full_emissions_fao.csv 
+│        └── full_emissions_sau.csv 
 ├── notebooks/
 │   ├── data-assembly.qmd
 │   ├── data-pipeline.qmd
