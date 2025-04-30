@@ -1,5 +1,5 @@
 ---
-title: "Option 1"
+title: "Option 1: FAO"
 author: "Carmen Hoyt"
 date: last-modified
 format:
@@ -16,14 +16,25 @@ editor_options:
 
 # Methods:
 
-- For each year, calculate total **non-broadcasting** emissions for each FAO region:  `fao_summary_non_broadcasting`
-- Then divy that up to *all* fisheries that report catch in that region (proportionally by the amount of catch in each fishery). TABLE 1: `total_region_non_broad_allocation`
-- For each year, calculate total **broadcasting** emissions, by country, for each FAO region. TABLE 2: `emissions_partitioned`
-- Full join the allocated non-broadcasting emissions with the broadcasting emissions. TABLE 3: `total_region_emissions`
+-   For each year, calculate total **non-broadcasting** emissions for each FAO region:
+
+`fao_summary_non_broadcasting`
+
+-   Then divy that up to *all* fisheries that report catch in that region (proportionally by the amount of catch in each fishery).
+
+TABLE 1: `total_region_non_broad_allocation`
+
+-   For each year, calculate total **broadcasting** emissions, by country, for each FAO region.
+
+TABLE 2: `emissions_partitioned`
+
+-   Full join the allocated non-broadcasting emissions with the broadcasting emissions.
+
+TABLE 3: `total_region_emissions`
 
 Assumptions:
 
-- Within an FAO region, the non-broadcasting emissions are spread proportionally across *all* fisheries and countries within that region *by catch*.
+-   Within an FAO region, the non-broadcasting emissions are spread proportionally across *all* fisheries and countries within that region *by catch*.
 
 ## Load Packages
 
@@ -32,7 +43,7 @@ Assumptions:
 library(tidyverse)
 library(janitor)
 library(here)
-library(dplyr)
+#library(dplyr)
 ```
 
 ## Load Data
@@ -61,23 +72,23 @@ option_1 <- vector("list", length = length(regions))
 for (i in seq_along(regions)){
   
   # Make list of flags in FAO catch data by Region #
-  fao_catch_flags <- fao_catch %>%
-    filter(zone == regions[i])
-  
-  fao_catch_flags <- unique(fao_catch_flags$flag)
-  
-  # Make a list of flags in emissions data by Region #
-  emissions_flags <- emissions_partitioned_grouped %>%
-    filter(zone == regions[i])
-  
-  emissions_flags <- unique(emissions_flags$flag) # TABLE 2: flags with BROADCASTING emissions
-  
-  # Make a list of flags with non-broadcasting emissions ONLY by Region # (those flags in FAO catch but not in emissions)
-  non_broad_only_flags <- setdiff(fao_catch_flags, emissions_flags)
-  
+  # fao_catch_flags <- fao_catch %>%
+  #   filter(zone == regions[i])
+  # 
+  # fao_catch_flags <- unique(fao_catch_flags$flag)
+  # 
+  # # Make a list of flags in emissions data by Region #
+  # emissions_flags <- emissions_partitioned_grouped %>%
+  #   filter(zone == regions[i])
+  # 
+  # emissions_flags <- unique(emissions_flags$flag) # TABLE 2: flags with BROADCASTING emissions
+  # 
+  # # Make a list of flags with non-broadcasting emissions ONLY by Region # (those flags in FAO catch but not in emissions)
+  # non_broad_only_flags <- setdiff(fao_catch_flags, emissions_flags)
+  # 
   # Make a list of broadcasting only flags? check in final df?
   
-  # -------- TABLE 1 --------
+ # -------- TABLE 1 --------
   # 1.1 All flags reporting FAO catch in Region #
   total_region_catch <- fao_catch %>%
     filter(zone == regions[i]) %>%
@@ -87,7 +98,8 @@ for (i in seq_along(regions)){
     group_by(zone, year) %>%
     mutate(region_total_tons = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
     mutate(prop_fao_catch = country_total_tons_by_species/region_total_tons) %>%
-    select(-region_total_tons)
+    select(-region_total_tons) %>%
+    filter(country_total_tons_by_species > 0)
   
   # 1.2 Summarise non-broadcasting emissions by Region #
   fao_summary_non_broadcasting <- emissions_partitioned_grouped %>%
@@ -141,7 +153,7 @@ for (i in seq_along(regions)){
   
   # Warning if emissions loss is greater than 0.001%
   if(percent_diff > 0.001) {
-    warning(paste0("Greater than 0.001% of non-broadcasting emissions lost during allocation to FAO reporting countries in Region ", regions[i], ". Check Table 1."))
+    stop(paste0("Greater than 0.001% of non-broadcasting emissions lost during allocation to FAO reporting countries in Region ", regions[i], ". Check Table 1."))
   }
   
   # -------- TABLE 2 --------
@@ -171,7 +183,8 @@ for (i in seq_along(regions)){
     group_by(zone, year, flag) %>%
     mutate(country_total_tons = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
     mutate(prop_species_catch = country_total_tons_by_species/country_total_tons) %>%
-    select(-c(country_total_tons_by_species, country_total_tons)) %>%
+    filter(country_total_tons_by_species > 0) %>%
+    select(-c(country_total_tons)) %>% #country_total_tons_by_species
     filter(!is.na(prop_species_catch))
   
   # TABLE 2
@@ -220,7 +233,7 @@ for (i in seq_along(regions)){
   
   # Warning if emissions loss is greater than 0.001%
   if(percent_diff > 0.001) {
-    warning(paste0("Greater than 0.001% of emissions lost during full join of broadcasting and non-broadcasting in Region ", regions[i], ". Check Table 3."))
+    stop(paste0("Greater than 0.001% of emissions lost during full join of broadcasting and non-broadcasting in Region ", regions[i], ". Check Table 3."))
   }
   
   # Append to vector
@@ -237,7 +250,7 @@ full_emissions_fao <- bind_rows(option_1)
 #| code-summary: Checkpoint
 
 # Save FAO emissions dataset to workbench-2
-#write_csv(full_emissions_fao, file.path("/capstone/seamissions/checkpoint/full_emissions_fao.csv"))
+write_csv(full_emissions_fao, file.path("/capstone/seamissions/checkpoint/full_emissions_fao.csv"))
 
 # Read in FAO emissions dataset
 #full_emissions_fao <- read_csv(file.path("/capstone/seamissions/checkpoint/full_emissions_fao.csv"), show_col_types = FALSE)

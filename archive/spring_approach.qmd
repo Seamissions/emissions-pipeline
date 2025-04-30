@@ -26,7 +26,7 @@ library(janitor)
 library(here)
 library(lubridate)
 library(sf)
-library(dplyr)
+# library(dplyr) in tidyverse
 ```
 
 ## Load Data
@@ -69,7 +69,11 @@ for (i in seq_along(file_names)) {
 # Create `year_month` column
 broadcasting <- broadcasting %>%
   mutate(date = lubridate::ymd(month)) %>%
-  mutate(year_month = format(date, '%Y-%m'))
+  mutate(year_month = format(date, '%Y-%m')) %>%
+  # Replace NA values with "UNK"
+  mutate(flag = ifelse(is.na(flag), "UNK", flag)) %>%
+  # Only select fishing vessels (dataset already only selects for fishing activity)
+  filter(vessel_class %in% c("fishing","squid_jigger","drifting_longlines","pole_and_line","other_fishing","trollers","fixed_gear","pots_and_traps","set_longlines","set_gillnets","trawlers","dredge_fishing","seiners","purse_seines","tuna_purse_seines","other_purse_seines","other_seines","driftnets"))
   
 non_broadcasting <- non_broadcasting %>%
   mutate(date = lubridate::ymd(month)) %>%
@@ -81,7 +85,7 @@ colnames(non_broadcasting)[str_detect(colnames(non_broadcasting), "non_broadcast
 
 # Warning if pollutant column names don't match (for join)
 if(unique(colnames(non_broadcasting)[str_detect(colnames(non_broadcasting), "emissions")] == colnames(broadcasting)[str_detect(colnames(broadcasting), "emissions")]) != TRUE) {
-  warning("Column names don't match.")
+  stop("Column names don't match.")
 }
 ```
 
@@ -174,7 +178,9 @@ emissions_filtered <- emissions %>%
             co_mt = sum(emissions_co_mt, na.rm = TRUE),
             vocs_mt = sum(emissions_vocs_mt, na.rm = TRUE),
             pm2_5_mt = sum(emissions_pm2_5_mt, na.rm = TRUE),
-            pm10_mt = sum(emissions_pm10_mt, na.rm = TRUE))
+            pm10_mt = sum(emissions_pm10_mt, na.rm = TRUE)) %>%
+  # Filter years to match non-broadcasting emissions
+  filter(year > 2015)
 
 # Convert lat/long to point geometry (degrees)
 emissions_sf <- emissions_filtered %>%
@@ -225,7 +231,7 @@ fao_regions <- st_read(file.path("/capstone/seamissions/data/fao_region_shapefil
 
 # Confirm crs match
 if (st_crs(emissions_grid_sf) != st_crs(fao_regions)){
-  warning("CRS don't match.")
+  stop("CRS don't match.")
 }
 
 # Find which grid cells intersect with the FAO regions
@@ -262,7 +268,7 @@ invalid_types <- setdiff(geom_types, valid_types) # contains POINT (?)
 
 # Warning if geometry types besides POLYGON or MULTIPOLYGON found
 if(length(invalid_types > 0)) {
-  warning("Additional geometry types detected.")
+  warning("Additional geometry types detected. Proceed with filter.")
 }
 
 # Remove other geometry types (filter out POINT)
@@ -300,7 +306,7 @@ emissions_zones_joined <- left_join(emissions_zones, grid_id_key)
 
 # build in warning for matching rows? ids?
 if(nrow(emissions_zones_joined) != nrow(emissions_zones)) {
-  warning("Incorrect join: too many rows.")
+  stop("Incorrect join: too many rows.")
 }
 
 # Partition out emissions by area proportion
@@ -335,13 +341,13 @@ for (i in seq_along(pollutants)) {
   diff <- em_after - em_before
   
   # Percent error
-  error <- diff/em_before
+  error <- ((diff/em_before)*100)
   
   #print(error)
   
-  # Error warning for lost emissions over 5% (DECISION POINT)
-  if (error > 0.05) {
-  warning(paste0("Error over 5% returned for ", {pollutants[i]}, " emissions partitioning. Some emissions may be lost."))
+  # Error warning for lost emissions over 0.001% (DECISION POINT)
+  if (error > 0.001) {
+  stop(paste0("Error over 0.001% returned for ", {pollutants[i]}, " emissions partitioning. Some emissions may be lost."))
   }
 }
 
@@ -380,4 +386,3 @@ emissions_partitioned_grouped <- emissions_partitioned_no_geo %>%
 # Save emissions_partitioned_grouped to workbench-2
 #write_csv(emissions_partitioned_grouped, file.path("/capstone/seamissions/checkpoint/emissions_partitioned_grouped.csv"))
 ```
-

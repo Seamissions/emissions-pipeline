@@ -1,0 +1,112 @@
+---
+title: "Visualizations"
+author: "Carmen Hoyt"
+date: last-modified
+format:
+  html:
+      toc: true
+      code-fold: true
+editor: visual
+execute:
+  warning: false
+  messages: false
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+library(tidyverse)
+
+full_emissions_fao <- read_csv(file.path("/capstone/seamissions/checkpoint/full_emissions_fao.csv"), show_col_types = FALSE)
+
+full_emissions_fao_species <- read_csv(file.path("/capstone/seamissions/checkpoint/full_emissions_fao_species.csv"))
+```
+
+# Trends in global emissions by FAO region
+
+```{r}
+full_emissions_fao %>%
+  group_by(zone, year) %>%
+  summarise(total_emissions_co2 = sum(total_co2_mt, na.rm = TRUE)) %>%
+  ggplot(aes(year, total_emissions_co2, color = as.factor(zone))) +
+  geom_line()
+
+full_emissions_fao %>%
+  group_by(zone, year) %>%
+  summarise(total_emissions_co2 = sum(total_co2_mt, na.rm = TRUE)) %>%
+  ggplot(aes(year, total_emissions_co2, group = as.factor(zone))) +
+  geom_line() +
+  scale_x_continuous(breaks = seq(2016, 2024, by = 4)) +
+  scale_y_continuous(labels = scales::comma) +
+  facet_wrap(~zone, scales = "free_y") +
+  labs(x = "",
+       y = "Emissions (mt) CO2",
+       title = "Trends in Global Emissions by FAO Region") +
+  theme_minimal()
+
+```
+
+# Trends in emissions-per-unit-catch by ISSCAAP species group
+
+```{r}
+full_emissions_fao_species %>%
+  filter(year<=2022) %>%
+  group_by(isscaap_group, isscaap, year) %>%
+  summarise(total_emissions_co2 = sum(total_co2_mt, na.rm = TRUE),
+            total_catch = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
+  mutate(emissions_unit_catch = total_emissions_co2/total_catch) %>%
+  ggplot(aes(year, emissions_unit_catch, group = isscaap_group)) +
+  geom_line() +
+  scale_x_continuous(breaks = seq(2016, 2022, by = 3)) +
+  facet_wrap(~isscaap_group, labeller = label_wrap_gen(width = 20), scales = "free_y") +
+  labs(x = "",
+       y = "Emissions CO2 per Unit Catch") +
+  theme_minimal()
+
+View(full_emissions_fao_species %>%
+  filter(is.na(isscaap_group)))
+  
+
+# species key missing:
+missing_species <- full_emissions_fao_species %>%
+  filter(is.na(isscaap_group))
+
+missing_species_key <- data.frame(species_identifier = unique(missing_species$species_identifier)) %>%
+  left_join(fao_species_groups_clean, by = c("species_identifier" = "identifier"))
+  
+```
+
+# Trends in emissions-per-unit-catch by FAO region 
+
+```{r}
+full_emissions_fao %>%
+  group_by(zone, year) %>%
+  summarise(total_emissions_co2 = sum(total_co2_mt, na.rm = TRUE),
+            total_catch = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
+  mutate(emissions_unit_catch = total_emissions_co2/total_catch) %>%
+  ggplot(aes(year, emissions_unit_catch, group = as.factor(zone))) +
+  geom_line() +
+  scale_x_continuous(breaks = seq(2016, 2024, by = 4)) +
+  #scale_y_continuous(labels = scales::comma) +
+  facet_wrap(~zone, scales = "free_y") +
+  labs(x = "",
+       y = "Emissions CO2 per Unit Catch",
+       title = "Trends in Global Emissions per Unit Catch by FAO Region") +
+  theme_minimal()
+
+full_emissions_fao %>%
+  group_by(zone, year) %>%
+  summarise(total_emissions_co2 = sum(total_co2_mt, na.rm = TRUE),
+            total_catch = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
+  mutate(emissions_unit_catch = total_emissions_co2/total_catch) %>%
+  ggplot(aes(year, emissions_unit_catch, group = as.factor(zone))) +
+  geom_line() +
+  scale_x_continuous(breaks = seq(2016, 2024, by = 4)) +
+  #scale_y_continuous(labels = scales::comma) +
+  #facet_wrap(~zone, scales = "free_y") +
+  labs(x = "",
+       y = "Emissions CO2 per Unit Catch",
+       title = "Trends in Global Emissions per Unit Catch by FAO Region") +
+  theme_minimal()
+```
+

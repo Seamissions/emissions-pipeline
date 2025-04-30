@@ -1,8 +1,22 @@
 ---
 title: "FAO Catch"
-format: html
+author: "Carmen Hoyt"
+date: last-modified
+format:
+  html:
+      toc: true
+      code-fold: true
 editor: visual
+execute:
+  warning: false
+  messages: false
+editor_options: 
+  chunk_output_type: console
 ---
+
+# About
+
+This .qmd hosts the code for assembling the FAO catch data used in the pipeline.
 
 ## Load Packages
 
@@ -11,15 +25,13 @@ editor: visual
 library(tidyverse)
 library(janitor)
 library(here)
-library(dplyr)
 ```
 
-```{r}
-#| code-summary: Load Project Data
-# ---- FAO Region Shapefile ----
-fao_shapefile <- st_read(here("/capstone/seamissions/data/fao_region_shapefile/World_Fao_Zones.shp"))
+## Load Data
 
-# ---- FAO seafood production data ---
+```{r}
+#| code-summary: Load Data
+# Read in FAO data
 fao_capture_quantity <- read_csv(here("/capstone/seamissions/data/fao_seafood_production/Capture_Quantity.csv"), show_col_types = FALSE) |> clean_names()
 
 fao_country_groups <- read_csv(here("/capstone/seamissions/data/fao_seafood_production/CL_FI_COUNTRY_GROUPS.csv"), show_col_types = FALSE)|> clean_names()
@@ -31,7 +43,10 @@ fao_symbol <- read_csv(here::here("/capstone/seamissions/data/fao_seafood_produc
 fao_waterarea <- read_csv(here::here("/capstone/seamissions/data/fao_seafood_production/CL_FI_WATERAREA_GROUPS.csv"), show_col_types = FALSE)|> clean_names()
 ```
 
+## Join FAO Data
+
 ```{r}
+#| code-summary: Join Data
 # --- Clean Data ----
 fao_country_groups_clean <- fao_country_groups |>
   select(un_code, iso3_code, name_en, continent_group_en, official_name_en)
@@ -42,19 +57,14 @@ fao_species_groups_clean <- fao_species_groups |>
 fao_waterarea_clean <- fao_waterarea |>
   select(code, contains("_en"))
 
-# ---- Left join capture and country groups ----
-
-# fao_capture_join <- left_join(fao_capture_quantity, fao_country_groups_clean, by = join_by(country_un_code == un_code)) 
-# fao_capture_join <- left_join(fao_capture_join, fao_species_groups_clean, by = join_by(iso3_code == x3a_code))
-# fao_capture_join <- left_join(fao_capture_join, fao_waterarea_clean, by = join_by(area_code == code))
-
+# Left join country and species groups
 fao_capture_join <- left_join(fao_capture_quantity, fao_country_groups_clean, by = join_by(country_un_code == un_code)) 
+
 fao_capture_join <- left_join(fao_capture_join, fao_species_groups_clean, by = join_by(species_alpha_3_code == x3a_code))
 
-#fao_capture_join <- left_join(fao_capture_join, fao_waterarea_clean, by = join_by(area_code == code))
+regions <- c(18, 21, 27, 31, 34, 47, 48, 51, 57, 58, 61, 67, 71, 77, 81, 87, 88)
 
-
-
+# Clean resulting dataset
 fao_catch <- fao_capture_join %>%
 # Select desired columns
   select(area_code,
@@ -70,23 +80,29 @@ fao_catch <- fao_capture_join %>%
          catch = value,
          species = scientific_name) %>%
   # Filter for >2015 to match emissions data
-  filter(year >= 2015) %>%
+  filter(year > 2015) %>%
   filter(zone %in% regions) %>%
-  mutate(
-    #species = ifelse(is.na(species), "species unknown", species),
-         zone = as.integer(zone),
+  mutate(zone = as.integer(zone),
          year = as.integer(year))
 
 fao_cleaned <- fao_catch %>%
-  group_by(zone, year, flag, species) %>% #official_name
-  summarise(fao_catch_tons = sum(catch, na.rm = TRUE)) 
-  
+  group_by(zone, year, flag, species) %>%
+  summarise(fao_catch_tons = sum(catch, na.rm = TRUE), .groups = "drop")
+#   
+# check <- fao_catch %>%
+#   group_by(zone, year, flag) %>%
+#   summarise(n_species = n_distinct(species))
+```
+
+### Checkpoint
+
+```{r}
+#| code-summary: Checkpoint
+
+# Save FAO catch dataset to workbench-2
 #write_csv(fao_cleaned, file.path("/capstone/seamissions/checkpoint/fao_catch.csv"))
 
-
-
-check <- fao_catch %>%
-  group_by(zone, year, flag) %>%
-  summarise(n_species = n_distinct(species))
+# Read in FAO catch dataset
+#fao_catch <- read_csv(file.path("/capstone/seamissions/checkpoint/fao_catch.csv"), show_col_types = FALSE)
 
 ```
