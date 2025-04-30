@@ -34,11 +34,14 @@ library(here)
 ```{r}
 #| code-summary: Load Data
 # Read in FAO data
-fao_capture_quantity <- read_csv(here("/capstone/seamissions/data/fao_seafood_production/Capture_Quantity.csv"), show_col_types = FALSE) |> clean_names()
+fao_capture_quantity <- read_csv(here("/capstone/seamissions/data/fao_seafood_production/Capture_Quantity.csv"), show_col_types = FALSE) %>%
+  clean_names()
 
-fao_country_groups <- read_csv(here("/capstone/seamissions/data/fao_seafood_production/CL_FI_COUNTRY_GROUPS.csv"), show_col_types = FALSE)|> clean_names()
+fao_country_groups <- read_csv(here("/capstone/seamissions/data/fao_seafood_production/CL_FI_COUNTRY_GROUPS.csv"), show_col_types = FALSE) %>%
+  clean_names()
 
-fao_species_groups <- read_csv(here::here("/capstone/seamissions/data/fao_seafood_production/CL_FI_SPECIES_GROUPS.csv"), show_col_types = FALSE)|> clean_names()
+fao_species_groups <- read_csv(here::here("/capstone/seamissions/data/fao_seafood_production/CL_FI_SPECIES_GROUPS.csv"), show_col_types = FALSE)%>%
+  clean_names()
 ```
 
 ## Clean Data
@@ -46,11 +49,12 @@ fao_species_groups <- read_csv(here::here("/capstone/seamissions/data/fao_seafoo
 ```{r}
 #| code-summary: Clean Data
 # --- Clean Data ----
-fao_country_groups_clean <- fao_country_groups |>
+fao_country_groups_clean <- fao_country_groups %>%
   select(un_code, iso3_code, name_en, continent_group_en, official_name_en)
 
-fao_species_groups_clean <- fao_species_groups |>
-  select(x3a_code, taxonomic_code, identifier, scientific_name, contains("_en"), major_group)
+fao_species_groups_clean <- fao_species_groups %>%
+  select(x3a_code, taxonomic_code, identifier, scientific_name, contains("_en"), major_group) %>%
+  filter(!str_detect(isscaap_group_en, '(?i)freshwater'))
 ```
 
 ## Join FAO Data
@@ -105,5 +109,6 @@ fao_cleaned <- fao_catch %>%
   group_by(zone, year, flag, species_identifier) %>%
   summarise(fao_catch_tons = sum(catch, na.rm = TRUE), .groups = "drop")
 
+# Save for analysis
 write_csv(fao_cleaned, file.path("/capstone/seamissions/checkpoint/fao_cleaned_identifier.csv"))
 ```

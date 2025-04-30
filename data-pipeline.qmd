@@ -160,15 +160,15 @@ emissions_filtered <- emissions %>%
   # Group by pixel, year, and flag
   group_by(lat_bin, lon_bin, year, flag) %>% # vessel_class (?)
   # Sum emissions
-  summarise(co2_mt = sum(emissions_co2_mt, na.rm = TRUE),
-            ch4_mt = sum(emissions_ch4_mt, na.rm = TRUE),
-            n2o_mt = sum(emissions_n2o_mt, na.rm = TRUE),
-            nox_mt = sum(emissions_nox_mt, na.rm = TRUE),
-            sox_mt = sum(emissions_sox_mt, na.rm = TRUE),
-            co_mt = sum(emissions_co_mt, na.rm = TRUE),
-            vocs_mt = sum(emissions_vocs_mt, na.rm = TRUE),
-            pm2_5_mt = sum(emissions_pm2_5_mt, na.rm = TRUE),
-            pm10_mt = sum(emissions_pm10_mt, na.rm = TRUE)) %>%
+  summarise(emissions_co2_mt = sum(emissions_co2_mt, na.rm = TRUE),
+            emissions_ch4_mt = sum(emissions_ch4_mt, na.rm = TRUE),
+            emissions_n2o_mt = sum(emissions_n2o_mt, na.rm = TRUE),
+            emissions_nox_mt = sum(emissions_nox_mt, na.rm = TRUE),
+            emissions_sox_mt = sum(emissions_sox_mt, na.rm = TRUE),
+            emissions_co_mt = sum(emissions_co_mt, na.rm = TRUE),
+            emissions_vocs_mt = sum(emissions_vocs_mt, na.rm = TRUE),
+            emissions_pm2_5_mt = sum(emissions_pm2_5_mt, na.rm = TRUE),
+            emissions_pm10_mt = sum(emissions_pm10_mt, na.rm = TRUE)) %>%
   # Filter years to match non-broadcasting emissions
   filter(year > 2015)
 
@@ -192,6 +192,9 @@ emissions_grid <- emissions_sf %>%
 emissions_grid_sf <- st_join(emissions_grid, emissions_sf, left = FALSE) %>%
   # Transform to Equal Earth projection
   st_transform(6933)
+
+# Save for dashboard
+st_write(emissions_grid_sf, file.path("/capstone/seamissions/checkpoint/emissions_grid_sf.gpkg"))
 ```
 
 ## Load FAO Regions Shapefile and Run Intersection
@@ -281,15 +284,15 @@ emissions_partitioned <- emissions_zones_joined %>%
   # Calculate proportion
   mutate(prop = area/total_unique_area) %>%
   # Partition emissions
-  mutate(prop_co2_mt = co2_mt * prop,
-         prop_ch4_mt = ch4_mt * prop,
-         prop_n2o_mt = n2o_mt * prop,
-         prop_nox_mt = nox_mt * prop,
-         prop_sox_mt = sox_mt * prop,
-         prop_co_mt = co_mt * prop,
-         prop_vocs_mt = vocs_mt * prop,
-         prop_pm2_5_mt = pm2_5_mt * prop,
-         prop_pm10_mt = pm10_mt * prop)
+  mutate(prop_co2_mt = emissions_co2_mt * prop,
+         prop_ch4_mt = emissions_ch4_mt * prop,
+         prop_n2o_mt = emissions_n2o_mt * prop,
+         prop_nox_mt = emissions_nox_mt * prop,
+         prop_sox_mt = emissions_sox_mt * prop,
+         prop_co_mt = emissions_co_mt * prop,
+         prop_vocs_mt = emissions_vocs_mt * prop,
+         prop_pm2_5_mt = emissions_pm2_5_mt * prop,
+         prop_pm10_mt = emissions_pm10_mt * prop)
 
 # Check for discrepancies
 for (i in seq_along(pollutants)) {
@@ -325,15 +328,15 @@ emissions_partitioned_no_geo <- emissions_partitioned %>%
 # Group by zone, flag, and year
 emissions_partitioned_grouped <- emissions_partitioned_no_geo %>%
   group_by(zone, flag, year) %>%
-  summarise(co2 = sum(prop_co2_mt, na.rm = TRUE),
-            ch4 = sum(prop_ch4_mt, na.rm = TRUE),
-            n2o = sum(prop_n2o_mt, na.rm = TRUE),
-            nox = sum(prop_nox_mt, na.rm = TRUE),
-            sox = sum(prop_sox_mt, na.rm = TRUE),
-            co = sum(prop_co_mt, na.rm = TRUE),
-            vocs = sum(prop_vocs_mt, na.rm = TRUE),
-            pm2_5 = sum(prop_pm2_5_mt, na.rm = TRUE),
-            pm10 = sum(prop_pm10_mt, na.rm = TRUE)) %>%
+  summarise(emissions_co2_mt = sum(prop_co2_mt, na.rm = TRUE),
+            emissions_ch4_mt = sum(prop_ch4_mt, na.rm = TRUE),
+            emissions_n2o_mt = sum(prop_n2o_mt, na.rm = TRUE),
+            emissions_nox_mt = sum(prop_nox_mt, na.rm = TRUE),
+            emissions_sox_mt = sum(prop_sox_mt, na.rm = TRUE),
+            emissions_co_mt = sum(prop_co_mt, na.rm = TRUE),
+            emissions_vocs_mt = sum(prop_vocs_mt, na.rm = TRUE),
+            emissions_pm2_5_mt = sum(prop_pm2_5_mt, na.rm = TRUE),
+            emissions_pm10_mt = sum(prop_pm10_mt, na.rm = TRUE)) %>%
   ungroup()
 
 # Save for SAU analysis
@@ -384,15 +387,15 @@ for (i in seq_along(regions)){
     # Select non-broadcasting emissions
     filter(flag == "DARK") %>%
     # Rename columns for non-broadcasting emissions
-    mutate(non_broad_co2_mt = co2,
-           non_broad_ch4_mt = ch4,
-           non_broad_n2o_mt = n2o,
-           non_broad_nox_mt = nox,
-           non_broad_sox_mt = sox,
-           non_broad_co_mt = co,
-           non_broad_vocs_mt = vocs,
-           non_broad_pm2_5_mt = pm2_5,
-           non_broad_pm10_mt = pm10) %>%
+    mutate(non_broad_co2_mt = emissions_co2_mt,
+           non_broad_ch4_mt = emissions_ch4_mt,
+           non_broad_n2o_mt = emissions_n2o_mt,
+           non_broad_nox_mt = emissions_nox_mt,
+           non_broad_sox_mt = emissions_sox_mt,
+           non_broad_co_mt = emissions_co_mt,
+           non_broad_vocs_mt = emissions_vocs_mt,
+           non_broad_pm2_5_mt = emissions_pm2_5_mt,
+           non_broad_pm10_mt = emissions_pm10_mt) %>%
     # Keep only desired columns
     select(zone, 
            year, 
@@ -454,16 +457,16 @@ for (i in seq_along(regions)){
     filter(zone == regions[i]) %>%
     # Remove non-broadcasting emissions
     filter(!flag == "DARK") %>%
-    mutate(broad_co2_mt = co2,
-           broad_ch4_mt = ch4,
-           broad_n2o_mt = n2o,
-           broad_nox_mt = nox,
-           broad_sox_mt = sox,
-           broad_co_mt = co,
-           broad_vocs_mt = vocs,
-           broad_pm2_5_mt = pm2_5,
-           broad_pm10_mt = pm10) %>%
-    select(-c(co2, ch4, n2o, nox, sox, co, vocs, pm2_5, pm10))
+    mutate(broad_co2_mt = emissions_co2_mt,
+           broad_ch4_mt = emissions_ch4_mt,
+           broad_n2o_mt = emissions_n2o_mt,
+           broad_nox_mt = emissions_nox_mt,
+           broad_sox_mt = emissions_sox_mt,
+           broad_co_mt = emissions_co_mt,
+           broad_vocs_mt = emissions_vocs_mt,
+           broad_pm2_5_mt = emissions_pm2_5_mt,
+           broad_pm10_mt = emissions_pm10_mt) %>%
+    select(-c(emissions_co2_mt, emissions_ch4_mt, emissions_n2o_mt, emissions_nox_mt, emissions_sox_mt, emissions_co_mt, emissions_vocs_mt, emissions_pm2_5_mt, emissions_pm10_mt))
   
   # 2.2 Distribute broadcasting for countries with catch ASSUMPTION: 1 ton = same emissions for all species
   total_flag_catch <- fao_catch %>%
@@ -543,7 +546,7 @@ for (i in seq_along(regions)){
     # Filter for Region #
     filter(zone == regions[i])
 
-  before <- sum(check$co2, na.rm = TRUE)
+  before <- sum(check$emissions_co2_mt, na.rm = TRUE)
   after <- sum(total_region_emissions$total_co2_mt, na.rm = TRUE)
   
   percent_diff <- ((after-before)/before)*100
@@ -570,7 +573,7 @@ write_csv(full_emissions_fao, file.path("/capstone/seamissions/checkpoint/full_e
 ```{r}
 #| code-summary: Final Check
 # Make sure total emissions match
-total_co2 <- sum(emissions_partitioned_grouped$co2, na.rm = TRUE)
+total_co2 <- sum(emissions_partitioned_grouped$emissions_co2_mt, na.rm = TRUE)
 total_co2_fao <- sum(full_emissions_fao$total_co2_mt, na.rm = TRUE)
 
 percent_diff <- ((total_co2_fao-total_co2)/total_co2)*100

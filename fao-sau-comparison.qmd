@@ -342,16 +342,16 @@ fao_summary <- full_emissions_fao_filtered %>%
   group_by(flag) %>%
   summarise(fao_total_co2_mt = sum(total_co2_mt, na.rm = TRUE),
             fao_total_catch = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
-  mutate(fao_emissions_unit_catch = ifelse(fao_total_catch == 0, 0, fao_total_co2_mt/fao_total_catch)) %>%
-  select(-c(fao_total_co2_mt, fao_total_catch))
+  mutate(fao_emissions_unit_catch = ifelse(fao_total_catch == 0, 0, fao_total_co2_mt/fao_total_catch)) 
+  #select(-c(fao_total_co2_mt, fao_total_catch))
 
 # Summarise SAU by flag
 sau_summary <- full_emissions_sau_filtered %>%
   group_by(flag)  %>%
   summarise(sau_total_co2_mt = sum(total_co2_mt, na.rm = TRUE),
             sau_total_catch = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
-  mutate(sau_emissions_unit_catch = ifelse(sau_total_catch == 0, 0, sau_total_co2_mt/sau_total_catch)) %>%
-  select(-c(sau_total_co2_mt, sau_total_catch))
+  mutate(sau_emissions_unit_catch = ifelse(sau_total_catch == 0, 0, sau_total_co2_mt/sau_total_catch)) 
+  #select(-c(sau_total_co2_mt, sau_total_catch))
 
 # Join summaries
 flag_emissions_catch_comparison <- full_join(fao_summary, sau_summary, by = "flag") 
@@ -699,8 +699,10 @@ species_key <- read_csv(file.path("/capstone/seamissions/data/master_species_key
    select(identifier, name_en, scientific_name, major_group, isscaap_group, isscaap) %>%
   add_row(identifier = 99999999, name_en = "no_fao_species_catch_data", scientific_name = "no_fao_species_catch_data", major_group = "no_fao_species_catch_data", isscaap_group = "no_fao_species_catch_data", isscaap = 99999999)
 
+full_species_key
+
 # Join to FAO data
-full_emissions_fao_species <- left_join(full_emissions_fao, species_key, by = c("species_identifier" = "identifier")) %>%
+full_emissions_fao_species <- left_join(full_emissions_fao, full_species_key, by = c("species_identifier" = "identifier")) %>%
   relocate(c(name_en, scientific_name, major_group, isscaap_group, isscaap), .after = flag)
  
 # Save species-specific emissions

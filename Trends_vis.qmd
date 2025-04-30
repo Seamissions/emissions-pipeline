@@ -1,5 +1,5 @@
 ---
-title: "Data Pipeline"
+title: "Visualizations"
 author: "Carmen Hoyt"
 date: last-modified
 format:
@@ -16,10 +16,10 @@ editor_options:
 
 ```{r}
 library(tidyverse)
-```
 
-```{r}
+full_emissions_fao <- read_csv(file.path("/capstone/seamissions/checkpoint/full_emissions_fao.csv"), show_col_types = FALSE)
 
+full_emissions_fao_species <- read_csv(file.path("/capstone/seamissions/checkpoint/full_emissions_fao_species.csv"))
 ```
 
 # Trends in global emissions by FAO region
@@ -62,6 +62,17 @@ full_emissions_fao_species %>%
   labs(x = "",
        y = "Emissions CO2 per Unit Catch") +
   theme_minimal()
+
+View(full_emissions_fao_species %>%
+  filter(is.na(isscaap_group)))
+  
+
+# species key missing:
+missing_species <- full_emissions_fao_species %>%
+  filter(is.na(isscaap_group))
+
+missing_species_key <- data.frame(species_identifier = unique(missing_species$species_identifier)) %>%
+  left_join(fao_species_groups_clean, by = c("species_identifier" = "identifier"))
   
 ```
 
