@@ -220,6 +220,13 @@ emissions_zones <- st_intersection(emissions_grid_sf, fao_regions)
 
 # Create area column (as numeric)
 emissions_zones$area <- as.numeric(st_area(emissions_zones))
+
+# Export for dashboard
+dashboard <- emissions_zones %>%
+  group_by(grid_id, lat_bin, lon_bin, flag, year, zone, geometry) %>% # geometry?
+  summarize(emissions_co2_mt = sum(emissions_co2_mt, na.rm = TRUE))
+
+st_write(dashboard, file.path("/capstone/seamissions/checkpoint/dashboard.gpkg"), delete_dsn = TRUE)
 ```
 
 ## Partition Emissions by Proportional Area
@@ -338,6 +345,22 @@ emissions_partitioned_grouped <- emissions_partitioned_no_geo %>%
             emissions_pm2_5_mt = sum(prop_pm2_5_mt, na.rm = TRUE),
             emissions_pm10_mt = sum(prop_pm10_mt, na.rm = TRUE)) %>%
   ungroup()
+
+# Group by zone, flag, and year
+# emissions_partitioned_grouped_geo <- emissions_partitioned %>%
+#   group_by(zone, flag, year) %>%
+#   summarise(emissions_co2_mt = sum(prop_co2_mt, na.rm = TRUE),
+#             emissions_ch4_mt = sum(prop_ch4_mt, na.rm = TRUE),
+#             emissions_n2o_mt = sum(prop_n2o_mt, na.rm = TRUE),
+#             emissions_nox_mt = sum(prop_nox_mt, na.rm = TRUE),
+#             emissions_sox_mt = sum(prop_sox_mt, na.rm = TRUE),
+#             emissions_co_mt = sum(prop_co_mt, na.rm = TRUE),
+#             emissions_vocs_mt = sum(prop_vocs_mt, na.rm = TRUE),
+#             emissions_pm2_5_mt = sum(prop_pm2_5_mt, na.rm = TRUE),
+#             emissions_pm10_mt = sum(prop_pm10_mt, na.rm = TRUE)) %>%
+#   ungroup()
+
+
 
 # Save for SAU analysis
 write_csv(emissions_partitioned_grouped, file.path("/capstone/seamissions/checkpoint/emissions_partitioned_grouped.csv"))

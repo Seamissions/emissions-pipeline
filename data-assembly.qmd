@@ -54,7 +54,8 @@ fao_country_groups_clean <- fao_country_groups %>%
 
 fao_species_groups_clean <- fao_species_groups %>%
   select(x3a_code, taxonomic_code, identifier, scientific_name, contains("_en"), major_group) %>%
-  filter(!str_detect(isscaap_group_en, '(?i)freshwater'))
+  filter(!str_detect(isscaap_group_en, '(?i)freshwater')) %>%
+  filter(!isscaap_group_en == "River eels")
 ```
 
 ## Join FAO Data
@@ -85,8 +86,6 @@ fao_catch <- fao_capture_join %>%
          # This will be the species identifier in the final dataset
          identifier,
          major_group,
-         # scientific_name,
-         # name_en.y,
          value) %>%
   # Rename columns for consistency
   rename(zone = area_code,
@@ -94,8 +93,6 @@ fao_catch <- fao_capture_join %>%
          flag = iso3_code,
          species_identifier = identifier,
          catch = value
-         # species = scientific_name,
-         # common_name = name_en.y
          ) %>%
   # Filter for >2015 to match emissions data
   filter(year > 2015) %>%
@@ -104,7 +101,7 @@ fao_catch <- fao_capture_join %>%
          year = as.integer(year))
 
 fao_cleaned <- fao_catch %>%
-  # Filter out mammals(?), plants, and reptiles
+  # Filter out mammals, plants, and reptiles
   filter(major_group %in% c("PISCES", "CRUSTACEA", "MOLLUSCA", "INVERTEBRATA AQUATICA")) %>%
   group_by(zone, year, flag, species_identifier) %>%
   summarise(fao_catch_tons = sum(catch, na.rm = TRUE), .groups = "drop")
