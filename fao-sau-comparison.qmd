@@ -50,13 +50,8 @@ library(gghighlight)
 # Read in emissions data
 emissions_partitioned_grouped <- read_csv(file.path("/capstone/seamissions/checkpoint/emissions_partitioned_grouped.csv"), show_col_types = FALSE)
 
-# Read in FAO country code table
-# iso_flags <- read_csv("/capstone/seamissions/data/fao_seafood_production/CL_FI_COUNTRY_GROUPS.csv", show_col_types = FALSE) %>%
-#   clean_names() %>%
-#   select(iso3_code, name_en) 
-
 # Read in flag key
-flag_key <- read_csv(file.path("/capstone/seamissions/checkpoint/flag_key.csv"), show_col_types = FALSE)
+flag_key <- read_csv(here("data-keys", "flag_key.csv"), show_col_types = FALSE)
 
 # Set up import for .csv files
 file_names <- list.files("/capstone/seamissions/data/sau", pattern="*.csv", full.names = TRUE)
@@ -290,26 +285,11 @@ write_csv(full_emissions_sau, file.path("/capstone/seamissions/checkpoint/full_e
 
 ```{r}
 #| code-summary: Load Data
-#full_emissions_fao <- read_csv(file.path("/capstone/seamissions/checkpoint/full_emissions_fao.csv"), show_col_types = FALSE)
+full_emissions_fao <- read_csv(file.path("/capstone/seamissions/checkpoint/full_emissions_fao.csv"), show_col_types = FALSE)
 
-#full_emissions_sau <- read_csv(file.path("/capstone/seamissions/checkpoint/full_emissions_sau.csv"), show_col_types = FALSE)
-```
+full_emissions_fao_species <- read_csv(file.path("/capstone/seamissions/checkpoint/full_emissions_fao_species.csv"), show_col_types = FALSE)
 
-## Join FAO Species Key
-
-[The current International Standard Statistical Classification of Aquatic Animals and Plants (ISSCAAP) in use from 2000](https://www.fao.org/fishery/docs/DOCUMENT/cwp/handbook/annex/AnnexS2listISSCAAP2000.pdf)
-
-```{r}
-#| code-summary: Join Species Key
-# Import species key
-full_species_key <- read_csv(file.path("/capstone/seamissions/data/full_species_key.csv"), show_col_types = FALSE)
-
-# Join to FAO data
-full_emissions_fao_species <- left_join(full_emissions_fao, full_species_key, by = c("species_identifier" = "identifier")) %>%
-  relocate(c(name_en, scientific_name, major_group, isscaap_group, isscaap), .after = flag)
- 
-# Save species-specific emissions
-write_csv(full_emissions_fao_species, file.path("/capstone/seamissions/checkpoint/full_emissions_fao_species.csv"))
+full_emissions_sau <- read_csv(file.path("/capstone/seamissions/checkpoint/full_emissions_sau.csv"), show_col_types = FALSE)
 ```
 
 ## Overall Comparisons
@@ -341,9 +321,12 @@ sau_total_catch <- sum(full_emissions_sau_filtered$country_total_tons_by_species
 # -------- Compare Emissions/Unit Catch --------
 fao_total_emissions_catch <- total_co2_fao/fao_total_catch
 sau_total_emissions_catch <- total_co2_sau/sau_total_catch
+
+print(paste0("FAO emissions-per-unit-catch: ", fao_total_emissions_catch, "."))
+print(paste0("SAU emissions-per-unit-catch: ", sau_total_emissions_catch, "."))
 ```
 
-## Emissions/Unit Catch
+## Emissions/Unit Catch Comparisons
 
 ### Flag
 
@@ -388,10 +371,12 @@ flag_emissions_catch_comparison %>%
 #write_csv(flag_emissions_catch_comparison, file.path("/capstone/seamissions/checkpoint/flag_emissions_catch_comparison.csv"))
 ```
 
+**add box plot**
+
 ### Zone
 
 ```{r}
-#| code-summary: Region
+#| code-summary: Zone
 # Summarise FAO catch by region
 fao_summary <- full_emissions_fao_filtered %>%
   group_by(zone) %>%
@@ -423,30 +408,30 @@ zone_emissions_catch_comparison %>%
        title = "Emissions per Unit Catch Disparity by Major Fishing Area") +
   theme_minimal()
 
-zone_emissions_catch_comparison %>%
-  arrange(desc(emissions_catch))
+# zone_emissions_catch_comparison %>%
+#   arrange(desc(emissions_catch))
 
-write_csv(zone_emissions_catch_comparison, file.path("/capstone/seamissions/checkpoint/zone_emissions_catch_comparison.csv"))
+#write_csv(zone_emissions_catch_comparison, file.path("/capstone/seamissions/checkpoint/zone_emissions_catch_comparison.csv"))
 
-zone_18_fao <- full_emissions_fao_filtered %>%
-  filter(zone == 18) %>%
-  group_by(flag) %>%
-  summarise(fao_total_co2_mt = sum(total_co2_mt, na.rm = TRUE),
-            fao_total_catch = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
-  mutate(fao_emissions_unit_catch = ifelse(fao_total_catch == 0, 0, fao_total_co2_mt/fao_total_catch))
-  #select(flag, fao_emissions_unit_catch)
-  
-zone_18_sau <- full_emissions_sau_filtered %>%
-  filter(zone == 18) %>%
-  group_by(flag) %>%
-  summarise(sau_total_co2_mt = sum(total_co2_mt, na.rm = TRUE),
-            sau_total_catch = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
-  mutate(sau_emissions_unit_catch = ifelse(sau_total_catch == 0, 0, sau_total_co2_mt/sau_total_catch))
-  #select(flag, sau_emissions_unit_catch)
+# zone_18_fao <- full_emissions_fao_filtered %>%
+#   filter(zone == 18) %>%
+#   group_by(flag) %>%
+#   summarise(fao_total_co2_mt = sum(total_co2_mt, na.rm = TRUE),
+#             fao_total_catch = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
+#   mutate(fao_emissions_unit_catch = ifelse(fao_total_catch == 0, 0, fao_total_co2_mt/fao_total_catch))
+#   #select(flag, fao_emissions_unit_catch)
+#   
+# zone_18_sau <- full_emissions_sau_filtered %>%
+#   filter(zone == 18) %>%
+#   group_by(flag) %>%
+#   summarise(sau_total_co2_mt = sum(total_co2_mt, na.rm = TRUE),
+#             sau_total_catch = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
+#   mutate(sau_emissions_unit_catch = ifelse(sau_total_catch == 0, 0, sau_total_co2_mt/sau_total_catch))
+#   #select(flag, sau_emissions_unit_catch)
+# 
+# zone_18 <- full_join(zone_18_fao, zone_18_sau, by = c("flag"))
 
-zone_18 <- full_join(zone_18_fao, zone_18_sau, by = c("flag"))
-
-write_csv(zone_18, file.path("/capstone/seamissions/checkpoint/zone_18.csv"))
+#write_csv(zone_18, file.path("/capstone/seamissions/checkpoint/zone_18.csv"))
 ```
 
 ### Zone and Flag
@@ -454,82 +439,83 @@ write_csv(zone_18, file.path("/capstone/seamissions/checkpoint/zone_18.csv"))
 ```{r}
 # code-summary: Zone and Flag
 # Summarise FAO data
-fao_summary <- full_emissions_fao_filtered %>%
-  group_by(flag, species_identifier) %>%
-  summarise(fao_total_co2_mt = sum(total_co2_mt, na.rm = TRUE),
-            fao_total_catch = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
-  mutate(fao_emissions_unit_catch = ifelse(fao_total_catch == 0, 0, fao_total_co2_mt/fao_total_catch)) %>%
-  select(-c(fao_total_co2_mt, fao_total_catch))
-
-# Summarise SAU data
-sau_summary <- full_emissions_sau_filtered %>%
-  group_by(flag, species) %>%
-  summarise(sau_total_co2_mt = sum(total_co2_mt, na.rm = TRUE),
-            sau_total_catch = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
-  mutate(sau_emissions_unit_catch = ifelse(sau_total_catch == 0, 0, sau_total_co2_mt/sau_total_catch)) %>%
-  select(-c(sau_total_co2_mt, sau_total_catch))
-
-# Join summaries
-zone_flag_emissions_catch <- full_join(fao_summary, sau_summary, by = c("flag", "species_identifer"))
-
-
-zone_flag_emissions_catch %>%
-  pivot_longer(cols = 3:4, names_to = "entity", values_to = "emissions_catch") %>%
-  filter(flag %in% c("FLK", "URY", "ISR", "PCN", "ITA", "SHN", "REU", "BRA", "CYM", "BEL")) %>%
-ggplot(aes(reorder(flag, -emissions_catch), emissions_catch, fill = entity)) +
-  geom_boxplot(position = position_dodge2(preserve = "single")) +
-  scale_fill_manual(labels = c("FAO", "SAU"), values = c("cornflowerblue", "firebrick")) +
-  labs(x = "Flag",
-       y = "Emissions CO2/Unit Catch",
-       fill = "Agency",
-       title = "Emissions CO2 per Unit Catch by Flag") +
-  theme_minimal()
+# fao_summary <- full_emissions_fao_filtered %>%
+#   group_by(flag, species_identifier) %>%
+#   summarise(fao_total_co2_mt = sum(total_co2_mt, na.rm = TRUE),
+#             fao_total_catch = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
+#   mutate(fao_emissions_unit_catch = ifelse(fao_total_catch == 0, 0, fao_total_co2_mt/fao_total_catch)) %>%
+#   select(-c(fao_total_co2_mt, fao_total_catch))
+# 
+# # Summarise SAU data
+# sau_summary <- full_emissions_sau_filtered %>%
+#   group_by(flag, species) %>%
+#   summarise(sau_total_co2_mt = sum(total_co2_mt, na.rm = TRUE),
+#             sau_total_catch = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
+#   mutate(sau_emissions_unit_catch = ifelse(sau_total_catch == 0, 0, sau_total_co2_mt/sau_total_catch)) %>%
+#   select(-c(sau_total_co2_mt, sau_total_catch))
+# 
+# # Join summaries
+# zone_flag_emissions_catch <- full_join(fao_summary, sau_summary, by = c("flag", "species_identifer"))
+# 
+# 
+# zone_flag_emissions_catch %>%
+#   pivot_longer(cols = 3:4, names_to = "entity", values_to = "emissions_catch") %>%
+#   filter(flag %in% c("FLK", "URY", "ISR", "PCN", "ITA", "SHN", "REU", "BRA", "CYM", "BEL")) %>%
+# ggplot(aes(reorder(flag, -emissions_catch), emissions_catch, fill = entity)) +
+#   geom_boxplot(position = position_dodge2(preserve = "single")) +
+#   scale_fill_manual(labels = c("FAO", "SAU"), values = c("cornflowerblue", "firebrick")) +
+#   labs(x = "Flag",
+#        y = "Emissions CO2/Unit Catch",
+#        fill = "Agency",
+#        title = "Emissions CO2 per Unit Catch by Flag") +
+#   theme_minimal()
 
 # VISUALIZE
 ```
 
-### Flag and Species 
+### Fishery
 
 ```{r}
-# code-summary: Zone and Flag
-# Summarise FAO data
-fao_summary <- full_emissions_fao_species %>%
-  group_by(flag, isscaap_group) %>%
-  summarise(fao_total_co2_mt = sum(total_co2_mt, na.rm = TRUE),
-            fao_total_catch = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
-  mutate(fao_emissions_unit_catch = ifelse(fao_total_catch == 0, 0, fao_total_co2_mt/fao_total_catch)) %>%
-  select(-c(fao_total_co2_mt, fao_total_catch))
-
-# Summarise SAU data
-sau_summary <- full_emissions_sau_filtered %>%
-  group_by(flag, species) %>%
-  summarise(sau_total_co2_mt = sum(total_co2_mt, na.rm = TRUE),
-            sau_total_catch = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
-  mutate(sau_emissions_unit_catch = ifelse(sau_total_catch == 0, 0, sau_total_co2_mt/sau_total_catch)) %>%
-  select(-c(sau_total_co2_mt, sau_total_catch))
-
-# Join summaries
-# zone_flag_emissions_catch <- full_join(fao_summary, sau_summary, by = c("flag", "species_identifer")) 
-
-fao_summary %>%
-  #pivot_longer(cols = 3:4, names_to = "entity", values_to = "emissions_catch") %>%
-  #filter(flag %in% c("FLK", "URY", "ISR", "PCN", "ITA", "SHN", "REU", "BRA", "CYM", "BEL")) %>%
-  group_by(flag) %>%
-  mutate(mean = mean(fao_emissions_unit_catch)) %>%
-  arrange(desc(mean)) %>%
-  filter(!isscaap_group == "no_fao_species_catch_data") %>%
-  filter(flag %in% c("GIB", "SVN", "REU", "MLT", "NRU", "BEL", "JPN", "CYP", "ITA", "BHR", "ISR", "HRV")) %>%
-ggplot(aes(reorder(flag, -fao_emissions_unit_catch), fao_emissions_unit_catch)) +
-  geom_boxplot() +
-  #scale_y_continuous(limits = c(0, 65)) +
-  #scale_fill_manual(labels = c("FAO", "SAU"), values = c("cornflowerblue", "firebrick")) +
-  labs(x = "",
-       y = "Emissions CO2/Unit Catch",
-       title = "Emissions CO2 per Unit Catch by Flag") +
-  theme_minimal()
+# # code-summary: Zone and Flag
+# # Summarise FAO data
+# fao_summary <- full_emissions_fao_species %>%
+#   group_by(flag, isscaap_group) %>%
+#   summarise(fao_total_co2_mt = sum(total_co2_mt, na.rm = TRUE),
+#             fao_total_catch = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
+#   mutate(fao_emissions_unit_catch = ifelse(fao_total_catch == 0, 0, fao_total_co2_mt/fao_total_catch)) %>%
+#   select(-c(fao_total_co2_mt, fao_total_catch))
+# 
+# # Summarise SAU data
+# sau_summary <- full_emissions_sau_filtered %>%
+#   group_by(flag, species) %>%
+#   summarise(sau_total_co2_mt = sum(total_co2_mt, na.rm = TRUE),
+#             sau_total_catch = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
+#   mutate(sau_emissions_unit_catch = ifelse(sau_total_catch == 0, 0, sau_total_co2_mt/sau_total_catch)) %>%
+#   select(-c(sau_total_co2_mt, sau_total_catch))
+# 
+# # Join summaries
+# # zone_flag_emissions_catch <- full_join(fao_summary, sau_summary, by = c("flag", "species_identifer")) 
+# 
+# fao_summary %>%
+#   #pivot_longer(cols = 3:4, names_to = "entity", values_to = "emissions_catch") %>%
+#   #filter(flag %in% c("FLK", "URY", "ISR", "PCN", "ITA", "SHN", "REU", "BRA", "CYM", "BEL")) %>%
+#   group_by(flag) %>%
+#   mutate(mean = mean(fao_emissions_unit_catch)) %>%
+#   arrange(desc(mean)) %>%
+#   filter(!isscaap_group == "no_fao_species_catch_data") %>%
+#   filter(flag %in% c("GIB", "SVN", "REU", "MLT", "NRU", "BEL", "JPN", "CYP", "ITA", "BHR", "ISR", "HRV")) %>%
+# ggplot(aes(reorder(flag, -fao_emissions_unit_catch), fao_emissions_unit_catch)) +
+#   geom_boxplot() +
+#   #scale_y_continuous(limits = c(0, 65)) +
+#   #scale_fill_manual(labels = c("FAO", "SAU"), values = c("cornflowerblue", "firebrick")) +
+#   labs(x = "",
+#        y = "Emissions CO2/Unit Catch",
+#        title = "Emissions CO2 per Unit Catch by Flag") +
+#   theme_minimal()
 ```
 
 ```{r}
+#| code-summary: Fishery
 # Summarise FAO data
 fao_summary <- full_emissions_fao_species %>%
   group_by(zone, flag, isscaap_group) %>%
@@ -562,45 +548,41 @@ ggplot(aes(as.factor(zone), fao_emissions_unit_catch, group = as.factor(zone))) 
        y = "Emissions CO2/Unit Catch",
        title = "Emissions CO2 per Unit Catch by Zone") +
   theme_minimal()
-
-
 ```
-
-
 
 ### ISSCAAP Group
 
 ```{r}
-#| code-summary: ISSCAAP Group
-# Filter FAO species data
-full_emissions_fao_species_filtered <- full_emissions_fao_species %>%
-  filter(year <= 2019)
-
-# Summarise FAO by isscaap group
-fao_summary <- full_emissions_fao_species %>%
-  group_by(zone, flag, isscaap_group) %>%
-  summarise(fao_total_co2_mt = sum(total_co2_mt, na.rm = TRUE),
-            fao_total_catch = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
-  mutate(fao_emissions_unit_catch = ifelse(fao_total_catch == 0, 0, fao_total_co2_mt/fao_total_catch)) %>%
-  select(-c(fao_total_co2_mt, fao_total_catch))
-
-# Plot
-fao_summary %>%
-  #filter(!is.na(isscaap_group)) %>%
-  #arrange(desc())
-  #slice(1:10) %>%
-  #filter(fao_emissions_unit_catch < 100) %>%
-  filter(isscaap_group %in% c("Carps, barbels, and other cyprinids", "Salmons, trouts, smelts", "King crabs, squat-lobsters", "Sturgeons, paddlefishes", "Krill, planktonic crustaceans", "Cods, hakes, haddocks", "Scallops, pectens", "Corals", "Sea-squirts and other tunicates", "Mussels", "Sponges", "Clams, cockles, arkshells", "Oysters")) %>%
- ggplot(aes(reorder(isscaap_group, fao_emissions_unit_catch), fao_emissions_unit_catch)) +
-  geom_boxplot() +
-  #geom_text(aes(label = round(fao_emissions_unit_catch, 1)), hjust = 1.5, color = "white") +
-  coord_flip() +
-  scale_y_continuous(limits = c(0, 35)) +
-  #scale_y_continuous(labels = scales::comma) +
-  labs(x = "",
-       y = "Emissions CO2/Unit Catch",
-       title = "Emissions CO2 per Unit Catch by ISSCAAP Group") +
-  theme_minimal()
+# #| code-summary: ISSCAAP Group
+# # Filter FAO species data
+# full_emissions_fao_species_filtered <- full_emissions_fao_species %>%
+#   filter(year <= 2019)
+# 
+# # Summarise FAO by isscaap group
+# fao_summary <- full_emissions_fao_species %>%
+#   group_by(zone, flag, isscaap_group) %>%
+#   summarise(fao_total_co2_mt = sum(total_co2_mt, na.rm = TRUE),
+#             fao_total_catch = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
+#   mutate(fao_emissions_unit_catch = ifelse(fao_total_catch == 0, 0, fao_total_co2_mt/fao_total_catch)) %>%
+#   select(-c(fao_total_co2_mt, fao_total_catch))
+# 
+# # Plot
+# fao_summary %>%
+#   #filter(!is.na(isscaap_group)) %>%
+#   #arrange(desc())
+#   #slice(1:10) %>%
+#   #filter(fao_emissions_unit_catch < 100) %>%
+#   filter(isscaap_group %in% c("Carps, barbels, and other cyprinids", "Salmons, trouts, smelts", "King crabs, squat-lobsters", "Sturgeons, paddlefishes", "Krill, planktonic crustaceans", "Cods, hakes, haddocks", "Scallops, pectens", "Corals", "Sea-squirts and other tunicates", "Mussels", "Sponges", "Clams, cockles, arkshells", "Oysters")) %>%
+#  ggplot(aes(reorder(isscaap_group, fao_emissions_unit_catch), fao_emissions_unit_catch)) +
+#   geom_boxplot() +
+#   #geom_text(aes(label = round(fao_emissions_unit_catch, 1)), hjust = 1.5, color = "white") +
+#   coord_flip() +
+#   scale_y_continuous(limits = c(0, 35)) +
+#   #scale_y_continuous(labels = scales::comma) +
+#   labs(x = "",
+#        y = "Emissions CO2/Unit Catch",
+#        title = "Emissions CO2 per Unit Catch by ISSCAAP Group") +
+#   theme_minimal()
 ```
 
 ## Agency
@@ -658,246 +640,246 @@ zone_year_flag_comparison_table <- full_join(fao_summary, sau_summary, by = c("z
 ### Flag
 
 ```{r}
-#| code-summary: Global Flags
-# -------- Emissions --------
-# Summarise FAO emissions by flag
-fao_summary <- full_emissions_fao_filtered %>%
-  group_by(flag) %>%
-  summarise(fao_total_co2_mt = sum(total_co2_mt, na.rm = TRUE))
+# #| code-summary: Global Flags
+# # -------- Emissions --------
+# # Summarise FAO emissions by flag
+# fao_summary <- full_emissions_fao_filtered %>%
+#   group_by(flag) %>%
+#   summarise(fao_total_co2_mt = sum(total_co2_mt, na.rm = TRUE))
+# 
+# # Summarise SAU emissions by flag
+# sau_summary <- full_emissions_sau_filtered %>%
+#   group_by(flag) %>%
+#   summarise(sau_total_co2_mt = sum(total_co2_mt, na.rm = TRUE))
+# 
+# # Join summaries
+# flag_emissions_comparison <- full_join(fao_summary, sau_summary, by = "flag") %>%
+#   mutate(percent_reported_co2 = round((fao_total_co2_mt/sau_total_co2_mt)*100, 2),
+#          tonnage_discrepancy_co2 = round(fao_total_co2_mt - sau_total_co2_mt, 2)) %>%
+#   arrange(desc(tonnage_discrepancy_co2), .by_group = TRUE)
+# 
+# # Save table
+# #write_csv(flag_emissions_comparison, file.path("/capstone/seamissions/checkpoint/flag_emissions_comparison.csv"))
+# 
+# flag_emissions_comparison %>%
+#   select(flag, fao_total_co2_mt, sau_total_co2_mt) %>%
+#   pivot_longer(cols = 2:3, names_to = "entity", values_to = "co2_emissions_mt") %>%
+#   arrange(desc(co2_emissions_mt)) %>%
+#   slice(1:14) %>%
+#   ggplot(aes(reorder(flag, -co2_emissions_mt), co2_emissions_mt, fill = entity)) +
+#            geom_bar(stat = "identity", position = "dodge") +
+#   scale_y_continuous(labels = scales::comma) +
+#   scale_fill_manual(labels = c("FAO", "SAU"), values = c("cornflowerblue", "firebrick")) +
+#   labs(x = "Flag",
+#        y = "CO2 Emissions (metric tons)",
+#        fill = "Agency",
+#        title = "Emissions Disparity by Flag") +
+#   theme_minimal()
 
-# Summarise SAU emissions by flag
-sau_summary <- full_emissions_sau_filtered %>%
-  group_by(flag) %>%
-  summarise(sau_total_co2_mt = sum(total_co2_mt, na.rm = TRUE))
-
-# Join summaries
-flag_emissions_comparison <- full_join(fao_summary, sau_summary, by = "flag") %>%
-  mutate(percent_reported_co2 = round((fao_total_co2_mt/sau_total_co2_mt)*100, 2),
-         tonnage_discrepancy_co2 = round(fao_total_co2_mt - sau_total_co2_mt, 2)) %>%
-  arrange(desc(tonnage_discrepancy_co2), .by_group = TRUE)
-
-# Save table
-#write_csv(flag_emissions_comparison, file.path("/capstone/seamissions/checkpoint/flag_emissions_comparison.csv"))
-
-flag_emissions_comparison %>%
-  select(flag, fao_total_co2_mt, sau_total_co2_mt) %>%
-  pivot_longer(cols = 2:3, names_to = "entity", values_to = "co2_emissions_mt") %>%
-  arrange(desc(co2_emissions_mt)) %>%
-  slice(1:14) %>%
-  ggplot(aes(reorder(flag, -co2_emissions_mt), co2_emissions_mt, fill = entity)) +
-           geom_bar(stat = "identity", position = "dodge") +
-  scale_y_continuous(labels = scales::comma) +
-  scale_fill_manual(labels = c("FAO", "SAU"), values = c("cornflowerblue", "firebrick")) +
-  labs(x = "Flag",
-       y = "CO2 Emissions (metric tons)",
-       fill = "Agency",
-       title = "Emissions Disparity by Flag") +
-  theme_minimal()
-
-# -------- Catch ---------
-# Summarise FAO catch by flag
-fao_summary <- full_emissions_fao_filtered %>%
-  group_by(flag) %>%
-  summarise(fao_catch_tons = sum(country_total_tons_by_species, na.rm = TRUE))
-
-# Summarise SAU catch by flag
-sau_summary <- full_emissions_sau_filtered %>%
-  group_by(flag) %>%
-  summarise(sau_catch_tons = sum(country_total_tons_by_species, na.rm = TRUE))
-
-flag_catch_comparison <- full_join(fao_summary, sau_summary, by = "flag") %>%
-  mutate(percent_reported_catch = round((fao_catch_tons/sau_catch_tons)*100, 2),
-         tonnage_discrepancy_catch = round(fao_catch_tons - sau_catch_tons, 2)) %>%
-  arrange(desc(tonnage_discrepancy_catch), .by_group = TRUE)
+# # -------- Catch ---------
+# # Summarise FAO catch by flag
+# fao_summary <- full_emissions_fao_filtered %>%
+#   group_by(flag) %>%
+#   summarise(fao_catch_tons = sum(country_total_tons_by_species, na.rm = TRUE))
+# 
+# # Summarise SAU catch by flag
+# sau_summary <- full_emissions_sau_filtered %>%
+#   group_by(flag) %>%
+#   summarise(sau_catch_tons = sum(country_total_tons_by_species, na.rm = TRUE))
+# 
+# flag_catch_comparison <- full_join(fao_summary, sau_summary, by = "flag") %>%
+#   mutate(percent_reported_catch = round((fao_catch_tons/sau_catch_tons)*100, 2),
+#          tonnage_discrepancy_catch = round(fao_catch_tons - sau_catch_tons, 2)) %>%
+#   arrange(desc(tonnage_discrepancy_catch), .by_group = TRUE)
 
 # Save table
 #write_csv(flag_catch_comparison, file.path("/capstone/seamissions/checkpoint/flag_catch_comparison.csv"))
 
-flag_catch_comparison %>%
-  select(flag, fao_catch_tons, sau_catch_tons) %>%
-  pivot_longer(cols = 2:3, names_to = "entity", values_to = "catch_tons") %>%
-  arrange(desc(catch_tons)) %>%
-  slice(1:16) %>%
-  ggplot(aes(reorder(flag, -catch_tons), catch_tons, fill = entity)) +
-           geom_bar(stat = "identity", position = "dodge") +
-  scale_y_continuous(labels = scales::comma) +
-  scale_fill_manual(labels = c("FAO", "SAU"), values = c("cornflowerblue", "firebrick")) +
-  labs(x = "Flag",
-       y = "Catch (tons)",
-       fill = "Agency",
-       title = "Catch Disparity by Flag") +
-  theme_minimal()
+# flag_catch_comparison %>%
+#   select(flag, fao_catch_tons, sau_catch_tons) %>%
+#   pivot_longer(cols = 2:3, names_to = "entity", values_to = "catch_tons") %>%
+#   arrange(desc(catch_tons)) %>%
+#   slice(1:16) %>%
+#   ggplot(aes(reorder(flag, -catch_tons), catch_tons, fill = entity)) +
+#            geom_bar(stat = "identity", position = "dodge") +
+#   scale_y_continuous(labels = scales::comma) +
+#   scale_fill_manual(labels = c("FAO", "SAU"), values = c("cornflowerblue", "firebrick")) +
+#   labs(x = "Flag",
+#        y = "Catch (tons)",
+#        fill = "Agency",
+#        title = "Catch Disparity by Flag") +
+#   theme_minimal()
 ```
 
 ### Region
 
 ```{r}
-#| code-summary: Region
-# Summarise FAO catch by region
-fao_summary <- full_emissions_fao_filtered %>%
-  group_by(zone) %>%
-  summarise(fao_catch_tons = sum(country_total_tons_by_species, na.rm = TRUE))
-
-# Summarise SAU catch by region
-sau_summary <- full_emissions_sau_filtered %>%
-  group_by(zone) %>%
-  summarise(sau_catch_tons = sum(country_total_tons_by_species, na.rm = TRUE))
-
-zone_catch_comparison <- full_join(fao_summary, sau_summary, by = "zone") %>%
-  mutate(diff = sau_catch_tons - fao_catch_tons) %>%
-  pivot_longer(cols = 2:3, names_to = "entity", values_to = "catch_tons") %>%
-  arrange(desc(diff))
-
-zone_catch_comparison %>%
-  # Order zones by disparity
-  ggplot(aes(x = fct_reorder(as.character(zone), diff, .desc = TRUE), y = catch_tons, fill = entity)) +
-  geom_bar(stat = "identity", position = "dodge") +
-  scale_y_continuous(labels = scales::comma) +
-  scale_fill_manual(labels = c("FAO", "SAU"), values = c("cornflowerblue", "firebrick")) +
-  labs(x = "Major Fishing Area",
-       y = "Catch (tons)",
-       fill = "Agency",
-       title = "Catch Disparity by Major Fishing Area") +
-  theme_minimal()
+# #| code-summary: Region
+# # Summarise FAO catch by region
+# fao_summary <- full_emissions_fao_filtered %>%
+#   group_by(zone) %>%
+#   summarise(fao_catch_tons = sum(country_total_tons_by_species, na.rm = TRUE))
+# 
+# # Summarise SAU catch by region
+# sau_summary <- full_emissions_sau_filtered %>%
+#   group_by(zone) %>%
+#   summarise(sau_catch_tons = sum(country_total_tons_by_species, na.rm = TRUE))
+# 
+# zone_catch_comparison <- full_join(fao_summary, sau_summary, by = "zone") %>%
+#   mutate(diff = sau_catch_tons - fao_catch_tons) %>%
+#   pivot_longer(cols = 2:3, names_to = "entity", values_to = "catch_tons") %>%
+#   arrange(desc(diff))
+# 
+# zone_catch_comparison %>%
+#   # Order zones by disparity
+#   ggplot(aes(x = fct_reorder(as.character(zone), diff, .desc = TRUE), y = catch_tons, fill = entity)) +
+#   geom_bar(stat = "identity", position = "dodge") +
+#   scale_y_continuous(labels = scales::comma) +
+#   scale_fill_manual(labels = c("FAO", "SAU"), values = c("cornflowerblue", "firebrick")) +
+#   labs(x = "Major Fishing Area",
+#        y = "Catch (tons)",
+#        fill = "Agency",
+#        title = "Catch Disparity by Major Fishing Area") +
+#   theme_minimal()
 ```
 
 ### Year
 
 ```{r}
-#| code-summary: Year
-# -------- Catch ---------
-# Summarise FAO catch by region
-fao_summary <- full_emissions_fao_filtered %>%
-  group_by(year) %>%
-  summarise(fao_catch_tons = sum(country_total_tons_by_species, na.rm = TRUE))
-
-# Summarise SAU catch by region
-sau_summary <- full_emissions_sau_filtered %>%
-  group_by(year) %>%
-  summarise(sau_catch_tons = sum(country_total_tons_by_species, na.rm = TRUE))
-
-year_catch_comparison <- full_join(fao_summary, sau_summary, by = "year") %>%
-  pivot_longer(cols = 2:3, names_to = "entity", values_to = "catch_tons") %>%
-  arrange(desc(catch_tons)) %>%
-  slice(1:20)
-
-year_catch_comparison%>%
-  ggplot(aes(as.factor(year), catch_tons, fill = entity)) +
-           geom_bar(stat = "identity", position = "dodge") +
-  scale_y_continuous(labels = scales::comma) +
-  scale_fill_manual(labels = c("FAO", "SAU"), values = c("cornflowerblue", "firebrick")) +
-  labs(x = "Zone",
-       y = "Catch (tons)",
-       fill = "Agency",
-       title = "Catch Disparity by Year") +
-  theme_minimal()
+# #| code-summary: Year
+# # -------- Catch ---------
+# # Summarise FAO catch by region
+# fao_summary <- full_emissions_fao_filtered %>%
+#   group_by(year) %>%
+#   summarise(fao_catch_tons = sum(country_total_tons_by_species, na.rm = TRUE))
+# 
+# # Summarise SAU catch by region
+# sau_summary <- full_emissions_sau_filtered %>%
+#   group_by(year) %>%
+#   summarise(sau_catch_tons = sum(country_total_tons_by_species, na.rm = TRUE))
+# 
+# year_catch_comparison <- full_join(fao_summary, sau_summary, by = "year") %>%
+#   pivot_longer(cols = 2:3, names_to = "entity", values_to = "catch_tons") %>%
+#   arrange(desc(catch_tons)) %>%
+#   slice(1:20)
+# 
+# year_catch_comparison%>%
+#   ggplot(aes(as.factor(year), catch_tons, fill = entity)) +
+#            geom_bar(stat = "identity", position = "dodge") +
+#   scale_y_continuous(labels = scales::comma) +
+#   scale_fill_manual(labels = c("FAO", "SAU"), values = c("cornflowerblue", "firebrick")) +
+#   labs(x = "Zone",
+#        y = "Catch (tons)",
+#        fill = "Agency",
+#        title = "Catch Disparity by Year") +
+#   theme_minimal()
 ```
 
 ## Visualizations
 
 ```{r}
-#| code-summary: Visualize
-
-# Graph by ISSCAAP group
-full_emissions_fao_species %>%
-  # Remove emissions from "no-fao-species-catch-data"
-  filter(!isscaap == 99999999) %>%
-  # Group by ISSCAAP group
-  group_by(isscaap_group) %>%
-  summarise(co2 = sum(total_co2_mt, na.rm = TRUE)) %>%
-  filter(!is.na(isscaap_group)) %>%
-ggplot(aes(reorder(as.factor(isscaap_group), co2), co2)) +
-  geom_col() +
-  scale_y_continuous(labels = scales::comma) +
-  coord_flip()+
-  labs(x = "ISSCAAP Groups",
-    y = "CO2 Emissions (mt)") +
-  theme_minimal()
-
-# Graph by ISSCAAP group
-full_emissions_fao_species %>%
-  # Remove emissions from "no-fao-species-catch-data"
-  filter(!isscaap == 99999999) %>%
-  # Group by ISSCAAP group
-  group_by(isscaap_group) %>%
-  summarise(total_emissions = sum(total_co2_mt, na.rm = TRUE),
-            total_catch = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
-  mutate(emissions_unit_catch = total_emissions/total_catch) %>%
-ggplot(aes(reorder(as.factor(isscaap_group), emissions_unit_catch), emissions_unit_catch)) +
-  geom_col() +
-  scale_y_continuous(labels = scales::comma) +
-  coord_flip()+
-  labs(x = "ISSCAAP Groups",
-    y = "CO2 Emissions/Unit Catch") +
-  theme_minimal()
-
-# Graph by ISSCAAP group
-full_emissions_fao_species %>%
-  # Remove emissions from "no-fao-species-catch-data"
-  filter(!isscaap == 99999999) %>%
-  # Group by ISSCAAP group
-  group_by(year, isscaap_group) %>%
-  summarise(total_emissions = sum(total_co2_mt, na.rm = TRUE),
-            total_catch = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
-  mutate(emissions_unit_catch = total_emissions/total_catch) %>%
-ggplot(aes(year, emissions_unit_catch, color = isscaap_group)) +
-  geom_line() +
-  gghighlight(mean(emissions_unit_catch) > 2.6) +
-  scale_y_continuous(labels = scales::comma) +
-  labs(x = "",
-    y = "CO2 Emissions/Unit Catch") +
-  theme_minimal() +
-  theme(plot.margin = margin(1, 5, 1, 1, "cm"), 
-        plot.title.position = "plot",
-    plot.caption.position = "plot",
-        legend.position = "bottom",
-    panel.spacing = unit(1, "lines"),
-        legend.title = element_blank(),
-        clip = "off")
-  
-theme(
-    plot.margin = margin(1, 5, 1, 1, "cm"),  # extra right margin
-    plot.title.position = "plot",
-    plot.caption.position = "plot",
-    panel.spacing = unit(1, "lines"),
-    clip = "off"  # <--- IMPORTANT
-  )
-
-# Emissions per unit catch over time for a group (facet region?)
-full_emissions_fao_species %>%
-  # Remove emissions from "no-fao-species-catch-data"
-  filter(!isscaap == 99999999) %>%
-  group_by(year, isscaap_group) %>%
-  summarise(emissions_unit_catch = sum(total_co2, na.rm = TRUE)/sum(country_total_tons_by_species, na.rm = TRUE)) %>%
-  arrange(desc(emissions_unit_catch)) %>%
-  slice(1:6) %>%
-  ggplot(aes(year, emissions_unit_catch, color = isscaap_group)) +
-  geom_line() +
-  scale_y_continuous(labels = scales::comma) +
-  labs(x = "",
-    y = "CO2 Emissions (tons)/Unit Catch (tons)",
-    color = "ISSCAAP Group",
-    title = "Top 5 ISSCAAP Groups by Emissions/Unit Catch") +
-  theme_minimal()
-  
-# Emissions/unit catch ISSCAAP Group by Region over time
-full_emissions_fao_species %>%
-  # Remove emissions from "no-fao-species-catch-data"
-  filter(!isscaap == 99999999) %>%
-  group_by(zone, year, isscaap_group) %>%
-  summarise(emissions_unit_catch = sum(total_co2, na.rm = TRUE)/sum(country_total_tons_by_species, na.rm = TRUE)) %>%
-  #arrange(desc(emissions_unit_catch)) %>%
-  slice_max(order_by = desc(emissions_unit_catch), n = 3) %>%
-  ggplot(aes(year, emissions_unit_catch, color = isscaap_group)) +
-  geom_line() +
-  facet_wrap(~zone, scales = "free_y") +
-  scale_y_continuous(labels = scales::comma) +
-  labs(x = "",
-    y = "CO2 Emissions (mt)",
-    color = "",
-    title = "Top 3 ISSCAAP Groups by Emissions/Unit Catch per Major Fishing Area") +
-  theme_minimal() +
-  theme(legend.position = "bottom")
+# #| code-summary: Visualize
+# 
+# # Graph by ISSCAAP group
+# full_emissions_fao_species %>%
+#   # Remove emissions from "no-fao-species-catch-data"
+#   filter(!isscaap == 99999999) %>%
+#   # Group by ISSCAAP group
+#   group_by(isscaap_group) %>%
+#   summarise(co2 = sum(total_co2_mt, na.rm = TRUE)) %>%
+#   filter(!is.na(isscaap_group)) %>%
+# ggplot(aes(reorder(as.factor(isscaap_group), co2), co2)) +
+#   geom_col() +
+#   scale_y_continuous(labels = scales::comma) +
+#   coord_flip()+
+#   labs(x = "ISSCAAP Groups",
+#     y = "CO2 Emissions (mt)") +
+#   theme_minimal()
+# 
+# # Graph by ISSCAAP group
+# full_emissions_fao_species %>%
+#   # Remove emissions from "no-fao-species-catch-data"
+#   filter(!isscaap == 99999999) %>%
+#   # Group by ISSCAAP group
+#   group_by(isscaap_group) %>%
+#   summarise(total_emissions = sum(total_co2_mt, na.rm = TRUE),
+#             total_catch = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
+#   mutate(emissions_unit_catch = total_emissions/total_catch) %>%
+# ggplot(aes(reorder(as.factor(isscaap_group), emissions_unit_catch), emissions_unit_catch)) +
+#   geom_col() +
+#   scale_y_continuous(labels = scales::comma) +
+#   coord_flip()+
+#   labs(x = "ISSCAAP Groups",
+#     y = "CO2 Emissions/Unit Catch") +
+#   theme_minimal()
+# 
+# # Graph by ISSCAAP group
+# full_emissions_fao_species %>%
+#   # Remove emissions from "no-fao-species-catch-data"
+#   filter(!isscaap == 99999999) %>%
+#   # Group by ISSCAAP group
+#   group_by(year, isscaap_group) %>%
+#   summarise(total_emissions = sum(total_co2_mt, na.rm = TRUE),
+#             total_catch = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
+#   mutate(emissions_unit_catch = total_emissions/total_catch) %>%
+# ggplot(aes(year, emissions_unit_catch, color = isscaap_group)) +
+#   geom_line() +
+#   gghighlight(mean(emissions_unit_catch) > 2.6) +
+#   scale_y_continuous(labels = scales::comma) +
+#   labs(x = "",
+#     y = "CO2 Emissions/Unit Catch") +
+#   theme_minimal() +
+#   theme(plot.margin = margin(1, 5, 1, 1, "cm"), 
+#         plot.title.position = "plot",
+#     plot.caption.position = "plot",
+#         legend.position = "bottom",
+#     panel.spacing = unit(1, "lines"),
+#         legend.title = element_blank(),
+#         clip = "off")
+#   
+# theme(
+#     plot.margin = margin(1, 5, 1, 1, "cm"),  # extra right margin
+#     plot.title.position = "plot",
+#     plot.caption.position = "plot",
+#     panel.spacing = unit(1, "lines"),
+#     clip = "off"  # <--- IMPORTANT
+#   )
+# 
+# # Emissions per unit catch over time for a group (facet region?)
+# full_emissions_fao_species %>%
+#   # Remove emissions from "no-fao-species-catch-data"
+#   filter(!isscaap == 99999999) %>%
+#   group_by(year, isscaap_group) %>%
+#   summarise(emissions_unit_catch = sum(total_co2, na.rm = TRUE)/sum(country_total_tons_by_species, na.rm = TRUE)) %>%
+#   arrange(desc(emissions_unit_catch)) %>%
+#   slice(1:6) %>%
+#   ggplot(aes(year, emissions_unit_catch, color = isscaap_group)) +
+#   geom_line() +
+#   scale_y_continuous(labels = scales::comma) +
+#   labs(x = "",
+#     y = "CO2 Emissions (tons)/Unit Catch (tons)",
+#     color = "ISSCAAP Group",
+#     title = "Top 5 ISSCAAP Groups by Emissions/Unit Catch") +
+#   theme_minimal()
+#   
+# # Emissions/unit catch ISSCAAP Group by Region over time
+# full_emissions_fao_species %>%
+#   # Remove emissions from "no-fao-species-catch-data"
+#   filter(!isscaap == 99999999) %>%
+#   group_by(zone, year, isscaap_group) %>%
+#   summarise(emissions_unit_catch = sum(total_co2, na.rm = TRUE)/sum(country_total_tons_by_species, na.rm = TRUE)) %>%
+#   #arrange(desc(emissions_unit_catch)) %>%
+#   slice_max(order_by = desc(emissions_unit_catch), n = 3) %>%
+#   ggplot(aes(year, emissions_unit_catch, color = isscaap_group)) +
+#   geom_line() +
+#   facet_wrap(~zone, scales = "free_y") +
+#   scale_y_continuous(labels = scales::comma) +
+#   labs(x = "",
+#     y = "CO2 Emissions (mt)",
+#     color = "",
+#     title = "Top 3 ISSCAAP Groups by Emissions/Unit Catch per Major Fishing Area") +
+#   theme_minimal() +
+#   theme(legend.position = "bottom")
 
 
 # For a specific zone:

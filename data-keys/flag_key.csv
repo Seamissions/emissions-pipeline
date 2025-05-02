@@ -1,0 +1,284 @@
+iso3_code,fao_name,sau_name
+ARM,Armenia,NA
+AFG,Afghanistan,NA
+ALB,Albania,NA
+DZA,Algeria,NA
+ASM,American Samoa,American Samoa
+AND,Andorra,NA
+AGO,Angola,Angola
+ATG,Antigua and Barbuda,Antigua & Barbuda
+ARG,Argentina,Argentina
+AUS,Australia,Australia
+AUT,Austria,NA
+BHS,Bahamas,Bahamas
+BHR,Bahrain,Bahrain
+BRB,Barbados,Barbados
+NA,Belgium-Luxembourg,NA
+BGD,Bangladesh,Bangladesh
+BMU,Bermuda,Bermuda (UK)
+BTN,Bhutan,NA
+BOL,Bolivia (Plurinational State of),NA
+BWA,Botswana,NA
+BRA,Brazil,Brazil
+ABW,Aruba,Aruba (Netherlands)
+BLZ,Belize,Belize
+IOT,British Indian Ocean Territory,Brit. Indian Ocean Terr. (UK)
+SLB,Solomon Islands,Solomon Isl.
+BRN,Brunei Darussalam,Brunei Darussalam
+BGR,Bulgaria,NA
+MMR,Myanmar,Myanmar
+BDI,Burundi,NA
+ATA,Antarctica,NA
+BVT,Bouvet Island,NA
+CMR,Cameroon,Cameroon
+CAN,Canada,Canada
+NA,Canton and Enderbury Islands,NA
+CPV,Cabo Verde,Cape Verde
+CYM,Cayman Islands,Cayman Isl. (UK)
+CAF,Central African Republic,NA
+LKA,Sri Lanka,Sri Lanka
+TCD,Chad,NA
+CHL,Chile,Chile
+CHN,China,China
+CXR,Christmas Island,Christmas Isl. (Australia)
+CCK,Cocos (Keeling) Islands,Cocos (Keeling) Isl. (Australia)
+COL,Colombia,Colombia
+COM,Comoros,Comoros
+COG,Congo,"Congo, R. of"
+COK,Cook Islands,Cook Islands
+CRI,Costa Rica,Costa Rica
+CUB,Cuba,Cuba
+CYP,Cyprus,NA
+CSK,Czechoslovakia,NA
+AZE,Azerbaijan,NA
+BEN,Benin,Benin
+DNK,Denmark,Denmark
+DNK,Denmark,Faeroe Isl. (Denmark)
+DMA,Dominica,Dominica
+DOM,Dominican Republic,Dominican Republic
+BLR,Belarus,NA
+ECU,Ecuador,Ecuador
+EGY,Egypt,Egypt
+SLV,El Salvador,El Salvador
+GNQ,Equatorial Guinea,Equatorial Guinea
+NA,Ethiopia PDR,NA
+EST,Estonia,Estonia
+FRO,Faroe Islands,NA
+FLK,Falkland Islands (Malvinas),Falkland Isl. (UK)
+FJI,Fiji,Fiji
+FIN,Finland,Finland
+FRA,France,France
+GUF,French Guiana,French Guiana
+PYF,French Polynesia,French Polynesia
+ATF,French Southern Territories,NA
+DJI,Djibouti,Djibouti
+GEO,Georgia,Georgia
+GAB,Gabon,Gabon
+GMB,Gambia,Gambia
+NA,Gaza Strip,NA
+NA,"Germany,New Länder",NA
+NA,"Germany, Fed. Rep. of",NA
+DEU,Germany,Germany
+BIH,Bosnia and Herzegovina,NA
+GHA,Ghana,Ghana
+GIB,Gibraltar,NA
+KIR,Kiribati,Kiribati
+GRC,Greece,Greece
+GRL,Greenland,Greenland
+GRD,Grenada,Grenada
+GLP,Guadeloupe,Guadeloupe  (France)
+GUM,Guam,Guam (USA)
+GTM,Guatemala,Guatemala
+GIN,Guinea,Guinea
+GUY,Guyana,Guyana
+HMD,Heard Island and McDonald Islands,NA
+HTI,Haiti,Haiti
+VAT,Holy See,NA
+HND,Honduras,Honduras
+HKG,"China, Hong Kong SAR",Hong Kong
+HUN,Hungary,NA
+HRV,Croatia,NA
+ISL,Iceland,Iceland
+IND,India,India
+IDN,Indonesia,Indonesia
+IRN,Iran (Islamic Republic of),Iran
+IRQ,Iraq,Iraq
+IRL,Ireland,Ireland
+ISR,Israel,Israel
+ITA,Italy,Italy
+CIV,Côte d'Ivoire,Côte d'Ivoire
+KAZ,Kazakhstan,NA
+JAM,Jamaica,Jamaica
+JPN,Japan,Japan
+JTN,Johnston Island,NA
+JOR,Jordan,Jordan
+KGZ,Kyrgyzstan,NA
+KEN,Kenya,Kenya
+KHM,Cambodia,Cambodia
+PRK,Democratic People's Republic of Korea,Korea (North)
+KOR,Republic of Korea,Korea (South)
+KWT,Kuwait,Kuwait
+LVA,Latvia,Latvia
+LAO,Lao People's Democratic Republic,NA
+LBN,Lebanon,NA
+LSO,Lesotho,NA
+LBR,Liberia,Liberia
+LBY,Libya,NA
+LIE,Liechtenstein,NA
+LTU,Lithuania,Lithuania
+MHL,Marshall Islands,Marshall Isl.
+MAC,"China, Macao SAR",NA
+MDG,Madagascar,Madagascar
+MWI,Malawi,NA
+MYS,Malaysia,Malaysia
+MDV,Maldives,Maldives
+MLI,Mali,NA
+MLT,Malta,NA
+MTQ,Martinique,Martinique (France)
+MRT,Mauritania,Mauritania
+MUS,Mauritius,Mauritius
+MEX,Mexico,Mexico
+MID,Midway Islands,NA
+MCO,Monaco,NA
+MNG,Mongolia,NA
+MSR,Montserrat,Montserrat (UK)
+MAR,Morocco,Morocco
+MOZ,Mozambique,Mozambique
+FSM,Micronesia (Federated States of),Micronesia
+MDA,Republic of Moldova,NA
+NAM,Namibia,Namibia
+NRU,Nauru,Nauru
+NPL,Nepal,NA
+NLD,Netherlands (Kingdom of the),Netherlands
+ANT,Netherlands Antilles,NA
+NA,Neutral Zone,NA
+NCL,New Caledonia,New Caledonia (France)
+MKD,North Macedonia,NA
+VUT,Vanuatu,Vanuatu
+NZL,New Zealand,New Zealand
+NIC,Nicaragua,Nicaragua
+NER,Niger,NA
+NGA,Nigeria,Nigeria
+NIU,Niue,Niue (New Zealand)
+NFK,Norfolk Island,Norfolk Isl. (Australia)
+NOR,Norway,Norway
+MNP,Northern Mariana Islands,North Marianas (USA)
+NA,Trust Territory of the Pacific Islands,NA
+PAK,Pakistan,Pakistan
+PAN,Panama,Panama
+CZE,Czechia,NA
+PNG,Papua New Guinea,Papua New Guinea
+PRY,Paraguay,NA
+PER,Peru,Peru
+PHL,Philippines,Philippines
+PCN,Pitcairn,Pitcairn (UK)
+POL,Poland,Poland
+PRT,Portugal,Portugal
+PRT,Portugal,Azores Isl. (Portugal)
+PRT,Portugal,Madeira Isl. (Portugal)
+GNB,Guinea-Bissau,Guinea-Bissau
+TLS,Timor-Leste,Timor Leste
+PRI,Puerto Rico,Puerto Rico (USA)
+ERI,Eritrea,Eritrea
+QAT,Qatar,Qatar
+PLW,Palau,Palau
+ZWE,Zimbabwe,NA
+REU,Réunion,Réunion (France)
+ROU,Romania,NA
+RWA,Rwanda,NA
+RUS,Russian Federation,Russian Federation
+SCG,Serbia and Montenegro,NA
+SHN,"Ascension, Saint Helena and Tristan da Cunha",Saint Helena (UK)
+SHN,"Ascension, Saint Helena and Tristan da Cunha",Ascension Isl. (UK)
+SHN,"Ascension, Saint Helena and Tristan da Cunha",Tristan da Cunha Isl. (UK)
+KNA,Saint Kitts and Nevis,Saint Kitts & Nevis
+LCA,Saint Lucia,Saint Lucia
+SPM,Saint Pierre and Miquelon,Saint Pierre & Miquelon (France)
+VCT,Saint Vincent and the Grenadines,Saint Vincent & the Grenadines
+SMR,San Marino,NA
+STP,Sao Tome and Principe,Sao Tome & Principe
+SAU,Saudi Arabia,Saudi Arabia
+SEN,Senegal,Senegal
+SYC,Seychelles,Seychelles
+SLE,Sierra Leone,Sierra Leone
+SVN,Slovenia,NA
+SVK,Slovakia,NA
+SGP,Singapore,Singapore
+SOM,Somalia,Somalia
+ZAF,South Africa,South Africa
+ESP,Spain,Spain
+ESH,Western Sahara,NA
+NA,Sudan (former),NA
+SUR,Suriname,Suriname
+TJK,Tajikistan,NA
+SWZ,Eswatini,NA
+SWE,Sweden,Sweden
+CHE,Switzerland,NA
+SYR,Syrian Arab Republic,NA
+TKM,Turkmenistan,NA
+TWN,Taiwan Province of China,Taiwan
+TZA,United Republic of Tanzania,Tanzania
+THA,Thailand,Thailand
+TGO,Togo,Togo
+TKL,Tokelau,Tokelau (New Zealand)
+TON,Tonga,Tonga
+TTO,Trinidad and Tobago,Trinidad & Tobago
+OMN,Oman,Oman
+TUN,Tunisia,NA
+TUR,Türkiye,NA
+TCA,Turks and Caicos Islands,Turks & Caicos Isl. (UK)
+ARE,United Arab Emirates,United Arab Emirates
+UGA,Uganda,NA
+TUV,Tuvalu,Tuvalu
+SUN,Un. Sov. Soc. Rep.,NA
+GBR,United Kingdom of Great Britain and Northern Ireland,United Kingdom
+GBR,United Kingdom of Great Britain and Northern Ireland,Channel Isl. (UK)
+UKR,Ukraine,Ukraine
+USA,United States of America,USA
+UMI,United States Minor Outlying Islands,NA
+BFA,Burkina Faso,NA
+URY,Uruguay,Uruguay
+UZB,Uzbekistan,NA
+VEN,Venezuela (Bolivarian Republic of),Venezuela
+VNM,Viet Nam,Viet Nam
+ETH,Ethiopia,NA
+VGB,British Virgin Islands,British Virgin Isl. (UK)
+VIR,United States Virgin Islands,US Virgin Isl.
+WAK,Wake Island,NA
+WLF,Wallis and Futuna Islands,Wallis & Futuna Isl. (France)
+WSM,Samoa,Samoa
+NA,West Bank,NA
+NA,Yemen Arab Republic,NA
+NA,"Yemen, Democratic",NA
+YUG,Yugoslavia SFR,NA
+YEM,Yemen,Yemen
+COD,Democratic Republic of the Congo,Congo (ex-Zaire)
+ZMB,Zambia,NA
+NA,Other NEI,NA
+BEL,Belgium,Belgium
+LUX,Luxembourg,NA
+AIA,Anguilla,Anguilla (UK)
+NA,Channel Islands,NA
+SJM,Svalbard and Jan Mayen Islands,NA
+IMN,Isle of Man,NA
+MYT,Mayotte,Mayotte (France)
+SGS,South Georgia and the South Sandwich Islands,NA
+SRB,Serbia,NA
+MNE,Montenegro,NA
+EAZ,"United Republic of Tanzania, Zanzibar",NA
+ANT,Netherlands Antilles,NA
+ALA,Åland Islands,NA
+BES,"Bonaire, Sint Eustatius and Saba",Saba and Saint Eustaius (Netherlands)
+BES,"Bonaire, Sint Eustatius and Saba",Bonaire (Netherlands)
+GGY,Guernsey,NA
+JEY,Jersey,NA
+CUW,Curaçao,Curacao
+BLM,Saint Barthélemy,St Barthelemy (France)
+MAF,Saint Martin (French part),St Martin
+SXM,Sint Maarten (Dutch part),Sint Maarten
+SSD,South Sudan,NA
+NA,Sark,NA
+SDN,Sudan,Sudan
+PSE,Palestine,NA
+EUR,European Union,NA
+UNK,NA,Unknown Fishing Country

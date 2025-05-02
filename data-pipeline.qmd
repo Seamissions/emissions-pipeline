@@ -222,11 +222,11 @@ emissions_zones <- st_intersection(emissions_grid_sf, fao_regions)
 emissions_zones$area <- as.numeric(st_area(emissions_zones))
 
 # Export for dashboard
-dashboard <- emissions_zones %>%
-  group_by(grid_id, lat_bin, lon_bin, flag, year, zone, geometry) %>% # geometry?
-  summarize(emissions_co2_mt = sum(emissions_co2_mt, na.rm = TRUE))
+# dashboard <- emissions_zones %>%
+#   group_by(grid_id, lat_bin, lon_bin, flag, year, zone, geometry) %>% # geometry?
+#   summarize(emissions_co2_mt = sum(emissions_co2_mt, na.rm = TRUE))
 
-st_write(dashboard, file.path("/capstone/seamissions/checkpoint/dashboard.gpkg"), delete_dsn = TRUE)
+#st_write(dashboard, file.path("/capstone/seamissions/checkpoint/dashboard.gpkg"), delete_dsn = TRUE)
 ```
 
 ## Partition Emissions by Proportional Area
@@ -241,16 +241,23 @@ geom_types <- unique(st_geometry_type(emissions_zones))
 valid_types <- c("POLYGON", "MULTIPOLYGON")
 
 # Identify unexpected types
-invalid_types <- setdiff(geom_types, valid_types) # contains POINT (?)
+invalid_types <- setdiff(geom_types, valid_types) # contains POINT (?) result of points of overlap
 
 # Warning if geometry types besides POLYGON or MULTIPOLYGON found
 if(length(invalid_types > 0)) {
   warning("Additional geometry types detected. Proceed with filter.")
-}
+} 
 
 # Remove other geometry types (filter out POINT)
 emissions_zones_filtered <- emissions_zones %>%
   filter(st_geometry_type(.) %in% valid_types) # in valid_types, c("POLYGON", "MULTIPOLYGON")
+
+# Save for dashboard after filtering out points
+dashboard <- emissions_zones_filtered %>%
+  group_by(grid_id, lat_bin, lon_bin, flag, year, zone, geometry) %>% # geometry?
+  summarize(emissions_co2_mt = sum(emissions_co2_mt, na.rm = TRUE))
+
+saveRDS(dashboard, file = "/capstone/seamissions/checkpoint/dashboard.rds")
 
 # Break MULTIPOLYGONS down into POLYGONS
 emissions_zones_exploded <- st_cast(emissions_zones_filtered, "MULTIPOLYGON") %>% 
@@ -606,3 +613,19 @@ if(percent_diff > 0.001) {
 }
 ```
 
+# Join Species Key
+
+[The current International Standard Statistical Classification of Aquatic Animals and Plants (ISSCAAP) in use from 2000](https://www.fao.org/fishery/docs/DOCUMENT/cwp/handbook/annex/AnnexS2listISSCAAP2000.pdf)
+
+```{r}
+#| code-summary: Join Species Key
+# Import species key
+full_species_key <- read_csv(here("data-keys", "full_species_key.csv"), show_col_types = FALSE)
+
+# Join to FAO data
+full_emissions_fao_species <- left_join(full_emissions_fao, full_species_key, by = c("species_identifier" = "identifier")) %>%
+  relocate(c(name_en, scientific_name, major_group, isscaap_group, isscaap), .after = flag)
+ 
+# Save species-specific emissions
+write_csv(full_emissions_fao_species, file.path("/capstone/seamissions/checkpoint/full_emissions_fao_species.csv"))
+```

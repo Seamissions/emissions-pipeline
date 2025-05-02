@@ -16,7 +16,7 @@ editor_options:
 
 # About
 
-This Quarto document hosts the code to assemble the data needed to feed into the Data Pipeline. Please run this document first.
+This Quarto document hosts the code to assemble the FAO Seafood Catch data needed to feed into the Data Pipeline. Please run this document first.
 
 # FAO Catch Data
 
@@ -54,20 +54,27 @@ fao_country_groups_clean <- fao_country_groups %>%
 
 fao_species_groups_clean <- fao_species_groups %>%
   select(x3a_code, taxonomic_code, identifier, scientific_name, contains("_en"), major_group) %>%
+  # Filter out mammals, plants, and reptiles (gear types not targeting these categories)
+  filter(major_group %in% c("PISCES", "CRUSTACEA", "MOLLUSCA", "INVERTEBRATA AQUATICA")) %>%
+  # Filter out freshwater species
   filter(!str_detect(isscaap_group_en, '(?i)freshwater')) %>%
+  # Filter out river species
   filter(!isscaap_group_en == "River eels")
 ```
 
 ## Join FAO Data
 
-`taxonomic_code` differs i.e. Argentine anchovy: 121006000206 FAO 1210600206 species_key
+A master_species_key.csv was created by Danielle Ferraro and Gordon Blasco and provided by emLab. 
 
-used identifier (FAO) = identifier (species_key)
+Since `taxonomic_code` differs between the FAO Species table and the master_species_key.csv (i.e. Argentine anchovy was 121006000206 in the FAO data and  1210600206 in the species key), I chose to use `identifier`.
+
+Additionally, some species in the resulting FAO dataset were not represented in the master_species_key.csv, so I added the necessary rows from the FAO species groups table. 
 
 [ISSCAAP groups](https://www.fao.org/fishery/static/ASFIS/ISSCAAP.pdf)
 
 ```{r}
 #| code-summary: Join Data
+
 # Left join country groups
 fao_capture_join <- left_join(fao_capture_quantity, fao_country_groups_clean, by = join_by(country_un_code == un_code)) 
 
@@ -101,8 +108,6 @@ fao_catch <- fao_capture_join %>%
          year = as.integer(year))
 
 fao_cleaned <- fao_catch %>%
-  # Filter out mammals, plants, and reptiles
-  filter(major_group %in% c("PISCES", "CRUSTACEA", "MOLLUSCA", "INVERTEBRATA AQUATICA")) %>%
   group_by(zone, year, flag, species_identifier) %>%
   summarise(fao_catch_tons = sum(catch, na.rm = TRUE), .groups = "drop")
 
