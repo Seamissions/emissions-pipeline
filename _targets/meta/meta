@@ -1,0 +1,13 @@
+name|type|data|command|depend|seed|path|time|size|bytes|format|repository|iteration|parent|children|seconds|warnings|error
+emissions_files|stem|cbbdb32cb50d8f2f|7b2a8a4b59fb3fef|2c530c1562a7fbd1|610340379|/capstone/seamissions/data/meds_capstone_project/meds_capstone_ais_emissions_data_v20241121.csv*/capstone/seamissions/data/meds_capstone_project/meds_capstone_non_broadcasting_emissions_data_v20250116.csv|t20150.7191198168s|s4472174780b|4472174780|file|local|vector|||1.312||
+emissions|stem|1872dca0c6ac56a9|554712addb9bf31f|cb2e35865daef18f|1126423221||t20214.1483159175s|s1375909750b|1375909750|rds|local|vector|||73.053||
+emissions_zones|stem|193204f0ab072204|1d9e6b0aa1153e87|fb3f93c7ef02e23b|-527017523||t20214.621121961s|s177921447b|177921447|rds|local|vector|||4697.104|attribute variables are assumed to be spatially constant throughout all geometries|
+emissions_partitioned_grouped|stem|93f29f738bebf79f|f5623e9ef0047c24|590186ad482c8f7c|1569783626||t20214.6686380606s|s459533b|459533|rds|local|vector|||1216.228|Additional geometry types detected. Proceed with filter.. repeating attributes for all sub-geometries for which they may not be constant|
+prep_fao|function|3531afa45878abd9
+partition_emissions|function|350ac3012b478d8c
+merge_emissions|function|27596afb7a25896a
+intersection|function|c38b831672563637
+merge_catch|function|6493b7b09bb6e96d
+fao_files|stem|9cb47761c193b142|00e43b8858eeadc0|2c530c1562a7fbd1|1039337457|/capstone/seamissions/data/fao_seafood_production//Capture_Quantity.csv*/capstone/seamissions/data/fao_seafood_production//CL_FI_COUNTRY_GROUPS.csv*/capstone/seamissions/data/fao_seafood_production//CL_FI_SPECIES_GROUPS.csv*/capstone/seamissions/data/fao_seafood_production//CL_FI_SYMBOL_SDMX.csv*/capstone/seamissions/data/fao_seafood_production//CL_FI_WATERAREA_GROUPS.csv*/capstone/seamissions/data/fao_seafood_production//fao_catch.csv*/capstone/seamissions/data/fao_seafood_production//FSJ_UNIT.csv|t20147.9808114813s|s411844046b|411844046|file|local|vector|||1.333||
+fao_catch|stem|3987f8a1e11dd897|10568c6e3d2b9aea|2be5eaa4e237c09f|-1821612448||t20215.1551073999s|s402046b|402046|rds|local|vector|||3.345||
+full_emissions_fao_species|stem|85dbcdcdce7e6c55|a079b80c5ee4076b|8296e78fe0ec1f40|1111384938||t20215.1561260286s|s5971068b|5971068|rds|local|vector|||87.374||

@@ -58,6 +58,8 @@ fao_species_groups_clean <- fao_species_groups %>%
   filter(major_group %in% c("PISCES", "CRUSTACEA", "MOLLUSCA", "INVERTEBRATA AQUATICA")) %>%
   # Filter out freshwater species
   filter(!str_detect(isscaap_group_en, '(?i)freshwater')) %>%
+  # Filter out corals
+  filter(!isscaap_group_en == "Corals") %>%
   # Filter out river species
   filter(!isscaap_group_en == "River eels")
 ```

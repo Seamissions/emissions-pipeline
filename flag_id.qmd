@@ -63,8 +63,10 @@ flag_match %>%
 
 # Summarise counts for TRUE match, FALSE mismatch, and NA
 total_match <- flag_match %>%
+  filter(!is.na(flag)) %>%
   group_by(match) %>%
-  summarise(counts = n())
+  summarise(counts = n()) %>%
+  mutate(percent = counts/sum(counts))
 
 total_match
 ```
@@ -79,20 +81,23 @@ This will give us a sense of how much emissions on aggregate could be affected b
 #| code-summary: Full Dataset Emissions
 # Summarise emissions mismatch by year
 year_emissions <- flag_match %>%
+  filter(!is.na(flag)) %>%
   group_by(year, match) %>%
   summarise(emissions = sum(emissions_co2_mt, na.rm = TRUE)) %>%
   group_by(year) %>%
   mutate(total_emissions = sum(emissions, na.rm = TRUE)) %>%
   ungroup() %>%
-  mutate(prop = round(emissions/total_emissions*100, 1)) %>%
-  select(-total_emissions)
+  mutate(prop = round(emissions/total_emissions*100, 1))
+  #select(-total_emissions)
 
 year_emissions
 
 # Summarise emissions mismatch overall
 year_emissions_avg <- year_emissions %>%
   group_by(match) %>%
-  summarise(avg = mean(prop))
+  summarise(avg_prop = mean(prop),
+            #check
+            sum_emissions = sum(emissions))
 
 year_emissions_avg
 ```
@@ -124,6 +129,8 @@ overestimation_emissions <- flag_match %>%
 overestimation_emissions %>%
   filter(flag == "PAN")
 
+overestimation_emissions %>%
+  arrange(desc(emissions))
 # Save table
 #write_csv(overestimation_emissions, file.path("/capstone/seamissions/checkpoint/overestimation_emissions.csv"))
 ```
@@ -155,6 +162,9 @@ underestimation_emissions <- flag_match %>%
 # Look at CHN
 underestimation_emissions %>%
   filter(flag == "CHN")
+
+underestimation_emissions %>%
+  arrange(desc(emissions))
 
 #write_csv(underestimation_emissions, file.path("/capstone/seamissions/checkpoint/underestimation_emissions.csv"))
 ```
