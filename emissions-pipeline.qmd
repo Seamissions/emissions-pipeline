@@ -18,6 +18,7 @@ editor_options:
 This repository hosts the code to create the open source data processing pipeline.
 
 ## Load packages
+
 ```{r}
 #| code-summary: Expand code
 library(tidyverse)
@@ -28,6 +29,7 @@ library(lubridate)
 ```
 
 ## Load data
+
 ```{r}
 #| code-summary: Expand code
 
@@ -63,89 +65,121 @@ for (i in seq_along(file_names)) {
 ```
 
 ## Clean data
+
 ```{r}
-#| code-summary: Expand code
+#| code-summary: Clean Data
+
 # Create `year_month` column
 broadcasting <- ais_emissions %>%
-  mutate(date = lubridate::ymd(time)) %>%
+  mutate(date = lubridate::ymd(month)) %>%
   mutate(year_month = format(date, '%Y-%m'))
   
-# Create `year_month` column
 non_broadcasting <- non_broadcasting %>%
-  mutate(date = lubridate::ymd(time)) %>%
-  mutate(year_month = format(date, '%Y-%m'))
+  mutate(date = lubridate::ymd(month)) %>%
+  mutate(year_month = format(date, '%Y-%m')) %>%
+  mutate(flag = "DARK")
+
+# Rename pollutant columns in non-broadcasting data to match broadcasting data
+colnames(non_broadcasting)[str_detect(colnames(non_broadcasting), "non_broadcasting")] <- str_remove(colnames(non_broadcasting)[str_detect(colnames(non_broadcasting), "non_broadcasting")], "_non_broadcasting") 
+
+# Warning if pollutant column names don't match (for join)
+if(unique(colnames(non_broadcasting)[str_detect(colnames(non_broadcasting), "emissions")] == colnames(broadcasting)[str_detect(colnames(broadcasting), "emissions")]) != TRUE) {
+  warning("Column names don't match.")
+}
 ```
 
 ```{r}
-#| code-summary: Expand code
-# Merge broadcasting and non-broadcasting datasets
-emissions <- left_join(broadcasting, non_broadcasting, by = c("year_month", "lat_bin", "lon_bin", "length_size_class_percentile")) %>%
-  
-  # Create lat_long bin to group by pixel
-  mutate(lat_long = paste0(lat_bin, "_", lon_bin)) %>%
-  
-  # Select columns to keep
-  select(year_month, 
-         lat_long, 
-         flag, 
-         vessel_class, 
-         length_size_class_percentile, 
-         fishing, 
-         hours, 
-         emissions_co2_mt, 
-         emissions_ch4_mt, 
-         emissions_n2o_mt, 
-         emissions_nox_mt, 
-         emissions_sox_mt, 
-         emissions_pm_mt, 
-         emissions_co_mt,
-         emissions_co2_non_broadcasting_mt,
-         emissions_ch4_non_broadcasting_mt,
-         emissions_n2o_non_broadcasting_mt,
-         emissions_nox_non_broadcasting_mt,
-         emissions_sox_non_broadcasting_mt,
-         emissions_pm_non_broadcasting_mt,
-         emissions_co_non_broadcasting_mt)
 
-# Subset data for test
-emissions_2017 <- emissions %>%
-  filter(year_month == "2017-11")
+class(broadcasting$year_month)
 
-# Partition emissions for test data 
-key <- emissions_2017 %>%
-  group_by(year_month, lat_long, flag) %>%
-  mutate(total_hours_by_flag = sum(hours)) %>%
-  group_by(year_month, lat_long) %>%
-  mutate(total_hours = sum(hours)) %>%
-  ungroup() %>%
-  mutate(factor = total_hours_by_flag/total_hours) %>%
-  mutate(total_co2 = emissions_co2_mt + (factor * emissions_co2_non_broadcasting_mt),
-         total_ch4 = emissions_ch4_mt + (factor * emissions_ch4_non_broadcasting_mt),
-         total_n2o = emissions_n2o_mt + (factor * emissions_n2o_non_broadcasting_mt),
-         total_nox = emissions_nox_mt + (factor * emissions_nox_non_broadcasting_mt),
-         total_sox = emissions_sox_mt + (factor * emissions_sox_non_broadcasting_mt),
-         total_pm = emissions_pm_mt + (factor * emissions_pm_non_broadcasting_mt),
-         total_co = emissions_co_mt + (factor * emissions_co_non_broadcasting_mt)) %>%
-   select(year_month, 
-         lat_long, 
-         flag, 
-         vessel_class, 
-         length_size_class_percentile, 
-         fishing, 
-         total_co2, 
-         total_ch4, 
-         total_n2o, 
-         total_nox, 
-         total_sox, 
-         total_pm, 
-         total_co)
+broadcasting_filtered <- broadcasting %>% mutate(year = format(as.Date(paste0(year_month, "-01")), "%Y"))
 
-# Adapt this code to full dataset
+fishing_gear <- broadcasting_filtered %>%
+  group_by(vessel_class, year) %>%
+  summarise(total_co2 = sum(emissions_co2_mt, na.rm = TRUE)) %>% 
+  dplyr::filter(vessel_class %in% c("fishing","squid_jigger","drifting_longlines","pole_and_line","other_fishing","trollers","fixed_gear","pots_and_traps","set_longlines","set_gillnets","trawlers","dredge_fishing","seiners","purse_seines","tuna_purse_seines","other_purse_seines","other_seines","driftnets"))
+
+unique(fishing_gear$vessel_class)
+
+fishing_gears_plot <- ggplot(fishing_gear, aes(x = year, y = total_co2, color = vessel_class, group = vessel_class)) + 
+  geom_line() + 
+  labs(title = "CO₂ Emissions by Fishing Gear Type Over Time", 
+       x = "Year", 
+       y = "Total CO₂ Emissions (mt)", 
+       color = "Gear Type") +
+  theme_minimal()
+
+fishing_gears_plot
 ```
 
-## Decision points:
+```{r}
+fishing_gear_filtered <- fishing_gear %>%
+  filter(vessel_class != "trawlers")
 
-- If only dark fleet in a pixel, how do we distribute emissions? Next closest month or next closest pixel? - add +/-1 to lat_long?
 
-## Visualize (maps, time series plots)
+fishing_gears_plot <- ggplot(fishing_gear_filtered, aes(x = year, y = total_co2, color = vessel_class, group = vessel_class)) + 
+  geom_line() + 
+  facet_wrap(~ vessel_class) + 
+  labs(title = "CO₂ Emissions by Fishing Gear Type Over Time", 
+       x = "Year", 
+       y = "Total CO₂ Emissions (mt)") +
+  theme_minimal()
+
+fishing_gears_plot
+
+
+```
+
+```{r}
+# Set file path to data folder
+pathway_2 <- "/capstone/seamissions/checkpoint/full_emissions_fao.csv"
+
+full_emissions <- read.csv(here(pathway_2))
+
+total_co2_2016 <- sum(full_emissions$total_co2_mt[full_emissions$year == 2016])
+
+print(total_co2_2016)
+
+tonnes_per_catch <- sum(full_emissions$total_co2_mt[full_emissions$year == 2016], na.rm = TRUE) / sum(full_emissions$country_total_tons_by_species[full_emissions$year == 2016], na.rm = TRUE)
+
+print(tonnes_per_catch)
+```
+
+```{r}
+pathway_3 <- "/capstone/seamissions/checkpoint/full_emissions_sau.csv"
+
+full_emissions_sau <- read.csv(here(pathway_3))
+
+total_co2_2016_sau <- sum(full_emissions_sau$total_co2_mt[full_emissions_sau$year == 2016])
+
+print(total_co2_2016_sau)
+
+tonnes_per_catch_sau <- sum(full_emissions_sau$total_co2_mt[full_emissions_sau$year == 2016], na.rm = TRUE) / sum(full_emissions_sau$country_total_tons_by_species[full_emissions_sau$year == 2016], na.rm = TRUE)
+
+print(tonnes_per_catch_sau)
+
+print(sum(full_emissions_sau$country_total_tons_by_species[full_emissions_sau$year == 2019], na.rm = TRUE))
+
+years <- 2016:2019  # Define the range of years
+results <- sapply(years, function(y) {
+  sum(full_emissions_sau$country_total_tons_by_species[full_emissions_sau$year == y], na.rm = TRUE)
+})
+
+print(results)  # Display results for each year
+```
+
+```{r}
+# 100 year global warming potential 
+print(full_emissions %>% 
+        group_by(year) %>% 
+        summarise(total_co_emissions = sum(total_co2_mt + total_ch4_mt * 29.8 + total_n2o_mt * 273)))
+
+full_emissions <- full_emissions %>% 
+  filter(country_total_tons_by_species != 0)
+# 20 year global warming potential 
+print(full_emissions %>% 
+        group_by(year) %>% 
+        summarise(total_co_emissions = sum(total_co2_mt + total_ch4_mt * 82.5 + total_n2o_mt * 273),
+                  emissions_per_ton = total_co_emissions / sum(country_total_tons_by_species, na.rm = TRUE)))
+```
 
