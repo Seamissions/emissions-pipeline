@@ -26,146 +26,127 @@ library(janitor)
 library(here)
 library(gghighlight)
 library(lubridate)
+library(knitr)
+library(kableExtra)
+library(scales)
 ```
 
-## Load data
-
-```{r}
-#| code-summary: Expand code
-
-# Turn off scientific notation
-options(scipen=999)
-
-# Set file path to data folder
-pathway <- "/capstone/seamissions/data/meds_capstone_project"
-
-# Set up import for .csv or .xlsx files
-file_names <- list.files(here(pathway), pattern=paste0(c("*.xlsx","*.csv"), collapse="|"), full.names=TRUE)
-
-# Read in data files
-for (i in seq_along(file_names)) {
-  # If .csv, read_csv
-  if(grepl('.*\\.csv', file_names[i])) {
-        table <- read_csv(file_names[i], show_col_types = FALSE) %>%
-          clean_names()
-         } else {
-           # If .xslx, read_excel
-           table <- read_excel(file_names[i]) %>%
-             clean_names()
-         }
-  
-  # Rename files truncated names
-  if(str_detect(file_names[i], "non")) {
-    table_name <- substr(file_names[i], 64, 79)
-  } else {
-    table_name <- substr(file_names[i], 64, 76)
-  }
-  assign(table_name, table)
-}
-```
-
-## Clean data
-
-```{r}
-#| code-summary: Clean Data
-
-# Create `year_month` column
-broadcasting <- ais_emissions %>%
-  mutate(date = lubridate::ymd(month)) %>%
-  mutate(year_month = format(date, '%Y-%m'))
-  
-non_broadcasting <- non_broadcasting %>%
-  mutate(date = lubridate::ymd(month)) %>%
-  mutate(year_month = format(date, '%Y-%m')) %>%
-  mutate(flag = "DARK")
-
-# Rename pollutant columns in non-broadcasting data to match broadcasting data
-colnames(non_broadcasting)[str_detect(colnames(non_broadcasting), "non_broadcasting")] <- str_remove(colnames(non_broadcasting)[str_detect(colnames(non_broadcasting), "non_broadcasting")], "_non_broadcasting") 
-
-# Warning if pollutant column names don't match (for join)
-if(unique(colnames(non_broadcasting)[str_detect(colnames(non_broadcasting), "emissions")] == colnames(broadcasting)[str_detect(colnames(broadcasting), "emissions")]) != TRUE) {
-  warning("Column names don't match.")
-}
-```
 
 ```{r}
 
-class(broadcasting$year_month)
-
-broadcasting_filtered <- broadcasting %>% mutate(year = format(as.Date(paste0(year_month, "-01")), "%Y"))
-
-fishing_gear <- broadcasting_filtered %>%
-  group_by(vessel_class, year) %>%
-  summarise(total_co2 = sum(emissions_co2_mt, na.rm = TRUE)) %>% 
-  dplyr::filter(vessel_class %in% c("fishing","squid_jigger","drifting_longlines","pole_and_line","other_fishing","trollers","fixed_gear","pots_and_traps","set_longlines","set_gillnets","trawlers","dredge_fishing","seiners","purse_seines","tuna_purse_seines","other_purse_seines","other_seines","driftnets"))
-
-unique(fishing_gear$vessel_class)
-
-fishing_gears_plot <- ggplot(fishing_gear, aes(x = year, y = total_co2, color = vessel_class, group = vessel_class)) + 
-  geom_line() + 
-  labs(title = "CO₂ Emissions by Fishing Gear Type Over Time", 
-       x = "Year", 
-       y = "Total CO₂ Emissions (mt)", 
-       color = "Gear Type") +
-  theme_minimal()
-
-fishing_gears_plot
+# fishing_gears_plot <- ggplot(fishing_gear, aes(x = year, y = total_co2, color = vessel_class, group = vessel_class)) + 
+#   geom_line() + 
+#   labs(title = "CO₂ Emissions by Fishing Gear Type Over Time", 
+#        x = "Year", 
+#        y = "Total CO₂ Emissions (mt)", 
+#        color = "Gear Type") +
+#   theme_minimal()
+# 
+# fishing_gears_plot
 ```
 
 ```{r}
-fishing_gear_filtered <- fishing_gear %>%
-  filter(vessel_class != "trawlers")
-
-
-fishing_gears_plot <- ggplot(fishing_gear_filtered, aes(x = year, y = total_co2, color = vessel_class, group = vessel_class)) + 
-  geom_line() + 
-  facet_wrap(~ vessel_class) + 
-  labs(title = "CO₂ Emissions by Fishing Gear Type Over Time", 
-       x = "Year", 
-       y = "Total CO₂ Emissions (mt)") +
-  theme_minimal()
-
-fishing_gears_plot
+# 
+# fishing_gears_plot <- ggplot(fishing_gear_filtered, aes(x = year, y = total_co2, color = vessel_class, group = vessel_class)) + 
+#   geom_line() + 
+#   facet_wrap(~ vessel_class) + 
+#   labs(title = "CO₂ Emissions by Fishing Gear Type Over Time", 
+#        x = "Year", 
+#        y = "Total CO₂ Emissions (mt)") +
+#   theme_minimal()
+# 
+# fishing_gears_plot
 
 
 ```
 
+## Comparing 2016 Findings to Previous Study 
 ```{r}
-# Set file path to data folder
+# Set file path to data folder for full_emissions_fao
 pathway_2 <- "/capstone/seamissions/checkpoint/full_emissions_fao.csv"
 
-full_emissions <- read.csv(here(pathway_2))
+# Read in file
+full_emissions_fao <- read.csv(here(pathway_2))
 
-total_co2_2016 <- sum(full_emissions$total_co2_mt[full_emissions$year == 2016])
+# Find total CO2 for 2016
+total_co2_2016 <- sum(full_emissions_fao$total_co2_mt[full_emissions_fao$year == 2016])
 
+# Print total CO2 
 print(total_co2_2016)
 
-tonnes_per_catch <- sum(full_emissions$total_co2_mt[full_emissions$year == 2016], na.rm = TRUE) / sum(full_emissions$country_total_tons_by_species[full_emissions$year == 2016], na.rm = TRUE)
+# Calculate CO2 tonnes per catch for 2016
+tonnes_per_catch <- sum(full_emissions_fao$total_co2_mt[full_emissions_fao$year == 2016], na.rm = TRUE) / sum(full_emissions_fao$country_total_tons_by_species[full_emissions_fao$year == 2016], na.rm = TRUE)
 
+# Print tonnes per catch 
 print(tonnes_per_catch)
 ```
 
 ```{r}
+# Read in sau file for similar comparison 
 pathway_3 <- "/capstone/seamissions/checkpoint/full_emissions_sau.csv"
 
+# Read in csv 
 full_emissions_sau <- read.csv(here(pathway_3))
 
+# Full emissions for 2016 
 total_co2_2016_sau <- sum(full_emissions_sau$total_co2_mt[full_emissions_sau$year == 2016])
-
 print(total_co2_2016_sau)
 
+# Tonnes per catch for 2016
 tonnes_per_catch_sau <- sum(full_emissions_sau$total_co2_mt[full_emissions_sau$year == 2016], na.rm = TRUE) / sum(full_emissions_sau$country_total_tons_by_species[full_emissions_sau$year == 2016], na.rm = TRUE)
 
+# Print tonnes per catch 
 print(tonnes_per_catch_sau)
+```
 
-print(sum(full_emissions_sau$country_total_tons_by_species[full_emissions_sau$year == 2019], na.rm = TRUE))
 
-years <- 2016:2019  # Define the range of years
-results <- sapply(years, function(y) {
-  sum(full_emissions_sau$country_total_tons_by_species[full_emissions_sau$year == y], na.rm = TRUE)
-})
+```{r}
+# FAO_total_catch_table.html <- full_emissions %>%
+#   group_by(year) %>%
+#   summarise(total_catch_tonnes = sum(country_total_tons_by_species)) %>%
+#   mutate(total_catch_tonnes = comma(total_catch_tonnes)) %>%
+#   kable(col.names = c("Year", "Total Catch (Tonnes)"), caption = "FAO Total Catch Tonnes by Year", align = c("l", "r")) %>%
+#   kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "responsive"))
+#  
+# save_kable(FAO_total_catch_table.html, file = "FAO_total_catch_table.html")
+# 
+# total_emissions_table.html <- full_emissions %>%
+#   group_by(year) %>%
+#   summarise(total_co2 = sum(total_co2_mt)) %>%
+#   mutate(total_co2 = comma(total_co2)) %>%
+#   kable(col.names = c("Year", "Total CO2 Emissions (MT)"), caption = "Total CO2 Emissions by Year", align = c("l", "r")) %>%
+#   kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "responsive"))
+# 
+# save_kable(total_emissions_table.html, file = "total_emissions_table.html")
 
-print(results)  # Display results for each year
+
+full_emissions_fao %>% 
+  mutate(total_co2_mt = as.numeric(total_co2_mt), 
+         country_total_tons_by_species = as.numeric(country_total_tons_by_species)) %>% 
+  group_by(year) %>% 
+  summarise(total_co2 = sum(total_co2_mt, na.rm = TRUE),
+            total_catch = sum(country_total_tons_by_species, na.rm = TRUE)) %>% 
+  ggplot(aes(x = year)) + 
+  geom_area(aes(y = total_co2), fill = "lightgrey") + 
+  geom_line(aes(y = total_catch), size = 1.2) + 
+  theme_minimal() + 
+  scale_y_continuous(
+    name = "Tonnes",
+    labels = scales::label_number(scale_cut = scales::cut_short_scale())) +
+  scale_x_continuous(name = "Year") +
+    # sec.axis = sec_axis(~ ., name = "Total Catch (Tonnes)",
+    #                     labels = scales::label_number(scale_cut = scales::cut_short_scale()))) +
+  geom_segment(aes(x = min(year) + 2, xend = min(year) + 3, 
+                   y = max(total_co2) * 0.8, yend = max(total_co2) * 0.6),
+               arrow = arrow(length = unit(0.03, "npc")), color = "black") +
+  geom_text(aes(x = min(year) + 2, y = max(total_co2) * 0.85, 
+                label = "Total CO₂ Emissions (MT)"), color = "black", hjust = 0) +
+  geom_segment(aes(x = min(year) + 3, xend = min(year) + 4, 
+                   y = max(total_catch) * 0.4, yend = max(total_catch) * 0.9),
+               arrow = arrow(length = unit(0.03, "npc")), color = "black") +
+  geom_text(aes(x = min(year) + 3, y = max(total_catch) * 0.95, 
+                label = "Total Catch (Tonnes)"), color = "black", hjust = .4, vjust = 10)
+
 ```
 
 ```{r}
@@ -181,5 +162,65 @@ print(full_emissions %>%
         group_by(year) %>% 
         summarise(total_co_emissions = sum(total_co2_mt + total_ch4_mt * 82.5 + total_n2o_mt * 273),
                   emissions_per_ton = total_co_emissions / sum(country_total_tons_by_species, na.rm = TRUE)))
+```
+
+```{r}
+print(unique(full_emissions_sau$species))
+```
+
+Compare Crustacian Emissions and Catch % to Previous Study 
+```{r}
+pathway_4 <- "/capstone/seamissions/checkpoint/full_emissions_fao_species.csv"
+
+full_emissions_fao_species <- read.csv(here(pathway_4))
+
+
+crustacea <- full_emissions_fao_species %>% 
+  group_by(major_group) %>%
+  summarise(total_co2_emissions = sum(total_co2_mt, na.rm = TRUE),
+            total_catch_tonnes = sum(country_total_tons_by_species, na.rm = TRUE)) %>% 
+  ungroup() %>% 
+  mutate(pct_co2 = (total_co2_emissions/sum(total_co2_emissions)) * 100,
+         pct_catch = (total_catch_tonnes/sum(total_catch_tonnes)) * 100)
+
+crustacea
+
+options(max.print = 999)
+print(unique_species)
+```
+
+Crustacea Lists
+```{r}
+crustacean_species <- c("Chaceon fenneri", "Clibanarius tricolor", "Clibanarius vittatus", "Eriphia gonagra", "Lysmata wurdemanni", "Mithraculus forceps", "Mithraculus sculptus", "Paguristes puncticeps", "Periclimenes yucatanicus", "Phimochirus operculatus", "Porcellana sayana", "Stenocionops furcatus", "Stenopus hispidus", "Stenorhynchus seticornis", "Callinectes pallidus", "Callinectes marginatus", "Ocypode cursor", "Nematocarcinus africanus", "Solenocera africana", "Panulirus echinatus", "Aristaeomorpha foliacea", "Aristeus varidens", "Solenocera membranacea", "Panulirus regius", "Jasus lalandii", "Jasus tristani", "Palinurus gilchristi", "Euphausia superba", "Paralomis formosa", "Paralomis spinosissima", "Metapenaeus", "Penaeus semisulcatus", "Portunus pelagicus", "Thenus orientalis", "Metapenaeus affinis", "Parapenaeopsis stylifera", "Charybdis hellerii", "Melicertus latisulcatus", "Metapenaeus monoceros", "Penaeus", "Penaeus indicus", "Penaeus monodon", "Trachysalambria curvirostris", "Scylla serrata", "Haliporoides triarthrus", "Metanephrops", "Panulirus homarus", "Panulirus polyphagus", "Ranina ranina", "Panulirus longipes", "Panulirus penicillatus", "Panulirus versicolor", "Palinurus delagoae", "Portunus", "Metanephrops mozambicus", "Haliporoides sibogae", "Jasus edwardsii", "Lithodes", "Melicertus plebejus", "Metapenaeus endeavouri", "Metapenaeus macleayi", "Panulirus cygnus", "Acetes", "Fenneropenaeus merguiensis", "Metapenaeus brevicornis", "Metapenaeus tenuipes", "Parapenaeopsis uncta", "Parapenaeopsis hardwickii", "Parapenaeopsis sculptilis", "Solenocera crassicornis", "Sergestidae", "Acetes japonicus", "Fenneropenaeus chinensis", "Metapenaeus joyneri", "Penaeus penicillatus", "Portunus trituberculatus", "Chionoecetes japonicus", "Oratosquilla oratoria", "Erimacrus isenbeckii", "Lithodes aequispinus", "Pandalus goniurus", "Pandalus hypsinotus", "Pandalus kessleri", "Paralithodes brevipes", "Paralithodes platypus", "Sclerocrangon", "Ibacus ciliatus", "Metapenaeus ensis", "Metacarcinus magister", "Pandalus jordani", "Neotrypaea californiensis", "Upogebia pugettensis", "Cancer antennarius", "Chionoecetes bairdi", "Charybdis feriatus", "Penaeus longistylus", "Calappa hepatica", "Diogenidae", "Xanthidae", "Charybdis anisodon", "Melicertus canaliculatus", "Ozius guttatus", "Podophthalmus vigil", "Acetes sibogae", "Birgus latro", "Eriphia sebana", "Farfantepenaeus brevirostris", "Farfantepenaeus californiensis", "Plesionika trispinus", "Solenocera agassizii", "Squilla biformis", "Litopenaeus stylirostris", "Litopenaeus vannamei", "Panulirus gracilis", "Callinectes arcuatus", "Litopenaeus occidentalis", "Rimapenaeus byrdi", "Callinectes bellicosus", "Callinectes toxotes", "Evibacus princeps", "Portunus xantusii", "Sicyonia disdorsalis", "Solenocera florea", "Squilla mantoidea", "Squilla panamensis", "Squilla parva", "Crangon franciscorum", "Heterocarpus laevigatus", "Panulirus interruptus", "Metanephrops challengeri", "Solenoceridae", "Haliporoides diomedeae", "Heterocarpus reedi", "Jasus frontalis", "Lithodes santolla", "Paralomis granulosa", "Hemigrapsus crenulatus", "Pseudograpsus setosus", "Rhynchocinetes typus", "Taliepus dentatus", "Taliepus marginatus", "Paralomis", "Euphausia", "Brachyura", "Cancer irroratus", "Chionoecetes", "Chionoecetes opilio", "Homarus americanus", "Lithodidae", "Miscellaneous marine crustaceans", "Pandalus", "Pandalus borealis", "Pandalus montagui", "Callinectes sapidus", "Cancer borealis", "Carcinus maenas", "Decapoda", "Geryon", "Dendrobranchiata", "Pandalidae", "Penaeidae", "Cancer pagurus", "Crangon crangon", "Homarus gammarus", "Nephrops norvegicus", "Chaceon affinis", "Calappa granulata", "Liocarcinus depurator", "Maja squinado", "Necora puber", "Palinurus", "Palinurus elephas", "Parapenaeus longirostris", "Penaeus kerathurus", "Plesionika edwardsii", "Plesionika heterocarpus", "Scyllarus arctus", "Squilla mantis", "Crangonidae", "Nephropidae", "Palaemon longirostris", "Palinuridae", "Palinurus mauritanicus", "Squillidae", "Palaemon")
+
+crustacea_2 <- c("Palaemonidae", "Goneplax rhomboides", "Scyllarides latus", "Paralithodes camtschaticus", "Aristeidae" , "Marsupenaeus japonicus", "Scyllaridae", "Panulirus argus", "Panulirus", "Panulirus guttatus", "Carpilius corallinus", "Menippe mercenaria", "Cardisoma guanhumi", "Farfantepenaeus duorarum", "Farfantepenaeus brasiliensis", "Farfantepenaeus notialis", "Farfantepenaeus subtilis", "Nematopalaemon schmitti", "Litopenaeus schmitti", "Litopenaeus setiferus", "Sicyonia brevirostris", "Pleoticus robustus")
+
+crustacean_species <- c(crustacean_species, crustacea_2)
+
+
+
+crustacea_sau <- full_emissions_sau %>%
+  mutate(species_major_group = ifelse(species %in% crustacean_species, "Crustacea", "Other"))
+
+crustacea_sau_pct <- crustacea_sau %>% 
+  group_by(species_major_group) %>%
+  summarise(total_co2_emissions = sum(total_co2_mt, na.rm = TRUE),
+            total_catch_tonnes = sum(country_total_tons_by_species, na.rm = TRUE)) %>% 
+  ungroup() %>% 
+  mutate(pct_co2 = (total_co2_emissions/sum(total_co2_emissions)) * 100,
+         pct_catch = (total_catch_tonnes/sum(total_catch_tonnes)) * 100)
+
+crustacea_sau_pct
+```
+
+Check to see which zones have no fao species 
+```{r}
+fao_check_species <- full_emissions_fao_species %>% 
+  filter(major_group == "no_fao_species_catch_data") %>% 
+  group_by(zone) %>% 
+  summarise(total_co2 = sum(total_co2_mt)) %>% 
+  arrange(desc(total_co2))
+
+fao_check_species
 ```
 
