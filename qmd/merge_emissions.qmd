@@ -1,0 +1,34 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+# Merge Emissions Datasets {#sec-methods}
+
+```{r, echo = FALSE, results = FALSE, message = FALSE, warning = FALSE}
+#| label: set-chunk-options
+knitr::opts_chunk$set(message = FALSE, warning = FALSE, echo = FALSE)
+library(tidyverse)
+library(janitor)
+library(here)
+library(lubridate)
+library(sf)
+
+#tar_target(emissions, merge_emissions(emissions_files))
+
+#source("R/functions.R")
+```
+
+## Join Emissions Data
+
+describe emissions datasets
+
+
+
+
+
+
+
+
+

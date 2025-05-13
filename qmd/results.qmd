@@ -1,0 +1,150 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+# Results {#sec-methods}
+
+```{r, echo = FALSE, results = FALSE, message = FALSE, warning = FALSE}
+#| label: set-chunk-options
+knitr::opts_chunk$set(message = FALSE, warning = FALSE, echo = FALSE)
+
+library(tidyverse)
+library(janitor)
+library(here)
+library(lubridate)
+library(sf)
+library(targets)
+
+source("R/functions.R")
+
+tar_load(full_emissions_fao_species)
+tar_load(full_emissions_sau_species)
+tar_load(emissions_partitioned_grouped)
+```
+
+## Overall Comparisons
+
+```{r}
+#| code-summary: Overall
+# -------- Total emissions comparison --------
+# Make sure total emissions match
+total_co2 <- sum(emissions_partitioned_grouped$co2, na.rm = TRUE)
+total_co2_fao <- sum(full_emissions_fao$total_co2_mt, na.rm = TRUE)
+total_co2_sau <- sum(full_emissions_sau$total_co2_mt, na.rm = TRUE)
+
+if (total_co2_fao != total_co2_sau) {
+  warning("Total emissions in FAO do not match total emissions in SAU.")
+}
+
+# -------- Total catch comparison --------
+# Filter for years with FAO/SAU overlap (2016-2019)
+full_emissions_fao_filtered <- full_emissions_fao %>%
+  filter(year <= 2019)
+
+full_emissions_sau_filtered <- full_emissions_sau %>%
+  filter(year <= 2019)
+
+# Compare total catch to determine underreporting
+fao_total_catch <- sum(full_emissions_fao_filtered$country_total_tons_by_species, na.rm = TRUE)
+sau_total_catch <- sum(full_emissions_sau_filtered$country_total_tons_by_species, na.rm = TRUE)
+
+# -------- Compare Emissions/Unit Catch --------
+fao_total_emissions_catch <- total_co2_fao/fao_total_catch
+sau_total_emissions_catch <- total_co2_sau/sau_total_catch
+
+print(paste0("FAO emissions-per-unit-catch: ", fao_total_emissions_catch, "."))
+print(paste0("SAU emissions-per-unit-catch: ", sau_total_emissions_catch, "."))
+```
+
+```{r}
+
+fao_species <- full_emissions_fao_species %>%
+  rename(fao_catch_tons = country_total_tons_by_species,
+         fao_total_co2_mt = total_co2_mt,
+        fao_total_ch4_mt = total_ch4_mt,
+         fao_total_n2o_mt = total_n2o_mt,
+         fao_total_nox_mt = total_nox_mt,
+        fao_total_sox_mt = total_sox_mt,
+        fao_total_co_mt = total_co_mt,
+        fao_total_pm2_5_mt = total_pm2_5_mt,
+        fao_total_pm10_mt = total_pm10_mt)
+
+sau_species <- full_emissions_sau_species %>%
+  rename(sau_catch_tons = country_total_tons_by_species,
+         sau_total_co2_mt = total_co2_mt,
+        sau_total_ch4_mt = total_ch4_mt,
+         sau_total_n2o_mt = total_n2o_mt,
+         sau_total_nox_mt = total_nox_mt,
+        sau_total_sox_mt = total_sox_mt,
+        sau_total_co_mt = total_co_mt,
+        sau_total_pm2_5_mt = total_pm2_5_mt,
+        sau_total_pm10_mt = total_pm10_mt)
+
+isscaap_comparison <- inner_join(fao_species, sau_species, by = c("zone", "year", "flag", "scientific_name" = "species"))
+```
+
+
+
+## Visualizations
+
+### Trends in emissions-per-unit-catch by ISSCAAP species group
+
+```{r}
+#| code-summary: ISSCAAP Time
+full_emissions_fao_species %>%
+  filter(year<=2022) %>%
+  filter(!isscaap_group %in% c("no_fao_species_catch_data", "unknown_species")) %>%
+  group_by(isscaap_group, isscaap, year) %>%
+  summarise(total_emissions_co2 = sum(total_co2_mt, na.rm = TRUE),
+            total_catch = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
+  mutate(emissions_unit_catch = total_emissions_co2/total_catch) %>%
+  ggplot(aes(year, emissions_unit_catch, group = isscaap_group)) +
+  geom_line() +
+  scale_x_continuous(breaks = seq(2016, 2022, by = 3)) +
+  facet_wrap(~isscaap_group, labeller = label_wrap_gen(width = 20), scales = "free_y") +
+  labs(x = "",
+       y = "Emissions CO2 per Unit Catch") +
+  theme_minimal()
+```
+
+#### Trends in emissions-per-unit-catch by FAO region
+
+```{r}
+#| code-summary: Region Emissions-Catch
+# Facet by region
+full_emissions_fao_species %>%
+  filter(year <= 2022) %>%
+  group_by(zone, year) %>%
+  summarise(total_emissions_co2 = sum(total_co2_mt, na.rm = TRUE),
+            total_catch = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
+  mutate(emissions_unit_catch = total_emissions_co2/total_catch) %>%
+  ggplot(aes(year, emissions_unit_catch, group = as.factor(zone))) +
+  geom_line() +
+  scale_x_continuous(breaks = seq(2016, 2024, by = 4)) +
+  #scale_y_continuous(labels = scales::comma) +
+  facet_wrap(~zone, scales = "free_y") +
+  labs(x = "",
+       y = "Emissions CO2 per Unit Catch",
+       title = "Trends in Global Emissions per Unit Catch by FAO Region") +
+  theme_minimal()
+
+full_emissions_fao_species %>%
+  filter(year <= 2022) %>%
+  group_by(zone, year) %>%
+  summarise(total_emissions_co2 = sum(total_co2_mt, na.rm = TRUE),
+            total_catch = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
+  mutate(emissions_unit_catch = total_emissions_co2/total_catch) %>%
+  filter(!zone == 18) %>%
+  ggplot(aes(year, emissions_unit_catch, group = as.factor(zone), color = as.factor(zone))) +
+  geom_line() +
+  scale_x_continuous(breaks = seq(2016, 2024, by = 4)) +
+  labs(x = "",
+       y = "Emissions CO2 per Unit Catch",
+       title = "Trends in Global Emissions per Unit Catch by FAO Region",
+       color = "Zone") +
+  gghighlight::gghighlight(as.factor(zone) %in% c(58, 88)) +
+  theme_minimal()
+```
+

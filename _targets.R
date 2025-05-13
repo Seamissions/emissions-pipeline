@@ -5,6 +5,8 @@
 
 # Load packages required to define the pipeline:
 library(targets)
+library(tarchetypes)
+library(quarto)
 
 # library(tarchetypes) # Load other packages as needed.
 
@@ -61,5 +63,15 @@ list(
   tar_target(emissions, merge_emissions(emissions_files)),
   tar_target(emissions_zones, intersection(emissions)),
   tar_target(emissions_partitioned_grouped, partition_emissions(emissions_zones)),
-  tar_target(full_emissions_fao_species, merge_catch(emissions_partitioned_grouped, fao_catch))
+  tar_target(full_emissions_fao_species, merge_catch_fao(emissions_partitioned_grouped, fao_catch)),
+  tar_target(sau_files,
+             list.files("/capstone/seamissions/data/sau/", pattern="*.csv", full.names = TRUE),
+             format = "file"),
+  tar_target(sau_catch, prep_sau(sau_files)),
+  tar_target(full_emissions_sau_species, merge_catch_sau(emissions_partitioned_grouped, sau_catch)),
+  # Make quarto notebook -----
+  tar_quarto(
+    name = quarto_book,
+    path = "qmd",
+    quiet = FALSE)
 )

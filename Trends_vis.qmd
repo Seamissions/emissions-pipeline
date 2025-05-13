@@ -109,7 +109,7 @@ fao_summary %>%
   theme_minimal()
 ```
 
-# Trends in emissions-per-unit-catch by FAO region 
+# Trends in emissions-per-unit-catch by FAO region
 
 ```{r}
 #| code-summary: Region Emissions-Catch
@@ -173,4 +173,3 @@ ggplot(aes(as.factor(zone), fao_emissions_unit_catch, group = as.factor(zone))) 
 ```
 
 Examine which fisheries are outlier
-

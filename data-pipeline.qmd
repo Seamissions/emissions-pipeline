@@ -429,15 +429,7 @@ for (i in seq_along(regions)){
     # Keep only desired columns
     select(zone, 
            year, 
-           non_broad_co2_mt,
-           non_broad_ch4_mt,
-           non_broad_n2o_mt,
-           non_broad_nox_mt,
-           non_broad_sox_mt,
-           non_broad_co_mt,
-           non_broad_vocs_mt,
-           non_broad_pm2_5_mt,
-           non_broad_pm10_mt)
+           contains("non_broad_"))
     # FAO data doesn't go past 2022
     #filter(year <= 2022) 
   
@@ -459,15 +451,7 @@ for (i in seq_along(regions)){
            flag,
            species_identifier,
            country_total_tons_by_species,
-           dist_non_broad_co2_mt,
-           dist_non_broad_ch4_mt,
-           dist_non_broad_n2o_mt,
-           dist_non_broad_nox_mt,
-           dist_non_broad_sox_mt,
-           dist_non_broad_co_mt,
-           dist_non_broad_vocs_mt,
-           dist_non_broad_pm2_5_mt,
-           dist_non_broad_pm10_mt) 
+           contains("dist_non_broad_")) 
   
   # Account for emissions transfer in TABLE 1
   before <- sum(fao_summary_non_broadcasting$non_broad_co2_mt, na.rm = TRUE) 
@@ -496,7 +480,7 @@ for (i in seq_along(regions)){
            broad_vocs_mt = emissions_vocs_mt,
            broad_pm2_5_mt = emissions_pm2_5_mt,
            broad_pm10_mt = emissions_pm10_mt) %>%
-    select(-c(emissions_co2_mt, emissions_ch4_mt, emissions_n2o_mt, emissions_nox_mt, emissions_sox_mt, emissions_co_mt, emissions_vocs_mt, emissions_pm2_5_mt, emissions_pm10_mt))
+    select(-contains("emissions_"))
   
   # 2.2 Distribute broadcasting for countries with catch ASSUMPTION: 1 ton = same emissions for all species
   total_flag_catch <- fao_catch %>%
@@ -549,14 +533,7 @@ for (i in seq_along(regions)){
            flag,
            species_identifier,
            country_total_tons_by_species,
-           total_co2_mt,
-           total_ch4_mt,
-           total_n2o_mt,
-           total_nox_mt,
-           total_sox_mt,
-           total_co_mt,
-           total_pm2_5_mt,
-           total_pm10_mt
+           contains("total_")
     )
   
   # BUILD SPECIES TABLE for zone, year, flag, species, catch_tons
