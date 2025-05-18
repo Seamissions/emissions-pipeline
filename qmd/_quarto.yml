@@ -11,6 +11,8 @@ book:
     - index.qmd
     - prep_fao.qmd
     - merge_emissions.qmd
+    - intersection.qmd
+    - results.qmd
     #- eda.qmd
     #- references.qmd
   downloads: [pdf]

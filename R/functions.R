@@ -131,6 +131,8 @@ merge_emissions <- function(emissions_files) {
     stop("Column names don't match.")
   }
   
+  #return(broadcasting)
+  
   # Combine broadcasting and non-broadcasting data
   emissions <- bind_rows(broadcasting, non_broadcasting) %>%
     select(year_month, everything(), -c(month, date))
@@ -230,16 +232,21 @@ partition_emissions <- function(emissions_zones) {
   emissions_zones_filtered <- emissions_zones %>%
     filter(st_geometry_type(.) %in% valid_types) # in valid_types, c("POLYGON", "MULTIPOLYGON")
   
+  # # Save for dashboard after filtering out points
+  # dashboard <- emissions_zones_filtered %>%
+  #   group_by(grid_id, lat_bin, lon_bin, flag, year, zone, geometry) %>% # geometry?
+  #   summarize(emissions_co2_mt = sum(emissions_co2_mt, na.rm = TRUE))
+
+  # Break MULTIPOLYGONS down into POLYGONS
+  emissions_zones_exploded <- st_cast(emissions_zones_filtered, "MULTIPOLYGON") %>% 
+    st_cast("POLYGON")
+  
   # Save for dashboard after filtering out points
-  dashboard <- emissions_zones_filtered %>%
+  dashboard <- emissions_zones_exploded %>%
     group_by(grid_id, lat_bin, lon_bin, flag, year, zone, geometry) %>% # geometry?
     summarize(emissions_co2_mt = sum(emissions_co2_mt, na.rm = TRUE))
   
   saveRDS(dashboard, file = "/capstone/seamissions/checkpoint/dashboard.rds")
-  
-  # Break MULTIPOLYGONS down into POLYGONS
-  emissions_zones_exploded <- st_cast(emissions_zones_filtered, "MULTIPOLYGON") %>% 
-    st_cast("POLYGON")
   
   # Generate areas by grid_id for sub polygons
   emissions_zones_summary_1 <- emissions_zones_exploded %>%

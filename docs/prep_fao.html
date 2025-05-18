@@ -98,7 +98,7 @@ ul.task-list li input[type="checkbox"] {
     <ul class="list-unstyled mt-1">
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./index.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Index</span></a>
+  <a href="./index.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">About</span></a>
   </div>
 </li>
         <li class="sidebar-item">
@@ -111,6 +111,11 @@ ul.task-list li input[type="checkbox"] {
   <a href="./merge_emissions.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Merge Emissions Datasets</span></a>
   </div>
 </li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./results.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Results</span></a>
+  </div>
+</li>
     </ul>
     </div>
 </nav>
@@ -120,7 +125,11 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">Table of contents</h2>
    
   <ul>
-  <li><a href="#join-fao-data" id="toc-join-fao-data" class="nav-link active" data-scroll-target="#join-fao-data"><span class="toc-section-number">2.1</span>  Join FAO Data</a></li>
+  <li><a href="#join-fao-data" id="toc-join-fao-data" class="nav-link active" data-scroll-target="#join-fao-data"><span class="toc-section-number">2.1</span>  Join FAO Data</a>
+  <ul class="collapse">
+  <li><a href="#remove-non-target-species" id="toc-remove-non-target-species" class="nav-link" data-scroll-target="#remove-non-target-species"><span class="toc-section-number">2.1.1</span>  Remove non-target species</a></li>
+  <li><a href="#add-species-information" id="toc-add-species-information" class="nav-link" data-scroll-target="#add-species-information"><span class="toc-section-number">2.1.2</span>  Add species information</a></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -129,7 +138,7 @@ ul.task-list li input[type="checkbox"] {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title"><span id="sec-methods" class="quarto-section-identifier d-none d-lg-block"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">FAO Data Assembly</span></span></h1>
+<h1 class="title d-none d-lg-block"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">FAO Data Assembly</span></h1>
 </div>
 
 
@@ -151,15 +160,21 @@ ul.task-list li input[type="checkbox"] {
 <h2 data-number="2.1" class="anchored" data-anchor-id="join-fao-data"><span class="header-section-number">2.1</span> Join FAO Data</h2>
 <p><a href="https://www.fao.org/fishery/en/collection/capture?lang=en">FAO Global Capture Production</a> data was downloaded as .csv files in a zipped folder. The following .csv files were used in this analysis:</p>
 <ul>
-<li><code>Capture_Quantity.csv</code> (core catch quantity)</li>
+<li><code>Capture_Quantity.csv</code> (catch quantity)</li>
 <li><code>CL_FI_COUNTRY_GROUPS.csv</code> (country information)</li>
 <li><code>CL_FI_SPECIES_GROUPS.csv</code> (species information)</li>
 </ul>
+<section id="remove-non-target-species" class="level3" data-number="2.1.1">
+<h3 data-number="2.1.1" class="anchored" data-anchor-id="remove-non-target-species"><span class="header-section-number">2.1.1</span> Remove non-target species</h3>
 <p>Prior to joining the .csv files, “PISCES”, “CRUSTACEA”, “MOLLUSCA”, and “INVERTEBRATA AQUATICA” were filtered out of the major groups represented in the <code>CL_FI_SPECIES_GROUPS.csv</code>. Additionally, <a href="https://www.fao.org/fishery/static/ASFIS/ISSCAAP.pdf">ISSCAAP group</a> 82 (Corals) was removed. These species were assumed not to be the target species of the fishing gear types (“fishing”, “squid_jigger”, “drifting_longlines”, “pole_and_line”, “other_fishing”, “trollers”, “fixed_gear”, “pots_and_traps”, “set_longlines”, “set_gillnets”, “trawlers”, “dredge_fishing”, “seiners”, “purse_seines”, “tuna_purse_seines”, “other_purse_seines”, “other_seines”, and “driftnets”) represented in the broadcasting emissions dataset.</p>
 <p>ISSCAAP groups 41 and 51, representing freshwater crustaceans and freshwater molluscs respectively, as well as the species “River eels”, were filtered out because any emissions associated with freshwater collection would have been eliminated during the intersection of the FAO regions shapefile and the emissions grid. Therefore, it is assumed that none of the resulting emissions can be attributed to fishing for freshwater species.</p>
+</section>
+<section id="add-species-information" class="level3" data-number="2.1.2">
+<h3 data-number="2.1.2" class="anchored" data-anchor-id="add-species-information"><span class="header-section-number">2.1.2</span> Add species information</h3>
 <p>The analysis is conducted with species distinguished by a unique numeric code in the <code>identifier</code> column, and then additional species information is joined back to the final table. Species information was obtained from a modified version of the <code>data-keys/master_species_key.csv</code> created by Danielle Ferraro and Gordon Blasco and provided by emLab. Some species in the resulting FAO dataset were not represented in the master_species_key.csv, so the missing species were added from the <code>FAO CL_FI_SPECIES_GROUPS.csv</code>.</p>
 
 
+</section>
 </section>
 
 </main> <!-- /main -->
@@ -299,7 +314,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
       <a href="./index.html" class="pagination-link">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Index</span></span>
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">About</span></span>
       </a>          
   </div>
   <div class="nav-page nav-page-next">

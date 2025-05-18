@@ -4,14 +4,14 @@
     "href": "index.html",
     "title": "Quantifying Greenhouse Gas (GHG) Emissions Associated with Global Seafood Production",
     "section": "",
-    "text": "1 Index"
+    "text": "1 About\nThis Quarto book documents the steps in the Emissions Pipeline."
   },
   {
     "objectID": "prep_fao.html#join-fao-data",
     "href": "prep_fao.html#join-fao-data",
     "title": "2  FAO Data Assembly",
     "section": "2.1 Join FAO Data",
-    "text": "2.1 Join FAO Data\nFAO Global Capture Production data was downloaded as .csv files in a zipped folder. The following .csv files were used in this analysis:\n\nCapture_Quantity.csv (core catch quantity)\nCL_FI_COUNTRY_GROUPS.csv (country information)\nCL_FI_SPECIES_GROUPS.csv (species information)\n\nPrior to joining the .csv files, “PISCES”, “CRUSTACEA”, “MOLLUSCA”, and “INVERTEBRATA AQUATICA” were filtered out of the major groups represented in the CL_FI_SPECIES_GROUPS.csv. Additionally, ISSCAAP group 82 (Corals) was removed. These species were assumed not to be the target species of the fishing gear types (“fishing”, “squid_jigger”, “drifting_longlines”, “pole_and_line”, “other_fishing”, “trollers”, “fixed_gear”, “pots_and_traps”, “set_longlines”, “set_gillnets”, “trawlers”, “dredge_fishing”, “seiners”, “purse_seines”, “tuna_purse_seines”, “other_purse_seines”, “other_seines”, and “driftnets”) represented in the broadcasting emissions dataset.\nISSCAAP groups 41 and 51, representing freshwater crustaceans and freshwater molluscs respectively, as well as the species “River eels”, were filtered out because any emissions associated with freshwater collection would have been eliminated during the intersection of the FAO regions shapefile and the emissions grid. Therefore, it is assumed that none of the resulting emissions can be attributed to fishing for freshwater species.\nThe analysis is conducted with species distinguished by a unique numeric code in the identifier column, and then additional species information is joined back to the final table. Species information was obtained from a modified version of the data-keys/master_species_key.csv created by Danielle Ferraro and Gordon Blasco and provided by emLab. Some species in the resulting FAO dataset were not represented in the master_species_key.csv, so the missing species were added from the FAO CL_FI_SPECIES_GROUPS.csv."
+    "text": "2.1 Join FAO Data\nFAO Global Capture Production data was downloaded as .csv files in a zipped folder. The following .csv files were used in this analysis:\n\nCapture_Quantity.csv (catch quantity)\nCL_FI_COUNTRY_GROUPS.csv (country information)\nCL_FI_SPECIES_GROUPS.csv (species information)\n\n\n2.1.1 Remove non-target species\nPrior to joining the .csv files, “PISCES”, “CRUSTACEA”, “MOLLUSCA”, and “INVERTEBRATA AQUATICA” were filtered out of the major groups represented in the CL_FI_SPECIES_GROUPS.csv. Additionally, ISSCAAP group 82 (Corals) was removed. These species were assumed not to be the target species of the fishing gear types (“fishing”, “squid_jigger”, “drifting_longlines”, “pole_and_line”, “other_fishing”, “trollers”, “fixed_gear”, “pots_and_traps”, “set_longlines”, “set_gillnets”, “trawlers”, “dredge_fishing”, “seiners”, “purse_seines”, “tuna_purse_seines”, “other_purse_seines”, “other_seines”, and “driftnets”) represented in the broadcasting emissions dataset.\nISSCAAP groups 41 and 51, representing freshwater crustaceans and freshwater molluscs respectively, as well as the species “River eels”, were filtered out because any emissions associated with freshwater collection would have been eliminated during the intersection of the FAO regions shapefile and the emissions grid. Therefore, it is assumed that none of the resulting emissions can be attributed to fishing for freshwater species.\n\n\n2.1.2 Add species information\nThe analysis is conducted with species distinguished by a unique numeric code in the identifier column, and then additional species information is joined back to the final table. Species information was obtained from a modified version of the data-keys/master_species_key.csv created by Danielle Ferraro and Gordon Blasco and provided by emLab. Some species in the resulting FAO dataset were not represented in the master_species_key.csv, so the missing species were added from the FAO CL_FI_SPECIES_GROUPS.csv."
   },
   {
     "objectID": "merge_emissions.html#join-emissions-data",
@@ -19,5 +19,19 @@
     "title": "3  Merge Emissions Datasets",
     "section": "3.1 Join Emissions Data",
     "text": "3.1 Join Emissions Data\ndescribe emissions datasets"
+  },
+  {
+    "objectID": "results.html#overall-comparisons",
+    "href": "results.html#overall-comparisons",
+    "title": "4  Results",
+    "section": "4.1 Overall Comparisons",
+    "text": "4.1 Overall Comparisons\n\n\n[1] \"FAO emissions-per-unit-catch: 4.56.\"\n\n\n[1] \"SAU emissions-per-unit-catch: 3.76.\""
+  },
+  {
+    "objectID": "results.html#visualizations",
+    "href": "results.html#visualizations",
+    "title": "4  Results",
+    "section": "4.2 Visualizations",
+    "text": "4.2 Visualizations\n\n4.2.1 Trends in emissions-per-unit-catch by ISSCAAP species group\n\n\n\n\n\n\n4.2.1.1 Trends in emissions-per-unit-catch by FAO region\n\n\n\n\n\n\n\n\n\n\n# A tibble: 6 × 1\n  major_group              \n  <chr>                    \n1 CRUSTACEA                \n2 INVERTEBRATA AQUATICA    \n3 MOLLUSCA                 \n4 PISCES                   \n5 no_fao_species_catch_data\n6 unknown_species          \n\n\nTEST"
   }
 ]
