@@ -4,7 +4,9 @@ editor_options:
   chunk_output_type: console
 ---
 
-# Merge Emissions Datasets {#sec-methods}
+# Merge Emissions Datasets
+
+This chapter describes the process used to merge emissions datasets.
 
 ```{r, echo = FALSE, results = FALSE, message = FALSE, warning = FALSE}
 #| label: set-chunk-options
@@ -12,7 +14,6 @@ knitr::opts_chunk$set(message = FALSE, warning = FALSE, echo = FALSE)
 
 library(tidyverse)
 
-#tar_target(emissions, merge_emissions(emissions_files))
 targets::tar_load(emissions)
 
 source("R/functions.R")
@@ -26,7 +27,9 @@ Two emissions datasets, obtained from emLab, were used in this analysis:
 
 - 2. Non-broadcasting emissions: `meds_capstone_non_broadcasting_emissions_data_v20250116.csv`
 
-The data were pre-filtered by emLab to select for fishing vessels. The following columns are needed in the analysis:
+The data were pre-filtered by emLab from a [larger emissions dataset](https://emlab-ucsb.github.io/ocean-ghg/) to select for fishing vessels. 
+
+The following columns are required:
 
 - `month`
 - `flag`
@@ -39,6 +42,9 @@ The data were pre-filtered by emLab to select for fishing vessels. The following
 
 ## Packages
 
+- {tidyverse}
+- {janitor}
+- {lubridate}
 
 # Methods 
 
@@ -50,8 +56,10 @@ Emissions datasets (datasets 1 and 2 above) were read into the pipeline, the col
 unique(emissions$vessel_class)
 ```
 
-**implications for non-broadcasting**
-
 In the non-broadcasting dataset, emissions estimate columns for each of the 9 pollutants (CO2, CH4, N2O, NOX, SOX, CO, VOCS, PM2.5, PM10) are renamed to match the broadcasting dataset, and a `flag` column is created and populated with “DARK” to distinguish non-broadcasting emissions from the broadcasting emissions. Then, the datasets were concatenated. 
 
 A `year` column was created, and the combined dataset was filtered to 2016-2024 to match the available data for the non-broadcasting dataset. Emissions estimates are then aggregated (summed) by year and flag for each one-by-one degree pixel (distinguished by `lat_bin` and `lon_bin`). 
+
+## Assumptions
+
+**By filtering out certain gear types,... implications for non-broadcasting**

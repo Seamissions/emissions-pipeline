@@ -13,6 +13,9 @@ book:
     - merge_emissions.qmd
     - intersection.qmd
     - results.qmd
+    - sau_comparison.qmd
+    - flag_id.qmd
+    - comparison_report.qmd
     #- eda.qmd
     #- references.qmd
   downloads: [pdf]

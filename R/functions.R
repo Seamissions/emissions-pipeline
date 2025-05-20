@@ -367,16 +367,27 @@ merge_catch_fao <- function(emissions_partitioned_grouped, fao_catch) {
     
     # -------- TABLE 1 --------
     # 1.1 All flags reporting FAO catch in Region #
+    # total_region_catch <- fao_catch %>%
+    #   filter(zone == regions[i]) %>%
+    #   group_by(zone, year, flag, species_identifier) %>%
+    #   summarise(country_total_tons_by_species = sum(fao_catch_tons, na.rm = TRUE), .groups = "drop") %>%
+    #   ungroup() %>%
+    #   group_by(zone, year) %>%
+    #   mutate(region_total_tons = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
+    #   mutate(prop_fao_catch = country_total_tons_by_species/region_total_tons) %>%
+    #   select(-region_total_tons) %>%
+    #   filter(country_total_tons_by_species > 0)
+    
     total_region_catch <- fao_catch %>%
       filter(zone == regions[i]) %>%
       group_by(zone, year, flag, species_identifier) %>%
-      summarise(country_total_tons_by_species = sum(fao_catch_tons, na.rm = TRUE), .groups = "drop") %>%
+      summarise(total_tons_by_species = sum(fao_catch_tons, na.rm = TRUE), .groups = "drop") %>%
       ungroup() %>%
       group_by(zone, year) %>%
-      mutate(region_total_tons = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
-      mutate(prop_fao_catch = country_total_tons_by_species/region_total_tons) %>%
+      mutate(region_total_tons = sum(total_tons_by_species, na.rm = TRUE)) %>%
+      mutate(prop_fao_catch = total_tons_by_species/region_total_tons) %>%
       select(-region_total_tons) %>%
-      filter(country_total_tons_by_species > 0)
+      filter(total_tons_by_species > 0)
     
     # 1.2 Summarise non-broadcasting emissions by Region #
     fao_summary_non_broadcasting <- emissions_partitioned_grouped %>%
@@ -415,7 +426,7 @@ merge_catch_fao <- function(emissions_partitioned_grouped, fao_catch) {
              year,
              flag,
              species_identifier,
-             country_total_tons_by_species,
+             total_tons_by_species,
              contains("dist_non_broad_")) 
     
     # Account for emissions transfer in TABLE 1
@@ -495,7 +506,7 @@ merge_catch_fao <- function(emissions_partitioned_grouped, fao_catch) {
              year,
              flag,
              species_identifier,
-             country_total_tons_by_species,
+             #total_tons_by_species,
              contains("total_"))
     
     # Account for emissions after full join
@@ -589,16 +600,27 @@ merge_catch_sau <- function(emissions_partitioned_grouped, sau_catch){
     
     # -------- TABLE 1 --------
     # 1.1 All flags reporting FAO catch in Region #
+    # total_region_catch <- sau_catch %>%
+    #   filter(zone == regions[i]) %>%
+    #   group_by(zone, year, flag, species) %>%
+    #   summarise(country_total_tons_by_species = sum(sau_catch_tons, na.rm = TRUE), .groups = "drop") %>%
+    #   ungroup() %>%
+    #   group_by(zone, year) %>%
+    #   mutate(region_total_tons = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
+    #   mutate(prop_sau_catch = country_total_tons_by_species/region_total_tons) %>%
+    #   select(-region_total_tons) %>%
+    #   filter(country_total_tons_by_species > 0)
+    
     total_region_catch <- sau_catch %>%
       filter(zone == regions[i]) %>%
       group_by(zone, year, flag, species) %>%
-      summarise(country_total_tons_by_species = sum(sau_catch_tons, na.rm = TRUE), .groups = "drop") %>%
+      summarise(total_tons_by_species = sum(sau_catch_tons, na.rm = TRUE), .groups = "drop") %>%
       ungroup() %>%
       group_by(zone, year) %>%
-      mutate(region_total_tons = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
-      mutate(prop_sau_catch = country_total_tons_by_species/region_total_tons) %>%
+      mutate(region_total_tons = sum(total_tons_by_species, na.rm = TRUE)) %>%
+      mutate(prop_sau_catch = total_tons_by_species/region_total_tons) %>%
       select(-region_total_tons) %>%
-      filter(country_total_tons_by_species > 0)
+      filter(total_tons_by_species > 0)
     
     # 1.2 Summarise non-broadcasting emissions by Region #
     sau_summary_non_broadcasting <- emissions_partitioned_grouped %>%
@@ -618,16 +640,8 @@ merge_catch_sau <- function(emissions_partitioned_grouped, sau_catch){
              non_broad_pm10_mt = emissions_pm10_mt) %>%
       # Keep only desired columns
       select(zone, 
-             year, 
-             non_broad_co2_mt,
-             non_broad_ch4_mt,
-             non_broad_n2o_mt,
-             non_broad_nox_mt,
-             non_broad_sox_mt,
-             non_broad_co_mt,
-             non_broad_vocs_mt,
-             non_broad_pm2_5_mt,
-             non_broad_pm10_mt)
+             year,
+             contains("non_broad_"))
     
     # TABLE 1: Allocate non-broadcasting emissions to FAO reporting countries by Region #
     total_region_non_broad_allocation <- full_join(total_region_catch, sau_summary_non_broadcasting, by = c("zone", "year")) %>%
@@ -645,16 +659,8 @@ merge_catch_sau <- function(emissions_partitioned_grouped, sau_catch){
              year,
              flag,
              species,
-             country_total_tons_by_species,
-             dist_non_broad_co2_mt,
-             dist_non_broad_ch4_mt,
-             dist_non_broad_n2o_mt,
-             dist_non_broad_nox_mt,
-             dist_non_broad_sox_mt,
-             dist_non_broad_co_mt,
-             dist_non_broad_vocs_mt,
-             dist_non_broad_pm2_5_mt,
-             dist_non_broad_pm10_mt) 
+             total_tons_by_species,
+             contains("dist_non_broad"))
     
     # Account for emissions transfer in TABLE 1
     before <- sum(sau_summary_non_broadcasting$non_broad_co2_mt, na.rm = TRUE) 
@@ -683,7 +689,8 @@ merge_catch_sau <- function(emissions_partitioned_grouped, sau_catch){
              broad_vocs_mt = emissions_vocs_mt,
              broad_pm2_5_mt = emissions_pm2_5_mt,
              broad_pm10_mt = emissions_pm10_mt) %>%
-      select(-c(emissions_co2_mt, emissions_ch4_mt, emissions_n2o_mt, emissions_nox_mt, emissions_sox_mt, emissions_co_mt, emissions_vocs_mt, emissions_pm2_5_mt, emissions_pm10_mt))
+      select(-c(contains("emissions_")))
+       # emissions_co2_mt, emissions_ch4_mt, emissions_n2o_mt, emissions_nox_mt, emissions_sox_mt, emissions_co_mt, emissions_vocs_mt, emissions_pm2_5_mt, emissions_pm10_mt))
     
     # 2.2 Distribute broadcasting for countries with catch ASSUMPTION: 1 ton = same emissions for all species
     total_flag_catch <- sau_catch %>%
@@ -733,17 +740,17 @@ merge_catch_sau <- function(emissions_partitioned_grouped, sau_catch){
              year,
              flag,
              species,
-             country_total_tons_by_species,
-             total_co2_mt,
-             total_ch4_mt,
-             total_n2o_mt,
-             total_nox_mt,
-             total_sox_mt,
-             total_co_mt,
-             total_vocs_mt,
-             total_pm2_5_mt,
-             total_pm10_mt
-      )
+             #total_tons_by_species,
+             contains("total_"))
+             # total_co2_mt,
+             # total_ch4_mt,
+             # total_n2o_mt,
+             # total_nox_mt,
+             # total_sox_mt,
+             # total_co_mt,
+             # total_vocs_mt,
+             # total_pm2_5_mt,
+             # total_pm10_mt
     
     # Account for emissions after full join
     before <- sum(emissions_partitioned$broad_co2_mt, na.rm = TRUE) + sum(sau_summary_non_broadcasting$non_broad_co2_mt, na.rm = TRUE)

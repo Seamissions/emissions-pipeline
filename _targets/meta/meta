@@ -6,16 +6,16 @@ fao_files|stem|9cb47761c193b142|00e43b8858eeadc0|2c530c1562a7fbd1|1039337457|/ca
 fao_catch|stem|b09471b0b2592dc9|10568c6e3d2b9aea|74e8b3afdb4625ec|-1821612448||t20221.1314227314s|s353650b|353650|rds|local|vector|||3.319||
 merge_catch|function|036b260907c453b3|||||||||||||||
 sau_files|stem|d775b378bd44b694|f9c676f2ebe2b3bf|2c530c1562a7fbd1|199275836|/capstone/seamissions/data/sau//SAU FAO 18 v50-1.csv*/capstone/seamissions/data/sau//SAU FAO 21 v50-1.csv*/capstone/seamissions/data/sau//SAU FAO 27 v50-1.csv*/capstone/seamissions/data/sau//SAU FAO 31 v50-1.csv*/capstone/seamissions/data/sau//SAU FAO 34 v50-1.csv*/capstone/seamissions/data/sau//SAU FAO 47 v50-1.csv*/capstone/seamissions/data/sau//SAU FAO 48 v50-1.csv*/capstone/seamissions/data/sau//SAU FAO 51 v50-1.csv*/capstone/seamissions/data/sau//SAU FAO 57 v50-1.csv*/capstone/seamissions/data/sau//SAU FAO 58 v50-1.csv*/capstone/seamissions/data/sau//SAU FAO 61 v50-1.csv*/capstone/seamissions/data/sau//SAU FAO 67 v50-1.csv*/capstone/seamissions/data/sau//SAU FAO 71 v50-1.csv*/capstone/seamissions/data/sau//SAU FAO 77 v50-1.csv*/capstone/seamissions/data/sau//SAU FAO 81 v50-1.csv*/capstone/seamissions/data/sau//SAU FAO 87 v50-1.csv*/capstone/seamissions/data/sau//SAU FAO 88 v50-1.csv|t20159.8257656096s|s1678638313b|1678638313|file|local|vector|||1.269||
-full_emissions_fao_species|stem|b14a30e908df1a36|6816d339cff95c2a|4333d9c92bde3154|1111384938||t20221.1958449568s|s6587321b|6587321|rds|local|vector|||86.684||
 sau_catch|stem|e300ac841a4a3f80|78e5118853563d83|518f5c63c082ac70|-2115036505||t20221.2064542606s|s1420275b|1420275|rds|local|vector|||52.257||
-full_emissions_sau_species|stem|ff1e74b023766a66|e70e26a4c56e3ced|2cb84ee6600a59cd|-693238736||t20221.2169782389s|s6328558b|6328558|rds|local|vector|||97.061||
+emissions_partitioned_grouped|stem|93f29f738bebf79f|f5623e9ef0047c24|61f4bb258ff849e7|1569783626||t20222.6754622769s|s459533b|459533|rds|local|vector|||1054.811|Additional geometry types detected. Proceed with filter.. repeating attributes for all sub-geometries for which they may not be constant|
+full_emissions_sau_species|stem|16e6f7d928815c87|e70e26a4c56e3ced|a5a100b376aff253|-693238736||t20226.7848511997s|s6328552b|6328552|rds|local|vector|||166.781||
+full_emissions_fao_species|stem|55a9d66ff71541d1|6816d339cff95c2a|48832d50b12ba05b|1111384938||t20226.786569285s|s6587314b|6587314|rds|local|vector|||147.449||
 prep_fao|function|2559817543711d07
 partition_emissions|function|71c82c2dca7d6788
 merge_emissions|function|27596afb7a25896a
-merge_catch_fao|function|5a9c98589c294b40
-.Random.seed|object|3215b21140d17235
+merge_catch_fao|function|ac0b3faa500d2975
+.Random.seed|object|56c5834f82b66a29
 prep_sau|function|efeaf1f1846064cd
 intersection|function|c38b831672563637
-merge_catch_sau|function|a2344eca4276545e
-quarto_book|stem|b52d472c4ed24950|f07c5797320957dc|2c530c1562a7fbd1|-1014629814|docs*qmd/_quarto.yml|t20222.6629879408s|s1411041b|1411041|file|local|vector|||28.471||
-emissions_partitioned_grouped|stem|93f29f738bebf79f|f5623e9ef0047c24|61f4bb258ff849e7|1569783626||t20222.6754622769s|s459533b|459533|rds|local|vector|||1054.811|Additional geometry types detected. Proceed with filter.. repeating attributes for all sub-geometries for which they may not be constant|
+merge_catch_sau|function|d1b099b51cb70032
+quarto_book|stem|33ecc57a3fb54ae0|f07c5797320957dc|2c530c1562a7fbd1|-1014629814|docs*qmd/_quarto.yml|t20228.0080254899s|s1586790b|1586790|file|local|vector|||138.838||

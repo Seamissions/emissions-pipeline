@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Quantifying Greenhouse Gas (GHG) Emissions Associated with Global Seafood Production - 5&nbsp; Results</title>
+<title>Quantifying Greenhouse Gas (GHG) Emissions Associated with Global Seafood Production - 4&nbsp; Intersection by FAO Region</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -30,8 +30,8 @@ ul.task-list li input[type="checkbox"] {
 <script src="site_libs/quarto-search/fuse.min.js"></script>
 <script src="site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="./">
-<link href="./sau_comparison.html" rel="next">
-<link href="./intersection.html" rel="prev">
+<link href="./results.html" rel="next">
+<link href="./merge_emissions.html" rel="prev">
 <script src="site_libs/quarto-html/quarto.js"></script>
 <script src="site_libs/quarto-html/popper.min.js"></script>
 <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
@@ -70,7 +70,7 @@ ul.task-list li input[type="checkbox"] {
   <header id="quarto-header" class="headroom fixed-top">
   <nav class="quarto-secondary-nav" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
     <div class="container-fluid d-flex justify-content-between">
-      <h1 class="quarto-secondary-nav-title"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Results</span></h1>
+      <h1 class="quarto-secondary-nav-title"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Intersection by FAO Region</span></h1>
       <button type="button" class="quarto-btn-toggle btn" aria-label="Show secondary navigation">
         <i class="bi bi-chevron-right"></i>
       </button>
@@ -113,12 +113,12 @@ ul.task-list li input[type="checkbox"] {
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./intersection.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Intersection by FAO Region</span></a>
+  <a href="./intersection.html" class="sidebar-item-text sidebar-link active"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Intersection by FAO Region</span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./results.html" class="sidebar-item-text sidebar-link active"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Results</span></a>
+  <a href="./results.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Results</span></a>
   </div>
 </li>
         <li class="sidebar-item">
@@ -145,9 +145,14 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">Table of contents</h2>
    
   <ul>
-  <li><a href="#trends-in-emissions-per-unit-catch-by-isscaap-species-group" id="toc-trends-in-emissions-per-unit-catch-by-isscaap-species-group" class="nav-link active" data-scroll-target="#trends-in-emissions-per-unit-catch-by-isscaap-species-group"><span class="toc-section-number">5.1</span>  Trends in emissions-per-unit-catch by ISSCAAP species group</a></li>
-  <li><a href="#trends-in-emissions-per-unit-catch-by-fao-region" id="toc-trends-in-emissions-per-unit-catch-by-fao-region" class="nav-link" data-scroll-target="#trends-in-emissions-per-unit-catch-by-fao-region"><span class="toc-section-number">5.2</span>  Trends in emissions-per-unit-catch by FAO region</a></li>
-  <li><a href="#species-spotlight-region-77-salmons-trouts-smelts" id="toc-species-spotlight-region-77-salmons-trouts-smelts" class="nav-link" data-scroll-target="#species-spotlight-region-77-salmons-trouts-smelts"><span class="toc-section-number">5.3</span>  Species Spotlight: Region 77 Salmons, Trouts, Smelts</a></li>
+  <li><a href="#datasets" id="toc-datasets" class="nav-link active" data-scroll-target="#datasets"><span class="toc-section-number">4.1</span>  Datasets</a></li>
+  <li><a href="#packages" id="toc-packages" class="nav-link" data-scroll-target="#packages"><span class="toc-section-number">4.2</span>  Packages</a></li>
+  <li><a href="#methods" id="toc-methods" class="nav-link" data-scroll-target="#methods"><span class="toc-section-number">5</span>  Methods</a>
+  <ul class="collapse">
+  <li><a href="#intersection" id="toc-intersection" class="nav-link" data-scroll-target="#intersection"><span class="toc-section-number">5.1</span>  Intersection</a></li>
+  <li><a href="#partition" id="toc-partition" class="nav-link" data-scroll-target="#partition"><span class="toc-section-number">5.2</span>  Partition</a></li>
+  <li><a href="#assumptions" id="toc-assumptions" class="nav-link" data-scroll-target="#assumptions"><span class="toc-section-number">5.3</span>  Assumptions</a></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -156,7 +161,7 @@ ul.task-list li input[type="checkbox"] {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title d-none d-lg-block"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Results</span></h1>
+<h1 class="title d-none d-lg-block"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Intersection by FAO Region</span></h1>
 </div>
 
 
@@ -171,36 +176,44 @@ ul.task-list li input[type="checkbox"] {
 
 </header>
 
-<p>This chapter details the results from the primary analysis.</p>
+<p>This chapter describes the process of spatially diving emissions amongst FAO Major Fishing Area (Region).</p>
 <div class="cell">
 
 </div>
-<section id="trends-in-emissions-per-unit-catch-by-isscaap-species-group" class="level2" data-number="5.1">
-<h2 data-number="5.1" class="anchored" data-anchor-id="trends-in-emissions-per-unit-catch-by-isscaap-species-group"><span class="header-section-number">5.1</span> Trends in emissions-per-unit-catch by ISSCAAP species group</h2>
-<div class="cell">
-<div class="cell-output-display">
-<p><img src="results_files/figure-html/unnamed-chunk-1-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
+<section id="datasets" class="level2" data-number="4.1">
+<h2 data-number="4.1" class="anchored" data-anchor-id="datasets"><span class="header-section-number">4.1</span> Datasets</h2>
+<p>A zip file containing the following shapefiles was downloaded from <a href="https://www.marineregions.org/gazetteer.php?p=details&amp;id=22541">Marineregions.org</a>:</p>
+<ul>
+<li><code>World_Fao_Zones.dbf</code></li>
+<li><code>World_Fao_Zones.prj</code></li>
+<li><code>World_Fao_Zones.sbn</code></li>
+<li><code>World_Fao_Zones.shp</code></li>
+<li><code>World_Fao_Zones.shx</code></li>
+</ul>
 </section>
-<section id="trends-in-emissions-per-unit-catch-by-fao-region" class="level2" data-number="5.2">
-<h2 data-number="5.2" class="anchored" data-anchor-id="trends-in-emissions-per-unit-catch-by-fao-region"><span class="header-section-number">5.2</span> Trends in emissions-per-unit-catch by FAO region</h2>
-<div class="cell">
-<div class="cell-output-display">
-<p><img src="results_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid" width="672"></p>
-</div>
-<div class="cell-output-display">
-<p><img src="results_files/figure-html/unnamed-chunk-2-2.png" class="img-fluid" width="672"></p>
-</div>
-</div>
+<section id="packages" class="level2" data-number="4.2">
+<h2 data-number="4.2" class="anchored" data-anchor-id="packages"><span class="header-section-number">4.2</span> Packages</h2>
+<ul>
+<li>{tidyverse}</li>
+<li>{sf}</li>
+</ul>
 </section>
-<section id="species-spotlight-region-77-salmons-trouts-smelts" class="level2" data-number="5.3">
-<h2 data-number="5.3" class="anchored" data-anchor-id="species-spotlight-region-77-salmons-trouts-smelts"><span class="header-section-number">5.3</span> Species Spotlight: Region 77 Salmons, Trouts, Smelts</h2>
-<div class="cell">
+<section id="methods" class="level1" data-number="5">
+<h1 data-number="5"><span class="header-section-number">5</span> Methods</h1>
+<section id="intersection" class="level2" data-number="5.1">
+<h2 data-number="5.1" class="anchored" data-anchor-id="intersection"><span class="header-section-number">5.1</span> Intersection</h2>
+<p>Spatial attributes (points) were created for each <code>lat_bin</code> and <code>lon_bin</code> in the native WGS coordinate reference system (unit: degrees). An empty grid was generated from the point geometry, the emissions data were joined back to the empty grid, and the geodataframe was transformed to Equal Earth projection. Every grid cell was assigned a unique ID. Using the FAO shapefile (dataset 3), an intersection was run on the emissions grid cells to assign each to an FAO region. Some grid cells overlapped multiple regions, resulting in multipolygons for those grid cell IDs. Multipolygons were broken down into individual sub-polygons. The area was calculated for each sub-polygon, and the individual sub-polygon areas were summed for each grid cell ID.</p>
+</section>
+<section id="partition" class="level2" data-number="5.2">
+<h2 data-number="5.2" class="anchored" data-anchor-id="partition"><span class="header-section-number">5.2</span> Partition</h2>
+<p>Emissions from each grid cell ID were partitioned out based on the proportion of sub-polygon area to total grid cell area associated with each grid cell ID. The emissions partitioning was validated using a check to trigger a warning if more than 0.001% of emissions were lost in comparing the total emissions estimates before and after partitioning. Some emissions are expected to be lost due to floating point error and rounding, and 0.001% was arbitrarily selected as a threshold (though the actual number of lost emissions is likely much smaller).</p>
+</section>
+<section id="assumptions" class="level2" data-number="5.3">
+<h2 data-number="5.3" class="anchored" data-anchor-id="assumptions"><span class="header-section-number">5.3</span> Assumptions</h2>
+<p>This assumes a uniform distribution of emissions within the 1 x 1 degree pixel.</p>
 
-</div>
 
-
+</section>
 </section>
 
 </main> <!-- /main -->
@@ -339,13 +352,13 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 </script>
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
-      <a href="./intersection.html" class="pagination-link">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Intersection by FAO Region</span></span>
+      <a href="./merge_emissions.html" class="pagination-link">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Merge Emissions Datasets</span></span>
       </a>          
   </div>
   <div class="nav-page nav-page-next">
-      <a href="./sau_comparison.html" class="pagination-link">
-        <span class="nav-page-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">SAU Validation</span></span> <i class="bi bi-arrow-right-short"></i>
+      <a href="./results.html" class="pagination-link">
+        <span class="nav-page-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Results</span></span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav>

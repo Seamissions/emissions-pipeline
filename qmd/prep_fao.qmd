@@ -6,6 +6,8 @@ editor_options:
 
 # FAO Data Assembly
 
+This chapter describes the process used to assemble FAO Seafood Catch data.
+
 ```{r, echo = FALSE, results = FALSE, message = FALSE, warning = FALSE}
 #| label: set-chunk-options
 knitr::opts_chunk$set(message = FALSE, warning = FALSE, echo = FALSE)
@@ -19,17 +21,20 @@ source("R/functions.R")
 
 ## Datasets
 
-## Packages
-
-# Methods
-
-## Join FAO Data
-
 [FAO Global Capture Production](https://www.fao.org/fishery/en/collection/capture?lang=en) data was downloaded as .csv files in a zipped folder. The following .csv files were used in this analysis:
 
 - `Capture_Quantity.csv` (catch quantity)
 - `CL_FI_COUNTRY_GROUPS.csv` (country information)
 - `CL_FI_SPECIES_GROUPS.csv` (species information)
+
+At the time of this analysis (Spring 2025), FAO data was only avaialable through 2022.
+
+## Packages
+
+- {tidyverse}
+- {janitor}
+
+# Methods
 
 ### Remove non-target species
 

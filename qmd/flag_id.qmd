@@ -1,0 +1,233 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+# Flag ID
+
+This chapter details the results of our flag analysis. 
+
+```{r, echo = FALSE, results = FALSE, message = FALSE, warning = FALSE}
+#| label: set-chunk-options
+knitr::opts_chunk$set(message = FALSE, warning = FALSE, echo = FALSE)
+
+# Load packages
+library(tidyverse)
+library(kableExtra)
+
+# Load data
+flag_data <- read_csv("/capstone/seamissions/data/meds_meds_capstone_annual_vessel_flag_country_emissions_v20241121.csv", show_col_types = FALSE)
+```
+
+# About
+
+The following analysis looks into the relationship between a vessel's AIS-registered flag and its top-visited (home port) country using data from emLab and Global Fishing Watch.
+
+## Datasets
+
+`meds_meds_capstone_annual_vessel_flag_country_emissions_v20241121.csv`
+
+- `ssvid`: unique vessel ID
+- `flag`: AIS-registered country
+- `top_visited_country_iso3`: country the vessel visited the most number of times; home port
+- `year`: year
+- `emissions_co2_mt`: annual CO₂ emissions (MT)
+
+## Packages
+
+- {tidyverse}
+- {kableExtra}
+
+# Methods
+
+## 1. Full Dataset Mismatch
+
+To give a high level sense of just how much of an issue flags of convenience could be, we assessed AIS-registered flag and top-visited country mismatch for the dataset as a whole.
+
+To do this, we created a `match` column, populated with the following values:
+
+-   `TRUE`: match
+-   `FALSE`: mismatch
+-   `NA`: no value in AIS-flag, cannot determine.
+
+```{r}
+#| code-summary: Full Dataset Mismatch
+# Investigate matching flags vs. non-matching flags
+flag_match <- flag_data %>%
+  # Fill `top_visit` NA values with `flag` values (**assumption**)
+  mutate(top_visited_country_iso3 = ifelse(is.na(top_visited_country_iso3), flag, top_visited_country_iso3)) %>%
+  mutate(match = case_when(flag == top_visited_country_iso3 ~ TRUE,
+                           flag != top_visited_country_iso3 ~ FALSE))
+
+# Summarise counts for TRUE match, FALSE mismatch, and NA
+total_match <- flag_match %>%
+  #filter(!is.na(flag)) %>%
+  group_by(match) %>%
+  summarise(counts = n()) %>%
+  mutate(percent = round((counts/sum(counts))*100)) %>%
+  select(-counts)
+
+kbl(total_match, caption = "Flag Mismatch") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"),
+                full_width = F)
+```
+
+## 2. Full Dataset Emissions
+
+Next, we looked at how much emissions (MT), on aggregate, could be affected by this flagging issue. We summarized emissions by match (TRUE), mismatch (FALSE), and NA for each year and overall.
+
+```{r}
+#| code-summary: Full Dataset Emissions
+# Summarise emissions mismatch by year
+year_emissions <- flag_match %>%
+  #filter(!is.na(flag)) %>%
+  group_by(year, match) %>%
+  summarise(emissions = sum(emissions_co2_mt, na.rm = TRUE)) %>%
+  group_by(year) %>%
+  mutate(total_emissions = sum(emissions, na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(prop = round(emissions/total_emissions*100, 1))
+
+# Summarise emissions mismatch overall
+year_emissions_avg <- year_emissions %>%
+  group_by(match) %>%
+  summarise(avg_prop = mean(prop),
+            #check
+            sum_emissions = sum(emissions)) %>%
+  select(-avg_prop)
+
+kbl(year_emissions_avg, caption = "Flag Mismatch Emissions") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"),
+                full_width = F)
+```
+
+## 3. Overestimating Emissions
+
+To quantify overestimation, or emissions attributed to a AIS-flag that visit different top-country, we assessed the fraction of emissions that end up in a different country (mismatch/FALSE) for each flag by year.
+
+Ex. If for the flag of Panama (PAN) 75% of emissions are from vessels that have a different home port country, this could mean that we are *overestimating* emissions for Panama by upwards of 75% due to flagging issues.
+
+```{r}
+#| code-summary: Overestimating Emissions
+# Summarise emissions attributed to mismatch by flag (AIS-flag)
+overestimation_emissions <- flag_match %>%
+  group_by(flag, match) %>%
+  summarise(vessels = n(),
+            emissions = sum(emissions_co2_mt, na.rm = TRUE)) %>%
+  group_by(flag) %>%
+  mutate(total_emissions = sum(emissions, na.rm = TRUE)) %>%
+  mutate(percent_emissions_leaving_by_flag = round(emissions/total_emissions*100, 1)) %>%
+  filter(match == FALSE) %>%
+  ungroup()
+
+overestimation_table <- overestimation_emissions %>%
+  arrange(desc(emissions)) %>%
+  slice(1:10) %>%
+  select(-c(match, vessels, emissions))
+
+kbl(overestimation_table, caption = "Overestimation of Emissions") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"),
+                full_width = F)
+```
+
+## 4. Underestimating Emissions
+
+To quantify underestimation, we assessed emissions for each top-visit country that come from a different AIS-flag.
+
+Ex. If for the country of China 25% of emissions are from vessels that have a different AIS-flag, this could mean that we are *underestimating* emissions for China by upwards of 25% due to flagging issues.
+
+```{r}
+#| code-summary: Underestimating Emissions
+# Summarise emissions attributed to mismatch by flag (top-country)
+underestimation_emissions <- flag_match %>%
+  group_by(top_visited_country_iso3, match) %>%
+  summarise(vessels = n(),
+            emissions = sum(emissions_co2_mt, na.rm = TRUE)) %>%
+  group_by(top_visited_country_iso3) %>%
+  mutate(total_emissions = sum(emissions, na.rm = TRUE)) %>%
+  mutate(percent_emissions_coming_by_flag = round(emissions/total_emissions*100, 1)) %>%
+  filter(match == FALSE) %>%
+  rename(flag = top_visited_country_iso3) %>%
+  ungroup()
+
+# Look at CHN
+# underestimation_emissions %>%
+#   filter(flag == "CHN")
+
+underestimation_table <- underestimation_emissions %>%
+  arrange(desc(emissions)) %>%
+  slice(1:10) %>%
+  select(-c(match, vessels, emissions))
+
+kbl(underestimation_table, caption = "Underestimation of Emissions") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"),
+                full_width = F)
+```
+
+## Visualize
+
+```{r}
+#| code-summary: Visualize
+# Top countries where emissions (prop) end up somewhere else (are flags of convenience)
+# overestimation_emissions %>%
+#   arrange(desc(percent_emissions_leaving_by_flag)) %>%
+#   filter(percent_emissions_leaving_by_flag >= 99) %>%
+# ggplot(aes(x = reorder(flag, percent_emissions_leaving_by_flag), y = percent_emissions_leaving_by_flag)) +
+#   geom_col() +
+#   coord_flip() +
+#   labs(title = "Emissions Leaving (Overestimation)",
+#     y = "Percent Emissions") +
+#   theme_minimal() +
+#   theme(
+#     axis.title.y = element_blank()
+#   )
+
+# top countries where emissions (tons) end up somewhere else
+overestimation_emissions %>%
+  arrange(desc(emissions)) %>%
+  slice(1:10) %>%
+ggplot(aes(x = reorder(flag, emissions), y = emissions)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = "Emissions Leaving (Overestimation)",
+       y = "Emissions (Metric Tons)") +
+  theme_minimal() +
+  theme(
+    axis.title.y = element_blank()
+  )
+
+# top countries where emissions (prop) come from a different flag (utilize flags of convenience)
+# underestimation_emissions %>%
+#   arrange(desc(percent_emissions_coming_by_flag)) %>%
+#   filter(percent_emissions_coming_by_flag >= 99) %>%
+#   ggplot(aes(x = reorder(flag, percent_emissions_coming_by_flag), y = percent_emissions_coming_by_flag)) +
+#   geom_col() +
+#   coord_flip() +
+#   labs(title = "Emissions Coming (Underestimation)",
+#     y = "Percent Emissions") +
+#   theme_minimal() +
+#   theme(
+#     axis.title.y = element_blank()
+#   )
+
+# top countries where emissions (tons) come from a different flag (utilize flags of convenience)
+underestimation_emissions %>%
+  arrange(desc(emissions)) %>%
+  slice(1:10) %>%
+ggplot(aes(x = reorder(flag, emissions), y = emissions)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = "Emissions Coming (Underestimation)",
+       y = "Emissions (Metric Tons)") +
+  theme_minimal() +
+  theme(
+    axis.title.y = element_blank()
+  )
+```
+
+## Assumptions
+
+Where top-visited country is NA, it was filled with AIS-flag value (assumes proper registration).
+
+Vessels are assumed to land catch in their top-visited country, and that catch gets reported to the FAO by that country.

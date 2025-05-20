@@ -4,7 +4,9 @@ editor_options:
   chunk_output_type: console
 ---
 
-# FAO Major Fishing Area (Region) Intersection
+# Intersection by FAO Region
+
+This chapter describes the process of spatially diving emissions amongst FAO Major Fishing Area (Region).
 
 ```{r, echo = FALSE, results = FALSE, message = FALSE, warning = FALSE}
 #| label: set-chunk-options
@@ -20,17 +22,29 @@ source("R/functions.R")
 
 ## Datasets
 
-- `World_Fao_Zones.zip` was downloaded from...
+A zip file containing the following shapefiles was downloaded from [Marineregions.org](https://www.marineregions.org/gazetteer.php?p=details&id=22541):
+
+- `World_Fao_Zones.dbf`
+- `World_Fao_Zones.prj`
+- `World_Fao_Zones.sbn`
+- `World_Fao_Zones.shp`
+- `World_Fao_Zones.shx` 
 
 ## Packages
 
-{sf}
+- {tidyverse}
+- {sf}
 
+# Methods
 
 ## Intersection
 
-spatial attributes (points) were created for each `lat_bin` and `lon_bin` in the WGS coordinate reference system (unit: degrees). An empty grid was generated from the point geometry, the emissions data were joined back to the empty grid, and the geodataframe was transformed to Equal Earth projection. Every grid cell was assigned a unique ID. Using the FAO shapefile (dataset 3), an intersection was run on the emissions grid cells to assign each to an FAO region. Some grid cells overlapped multiple regions, resulting in multipolygons for those grid cell IDs. Multipolygons were broken down into individual sub-polygons. The area was calculated for each sub-polygon, and the individual sub-polygon areas were summed for each grid cell ID. 
+Spatial attributes (points) were created for each `lat_bin` and `lon_bin` in the native WGS coordinate reference system (unit: degrees). An empty grid was generated from the point geometry, the emissions data were joined back to the empty grid, and the geodataframe was transformed to Equal Earth projection. Every grid cell was assigned a unique ID. Using the FAO shapefile (dataset 3), an intersection was run on the emissions grid cells to assign each to an FAO region. Some grid cells overlapped multiple regions, resulting in multipolygons for those grid cell IDs. Multipolygons were broken down into individual sub-polygons. The area was calculated for each sub-polygon, and the individual sub-polygon areas were summed for each grid cell ID. 
 
 ## Partition
 
 Emissions from each grid cell ID were partitioned out based on the proportion of sub-polygon area to total grid cell area associated with each grid cell ID. The emissions partitioning was validated using a check to trigger a warning if more than 0.001% of emissions were lost in comparing the total emissions estimates before and after partitioning. Some emissions are expected to be lost due to floating point error and rounding, and 0.001% was arbitrarily selected as a threshold (though the actual number of lost emissions is likely much smaller). 
+
+## Assumptions
+
+This assumes a uniform distribution of emissions within the 1 x 1 degree pixel. 
