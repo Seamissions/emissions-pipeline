@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.2.335">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Quantifying Greenhouse Gas (GHG) Emissions Associated with Global Seafood Production - 7&nbsp; Flag ID</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1.6em;
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<link href="./comparison_report.html" rel="next">
+<link href="./sau_comparison.html" rel="prev">
+<script src="site_libs/quarto-html/quarto.js"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit"
+  }
+}</script>
+
+<script src="site_libs/kePrint-0.0.1/kePrint.js"></script>
+<link href="site_libs/lightable-0.0.1/lightable.css" rel="stylesheet">
+
+
+</head>
+
+<body class="nav-sidebar floating">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+    <div class="container-fluid d-flex justify-content-between">
+      <h1 class="quarto-secondary-nav-title"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">Flag ID</span></h1>
+      <button type="button" class="quarto-btn-toggle btn" aria-label="Show secondary navigation">
+        <i class="bi bi-chevron-right"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse sidebar-navigation floating overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="sidebar-title mb-0 py-0">
+      <a href="./">Quantifying Greenhouse Gas (GHG) Emissions Associated with Global Seafood Production</a> 
+        <div class="sidebar-tools-main">
+    <a href="./Quantifying-Greenhouse-Gas--GHG--Emissions-Associated-with-Global-Seafood-Production.pdf" title="Download PDF" class="sidebar-tool px-1"><i class="bi bi-file-pdf"></i></a>
+</div>
+    </div>
+      </div>
+      <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+      </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">About</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./prep_fao.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">FAO Data Assembly</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./merge_emissions.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Merge Emissions Datasets</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./intersection.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Intersection by FAO Region</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./results.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Results</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./sau_comparison.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">SAU Validation</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./flag_id.html" class="sidebar-item-text sidebar-link active"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">Flag ID</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./comparison_report.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">Comparison Report</span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#about" id="toc-about" class="nav-link active" data-scroll-target="#about"><span class="toc-section-number">8</span>  About</a>
+  <ul class="collapse">
+  <li><a href="#datasets" id="toc-datasets" class="nav-link" data-scroll-target="#datasets"><span class="toc-section-number">8.1</span>  Datasets</a></li>
+  <li><a href="#packages" id="toc-packages" class="nav-link" data-scroll-target="#packages"><span class="toc-section-number">8.2</span>  Packages</a></li>
+  </ul></li>
+  <li><a href="#methods" id="toc-methods" class="nav-link" data-scroll-target="#methods"><span class="toc-section-number">9</span>  Methods</a>
+  <ul class="collapse">
+  <li><a href="#full-dataset-mismatch" id="toc-full-dataset-mismatch" class="nav-link" data-scroll-target="#full-dataset-mismatch"><span class="toc-section-number">9.1</span>  1. Full Dataset Mismatch</a></li>
+  <li><a href="#full-dataset-emissions" id="toc-full-dataset-emissions" class="nav-link" data-scroll-target="#full-dataset-emissions"><span class="toc-section-number">9.2</span>  2. Full Dataset Emissions</a></li>
+  <li><a href="#overestimating-emissions" id="toc-overestimating-emissions" class="nav-link" data-scroll-target="#overestimating-emissions"><span class="toc-section-number">9.3</span>  3. Overestimating Emissions</a></li>
+  <li><a href="#underestimating-emissions" id="toc-underestimating-emissions" class="nav-link" data-scroll-target="#underestimating-emissions"><span class="toc-section-number">9.4</span>  4. Underestimating Emissions</a></li>
+  <li><a href="#visualize" id="toc-visualize" class="nav-link" data-scroll-target="#visualize"><span class="toc-section-number">9.5</span>  Visualize</a></li>
+  <li><a href="#assumptions" id="toc-assumptions" class="nav-link" data-scroll-target="#assumptions"><span class="toc-section-number">9.6</span>  Assumptions</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title d-none d-lg-block"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">Flag ID</span></h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<p>This chapter details the results of our flag analysis.</p>
+<div class="cell">
+
+</div>
+<section id="about" class="level1" data-number="8">
+<h1 data-number="8"><span class="header-section-number">8</span> About</h1>
+<p>The following analysis looks into the relationship between a vessel’s AIS-registered flag and its top-visited (home port) country using data from emLab and Global Fishing Watch.</p>
+<section id="datasets" class="level2" data-number="8.1">
+<h2 data-number="8.1" class="anchored" data-anchor-id="datasets"><span class="header-section-number">8.1</span> Datasets</h2>
+<p><code>meds_meds_capstone_annual_vessel_flag_country_emissions_v20241121.csv</code></p>
+<ul>
+<li><code>ssvid</code>: unique vessel ID</li>
+<li><code>flag</code>: AIS-registered country</li>
+<li><code>top_visited_country_iso3</code>: country the vessel visited the most number of times; home port</li>
+<li><code>year</code>: year</li>
+<li><code>emissions_co2_mt</code>: annual CO₂ emissions (MT)</li>
+</ul>
+</section>
+<section id="packages" class="level2" data-number="8.2">
+<h2 data-number="8.2" class="anchored" data-anchor-id="packages"><span class="header-section-number">8.2</span> Packages</h2>
+<ul>
+<li>{tidyverse}</li>
+<li>{kableExtra}</li>
+</ul>
+</section>
+</section>
+<section id="methods" class="level1" data-number="9">
+<h1 data-number="9"><span class="header-section-number">9</span> Methods</h1>
+<section id="full-dataset-mismatch" class="level2" data-number="9.1">
+<h2 data-number="9.1" class="anchored" data-anchor-id="full-dataset-mismatch"><span class="header-section-number">9.1</span> 1. Full Dataset Mismatch</h2>
+<p>To give a high level sense of just how much of an issue flags of convenience could be, we assessed AIS-registered flag and top-visited country mismatch for the dataset as a whole.</p>
+<p>To do this, we created a <code>match</code> column, populated with the following values:</p>
+<ul>
+<li><code>TRUE</code>: match</li>
+<li><code>FALSE</code>: mismatch</li>
+<li><code>NA</code>: no value in AIS-flag, cannot determine.</li>
+</ul>
+<div class="cell">
+<div class="cell-output-display">
+
+<table class="table table-striped table-hover table-condensed table-responsive" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<caption>Flag Mismatch</caption>
+ <thead>
+  <tr>
+   <th style="text-align:left;"> match </th>
+   <th style="text-align:right;"> percent </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:left;"> FALSE </td>
+   <td style="text-align:right;"> 21 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> TRUE </td>
+   <td style="text-align:right;"> 75 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:right;"> 4 </td>
+  </tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</section>
+<section id="full-dataset-emissions" class="level2" data-number="9.2">
+<h2 data-number="9.2" class="anchored" data-anchor-id="full-dataset-emissions"><span class="header-section-number">9.2</span> 2. Full Dataset Emissions</h2>
+<p>Next, we looked at how much emissions (MT), on aggregate, could be affected by this flagging issue. We summarized emissions by match (TRUE), mismatch (FALSE), and NA for each year and overall.</p>
+<div class="cell">
+<div class="cell-output-display">
+
+<table class="table table-striped table-hover table-condensed table-responsive" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<caption>Flag Mismatch Emissions</caption>
+ <thead>
+  <tr>
+   <th style="text-align:left;"> match </th>
+   <th style="text-align:right;"> sum_emissions </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:left;"> FALSE </td>
+   <td style="text-align:right;"> 6835022045 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> TRUE </td>
+   <td style="text-align:right;"> 2784977001 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:right;"> 29475094 </td>
+  </tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</section>
+<section id="overestimating-emissions" class="level2" data-number="9.3">
+<h2 data-number="9.3" class="anchored" data-anchor-id="overestimating-emissions"><span class="header-section-number">9.3</span> 3. Overestimating Emissions</h2>
+<p>To quantify overestimation, or emissions attributed to a AIS-flag that visit different top-country, we assessed the fraction of emissions that end up in a different country (mismatch/FALSE) for each flag by year.</p>
+<p>Ex. If for the flag of Panama (PAN) 75% of emissions are from vessels that have a different home port country, this could mean that we are <em>overestimating</em> emissions for Panama by upwards of 75% due to flagging issues.</p>
+<div class="cell">
+<div class="cell-output-display">
+
+<table class="table table-striped table-hover table-condensed table-responsive" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<caption>Overestimation of Emissions</caption>
+ <thead>
+  <tr>
+   <th style="text-align:left;"> flag </th>
+   <th style="text-align:right;"> total_emissions </th>
+   <th style="text-align:right;"> percent_emissions_leaving_by_flag </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:left;"> PAN </td>
+   <td style="text-align:right;"> 1206570122 </td>
+   <td style="text-align:right;"> 96.9 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> LBR </td>
+   <td style="text-align:right;"> 864314868 </td>
+   <td style="text-align:right;"> 99.9 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MHL </td>
+   <td style="text-align:right;"> 804641557 </td>
+   <td style="text-align:right;"> 99.9 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> HKG </td>
+   <td style="text-align:right;"> 624671969 </td>
+   <td style="text-align:right;"> 99.0 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> SGP </td>
+   <td style="text-align:right;"> 563593064 </td>
+   <td style="text-align:right;"> 94.9 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MLT </td>
+   <td style="text-align:right;"> 424942851 </td>
+   <td style="text-align:right;"> 98.8 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> DEU </td>
+   <td style="text-align:right;"> 398070016 </td>
+   <td style="text-align:right;"> 85.6 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> BHS </td>
+   <td style="text-align:right;"> 307567222 </td>
+   <td style="text-align:right;"> 98.9 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> GRC </td>
+   <td style="text-align:right;"> 193952596 </td>
+   <td style="text-align:right;"> 83.2 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> CYP </td>
+   <td style="text-align:right;"> 136205494 </td>
+   <td style="text-align:right;"> 98.7 </td>
+  </tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</section>
+<section id="underestimating-emissions" class="level2" data-number="9.4">
+<h2 data-number="9.4" class="anchored" data-anchor-id="underestimating-emissions"><span class="header-section-number">9.4</span> 4. Underestimating Emissions</h2>
+<p>To quantify underestimation, we assessed emissions for each top-visit country that come from a different AIS-flag.</p>
+<p>Ex. If for the country of China 25% of emissions are from vessels that have a different AIS-flag, this could mean that we are <em>underestimating</em> emissions for China by upwards of 25% due to flagging issues.</p>
+<div class="cell">
+<div class="cell-output-display">
+
+<table class="table table-striped table-hover table-condensed table-responsive" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<caption>Underestimation of Emissions</caption>
+ <thead>
+  <tr>
+   <th style="text-align:left;"> flag </th>
+   <th style="text-align:right;"> total_emissions </th>
+   <th style="text-align:right;"> percent_emissions_coming_by_flag </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:left;"> CHN </td>
+   <td style="text-align:right;"> 2873213170 </td>
+   <td style="text-align:right;"> 75.0 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> USA </td>
+   <td style="text-align:right;"> 1263414706 </td>
+   <td style="text-align:right;"> 79.1 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> JPN </td>
+   <td style="text-align:right;"> 576401931 </td>
+   <td style="text-align:right;"> 55.3 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> ARE </td>
+   <td style="text-align:right;"> 319120513 </td>
+   <td style="text-align:right;"> 97.2 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> BRA </td>
+   <td style="text-align:right;"> 331487795 </td>
+   <td style="text-align:right;"> 91.7 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> AUS </td>
+   <td style="text-align:right;"> 329806075 </td>
+   <td style="text-align:right;"> 83.2 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MYS </td>
+   <td style="text-align:right;"> 232364455 </td>
+   <td style="text-align:right;"> 87.3 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> TUR </td>
+   <td style="text-align:right;"> 246145472 </td>
+   <td style="text-align:right;"> 68.5 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> IND </td>
+   <td style="text-align:right;"> 194510391 </td>
+   <td style="text-align:right;"> 78.1 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> KOR </td>
+   <td style="text-align:right;"> 248005266 </td>
+   <td style="text-align:right;"> 59.6 </td>
+  </tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</section>
+<section id="visualize" class="level2" data-number="9.5">
+<h2 data-number="9.5" class="anchored" data-anchor-id="visualize"><span class="header-section-number">9.5</span> Visualize</h2>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="flag_id_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="flag_id_files/figure-html/unnamed-chunk-5-2.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="assumptions" class="level2" data-number="9.6">
+<h2 data-number="9.6" class="anchored" data-anchor-id="assumptions"><span class="header-section-number">9.6</span> Assumptions</h2>
+<p>Where top-visited country is NA, it was filled with AIS-flag value (assumes proper registration).</p>
+<p>Vessels are assumed to land catch in their top-visited country, and that catch gets reported to the FAO by that country.</p>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="./sau_comparison.html" class="pagination-link">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">SAU Validation</span></span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="./comparison_report.html" class="pagination-link">
+        <span class="nav-page-text"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">Comparison Report</span></span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+
+
+
+</body></html>

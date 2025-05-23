@@ -1,0 +1,35 @@
+project:
+  type: book
+  # Use docs if published to github pages
+  output-dir: ../docs
+  
+book:
+  title: "Quantifying Greenhouse Gas (GHG) Emissions Associated with Global Seafood Production"  
+  date: last-modified
+  date-format: "[Last Updated on] MMMM DD, YYYY"
+  chapters:
+    - index.qmd
+    - prep_fao.qmd
+    - merge_emissions.qmd
+    - intersection.qmd
+    - results.qmd
+    - sau_comparison.qmd
+    - flag_id.qmd
+    - comparison_report.qmd
+    #- eda.qmd
+    #- references.qmd
+  downloads: [pdf]
+
+#bibliography: references.bib
+
+format:
+  html:
+    theme: cosmo
+  pdf:
+    output-file: "seamissions_capstone"
+    output-ext:  "pdf"
+    latex_engine: xelatex
+    documentclass: scrreprt
+    fig-pos: H
+editor: visual
+

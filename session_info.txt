@@ -1,0 +1,77 @@
+─ Session info ─────────────────────────────────────────────────────────────────────────────────────────────────
+ setting  value
+ version  R version 4.2.2 (2022-10-31)
+ os       Ubuntu 22.04.2 LTS
+ system   x86_64, linux-gnu
+ ui       RStudio
+ language (EN)
+ collate  en_US.UTF-8
+ ctype    en_US.UTF-8
+ tz       Etc/UTC
+ date     2025-05-21
+ rstudio  2022.12.0+353.pro20 Elsbeth Geranium (server)
+ pandoc   NA
+
+─ Packages ─────────────────────────────────────────────────────────────────────────────────────────────────────
+ package     * version date (UTC) lib source
+ backports     1.4.1   2021-12-13 [2] CRAN (R 4.2.2)
+ base64url     1.4     2018-05-14 [1] CRAN (R 4.2.2)
+ cachem        1.1.0   2024-05-16 [1] CRAN (R 4.2.2)
+ callr         3.7.3   2022-11-02 [2] CRAN (R 4.2.2)
+ cli           3.6.5   2025-04-23 [1] CRAN (R 4.2.2)
+ codetools     0.2-18  2020-11-04 [2] CRAN (R 4.2.2)
+ crayon        1.5.3   2024-06-20 [2] CRAN (R 4.2.2)
+ data.table    1.14.8  2023-02-17 [2] CRAN (R 4.2.2)
+ devtools      2.4.5   2022-10-11 [2] CRAN (R 4.2.2)
+ digest        0.6.37  2024-08-19 [1] CRAN (R 4.2.2)
+ ellipsis      0.3.2   2021-04-29 [2] CRAN (R 4.2.2)
+ evaluate      1.0.3   2025-01-10 [1] CRAN (R 4.2.2)
+ fastmap       1.2.0   2024-05-15 [1] CRAN (R 4.2.2)
+ fs            1.6.6   2025-04-12 [1] CRAN (R 4.2.2)
+ glue          1.8.0   2024-09-30 [1] CRAN (R 4.2.2)
+ htmltools     0.5.8.1 2024-04-04 [1] CRAN (R 4.2.2)
+ htmlwidgets   1.6.4   2023-12-06 [1] CRAN (R 4.2.2)
+ httpuv        1.6.16  2025-04-16 [2] CRAN (R 4.2.2)
+ igraph        2.1.4   2025-01-23 [1] CRAN (R 4.2.2)
+ knitr         1.50    2025-03-16 [1] CRAN (R 4.2.2)
+ later         1.4.2   2025-04-08 [2] CRAN (R 4.2.2)
+ lifecycle     1.0.4   2023-11-07 [1] CRAN (R 4.2.2)
+ magrittr      2.0.3   2022-03-30 [1] CRAN (R 4.2.2)
+ memoise       2.0.1   2021-11-26 [1] CRAN (R 4.2.2)
+ mime          0.13    2025-03-17 [1] CRAN (R 4.2.2)
+ miniUI        0.1.1.1 2018-05-18 [2] CRAN (R 4.2.2)
+ pillar        1.10.2  2025-04-05 [2] CRAN (R 4.2.2)
+ pkgbuild      1.4.0   2022-11-27 [2] CRAN (R 4.2.2)
+ pkgconfig     2.0.3   2019-09-22 [2] CRAN (R 4.2.2)
+ pkgload       1.3.2   2022-11-16 [2] CRAN (R 4.2.2)
+ prettyunits   1.1.1   2020-01-24 [2] CRAN (R 4.2.2)
+ processx      3.8.0   2022-10-26 [2] CRAN (R 4.2.2)
+ profvis       0.3.7   2020-11-02 [2] CRAN (R 4.2.2)
+ promises      1.3.2   2024-11-28 [2] CRAN (R 4.2.2)
+ ps            1.9.1   2025-04-12 [1] CRAN (R 4.2.2)
+ purrr         1.0.2   2023-08-10 [2] CRAN (R 4.2.2)
+ R6            2.6.1   2025-02-15 [1] CRAN (R 4.2.2)
+ Rcpp          1.0.14  2025-01-12 [2] CRAN (R 4.2.2)
+ remotes       2.4.2   2021-11-30 [2] CRAN (R 4.2.2)
+ rlang         1.1.6   2025-04-11 [1] CRAN (R 4.2.2)
+ rstudioapi    0.15.0  2023-07-07 [2] CRAN (R 4.2.2)
+ secretbase    1.0.5   2025-03-04 [1] CRAN (R 4.2.2)
+ sessioninfo   1.2.2   2021-12-06 [2] CRAN (R 4.2.2)
+ shiny         1.10.0  2024-12-14 [2] CRAN (R 4.2.2)
+ stringi       1.8.7   2025-03-27 [2] CRAN (R 4.2.2)
+ stringr       1.5.1   2023-11-14 [2] CRAN (R 4.2.2)
+ targets       1.11.1  2025-04-10 [1] CRAN (R 4.2.2)
+ tibble        3.2.1   2023-03-20 [2] CRAN (R 4.2.2)
+ tidyselect    1.2.0   2022-10-10 [2] CRAN (R 4.2.2)
+ urlchecker    1.0.1   2021-11-30 [2] CRAN (R 4.2.2)
+ usethis       2.1.6   2022-05-25 [2] CRAN (R 4.2.2)
+ vctrs         0.6.5   2023-12-01 [2] CRAN (R 4.2.2)
+ withr         3.0.2   2024-10-28 [2] CRAN (R 4.2.2)
+ xfun          0.52    2025-04-02 [1] CRAN (R 4.2.2)
+ xtable        1.8-4   2019-04-21 [2] CRAN (R 4.2.2)
+ yaml          2.3.10  2024-07-26 [1] CRAN (R 4.2.2)
+
+ [1] /Users/choyt/R/x86_64-pc-linux-gnu-library/4.2
+ [2] /opt/R/4.2.2/lib/R/library
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────

@@ -1,0 +1,233 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Quantifying Greenhouse Gas (GHG) Emissions Associated with Global Seafood Production",
+    "section": "",
+    "text": "1 About\nThis Quarto book documents the steps in the Emissions Pipeline."
+  },
+  {
+    "objectID": "prep_fao.html",
+    "href": "prep_fao.html",
+    "title": "2  FAO Data Assembly",
+    "section": "",
+    "text": "3 Methods"
+  },
+  {
+    "objectID": "prep_fao.html#datasets",
+    "href": "prep_fao.html#datasets",
+    "title": "2  FAO Data Assembly",
+    "section": "2.1 Datasets",
+    "text": "2.1 Datasets\nFAO Global Capture Production data was downloaded as .csv files in a zipped folder. The following .csv files were used in this analysis:\n\nCapture_Quantity.csv (catch quantity)\nCL_FI_COUNTRY_GROUPS.csv (country information)\nCL_FI_SPECIES_GROUPS.csv (species information)\n\nAt the time of this analysis (Spring 2025), FAO data was only avaialable through 2022."
+  },
+  {
+    "objectID": "prep_fao.html#packages",
+    "href": "prep_fao.html#packages",
+    "title": "2  FAO Data Assembly",
+    "section": "2.2 Packages",
+    "text": "2.2 Packages\n\n{tidyverse}\n{janitor}"
+  },
+  {
+    "objectID": "merge_emissions.html",
+    "href": "merge_emissions.html",
+    "title": "3  Merge Emissions Datasets",
+    "section": "",
+    "text": "4 Methods"
+  },
+  {
+    "objectID": "merge_emissions.html#datasets",
+    "href": "merge_emissions.html#datasets",
+    "title": "3  Merge Emissions Datasets",
+    "section": "3.1 Datasets",
+    "text": "3.1 Datasets\nTwo emissions datasets, obtained from emLab, were used in this analysis:\n\n\nBroadcasting emissions: meds_capstone_ais_emissions_data_v20241121.csv\n\n\nNon-broadcasting emissions: meds_capstone_non_broadcasting_emissions_data_v20250116.csv\n\n\nThe data were pre-filtered by emLab from a larger emissions dataset to select for fishing vessels.\nThe following columns are required:\n\nmonth\nflag\nvessel_class\nlon_bin\nlat_bin\nemissions_{pollutant}_mt\n\ndefine broadcasting vs. non-broadcasting?"
+  },
+  {
+    "objectID": "merge_emissions.html#packages",
+    "href": "merge_emissions.html#packages",
+    "title": "3  Merge Emissions Datasets",
+    "section": "3.2 Packages",
+    "text": "3.2 Packages\n\n{tidyverse}\n{janitor}\n{lubridate}"
+  },
+  {
+    "objectID": "merge_emissions.html#join-emissions-data",
+    "href": "merge_emissions.html#join-emissions-data",
+    "title": "3  Merge Emissions Datasets",
+    "section": "4.1 Join Emissions Data",
+    "text": "4.1 Join Emissions Data\nEmissions datasets (datasets 1 and 2 above) were read into the pipeline, the column names were converted to snake case, and a new year-month column was created for both datasets. In the broadcasting dataset, NA values in the flag column were filled with “UNK” to represent flag unknown, and vessel_class was filtered for gear types identified with a high degree of confidence (i.e. “squid_jigger”, “drifting_longlines”, “pole_and_line”, “trollers”, “pots_and_traps”, “set_longlines”, “set_gillnets”, “trawlers”, “dredge_fishing”, “tuna_purse_seines”, “other_purse_seines”, “other_seines”). This eliminated gear types such as “passenger” that were likely mis-identified as “fishing” or as “passenger” by GFW’s machine learning algorithm.\n\n\n [1] \"trawlers\"           \"set_longlines\"      \"drifting_longlines\"\n [4] \"trollers\"           \"squid_jigger\"       \"pots_and_traps\"    \n [7] \"other_seines\"       \"pole_and_line\"      \"other_purse_seines\"\n[10] \"tuna_purse_seines\"  \"set_gillnets\"       \"dredge_fishing\"    \n[13] NA                  \n\n\nIn the non-broadcasting dataset, emissions estimate columns for each of the 9 pollutants (CO2, CH4, N2O, NOX, SOX, CO, VOCS, PM2.5, PM10) are renamed to match the broadcasting dataset, and a flag column is created and populated with “DARK” to distinguish non-broadcasting emissions from the broadcasting emissions. Then, the datasets were concatenated.\nA year column was created, and the combined dataset was filtered to 2016-2024 to match the available data for the non-broadcasting dataset. Emissions estimates are then aggregated (summed) by year and flag for each one-by-one degree pixel (distinguished by lat_bin and lon_bin)."
+  },
+  {
+    "objectID": "merge_emissions.html#assumptions",
+    "href": "merge_emissions.html#assumptions",
+    "title": "3  Merge Emissions Datasets",
+    "section": "4.2 Assumptions",
+    "text": "4.2 Assumptions\nBy filtering out certain gear types,… implications for non-broadcasting"
+  },
+  {
+    "objectID": "intersection.html",
+    "href": "intersection.html",
+    "title": "4  Intersection by FAO Region",
+    "section": "",
+    "text": "5 Methods"
+  },
+  {
+    "objectID": "intersection.html#datasets",
+    "href": "intersection.html#datasets",
+    "title": "4  Intersection by FAO Region",
+    "section": "4.1 Datasets",
+    "text": "4.1 Datasets\nA zip file containing the following shapefiles was downloaded from Marineregions.org:\n\nWorld_Fao_Zones.dbf\nWorld_Fao_Zones.prj\nWorld_Fao_Zones.sbn\nWorld_Fao_Zones.shp\nWorld_Fao_Zones.shx"
+  },
+  {
+    "objectID": "intersection.html#packages",
+    "href": "intersection.html#packages",
+    "title": "4  Intersection by FAO Region",
+    "section": "4.2 Packages",
+    "text": "4.2 Packages\n\n{tidyverse}\n{sf}"
+  },
+  {
+    "objectID": "intersection.html#intersection",
+    "href": "intersection.html#intersection",
+    "title": "4  Intersection by FAO Region",
+    "section": "5.1 Intersection",
+    "text": "5.1 Intersection\nSpatial attributes (points) were created for each lat_bin and lon_bin in the native WGS coordinate reference system (unit: degrees). An empty grid was generated from the point geometry, the emissions data were joined back to the empty grid, and the geodataframe was transformed to Equal Earth projection. Every grid cell was assigned a unique ID. Using the FAO shapefile (dataset 3), an intersection was run on the emissions grid cells to assign each to an FAO region. Some grid cells overlapped multiple regions, resulting in multipolygons for those grid cell IDs. Multipolygons were broken down into individual sub-polygons. The area was calculated for each sub-polygon, and the individual sub-polygon areas were summed for each grid cell ID."
+  },
+  {
+    "objectID": "intersection.html#partition",
+    "href": "intersection.html#partition",
+    "title": "4  Intersection by FAO Region",
+    "section": "5.2 Partition",
+    "text": "5.2 Partition\nEmissions from each grid cell ID were partitioned out based on the proportion of sub-polygon area to total grid cell area associated with each grid cell ID. The emissions partitioning was validated using a check to trigger a warning if more than 0.001% of emissions were lost in comparing the total emissions estimates before and after partitioning. Some emissions are expected to be lost due to floating point error and rounding, and 0.001% was arbitrarily selected as a threshold (though the actual number of lost emissions is likely much smaller)."
+  },
+  {
+    "objectID": "intersection.html#assumptions",
+    "href": "intersection.html#assumptions",
+    "title": "4  Intersection by FAO Region",
+    "section": "5.3 Assumptions",
+    "text": "5.3 Assumptions\nThis assumes a uniform distribution of emissions within the 1 x 1 degree pixel."
+  },
+  {
+    "objectID": "results.html#trends-in-emissions-per-unit-catch-by-isscaap-species-group",
+    "href": "results.html#trends-in-emissions-per-unit-catch-by-isscaap-species-group",
+    "title": "5  Results",
+    "section": "5.1 Trends in emissions-per-unit-catch by ISSCAAP species group",
+    "text": "5.1 Trends in emissions-per-unit-catch by ISSCAAP species group"
+  },
+  {
+    "objectID": "results.html#trends-in-emissions-per-unit-catch-by-fao-region",
+    "href": "results.html#trends-in-emissions-per-unit-catch-by-fao-region",
+    "title": "5  Results",
+    "section": "5.2 Trends in emissions-per-unit-catch by FAO region",
+    "text": "5.2 Trends in emissions-per-unit-catch by FAO region"
+  },
+  {
+    "objectID": "results.html#species-spotlight-region-77-salmons-trouts-smelts",
+    "href": "results.html#species-spotlight-region-77-salmons-trouts-smelts",
+    "title": "5  Results",
+    "section": "5.3 Species Spotlight: Region 77 Salmons, Trouts, Smelts",
+    "text": "5.3 Species Spotlight: Region 77 Salmons, Trouts, Smelts"
+  },
+  {
+    "objectID": "sau_comparison.html",
+    "href": "sau_comparison.html",
+    "title": "6  SAU Validation",
+    "section": "",
+    "text": "7 Methods\nSea Around US (SAU) data was prepped using the same methods as FAO catch data (see “FAO Data Assembly”).\ncheck that SAU doesn’t contain mammals, plants, etc."
+  },
+  {
+    "objectID": "sau_comparison.html#datasets",
+    "href": "sau_comparison.html#datasets",
+    "title": "6  SAU Validation",
+    "section": "6.1 Datasets",
+    "text": "6.1 Datasets\nSea Around Us data was downloaded for each FAO Region (18, 21, 27, 31, 34, 37, 41, 47, 48, 51, 57, 58, 61, 67, 71, 77, 81, 87, and 88)."
+  },
+  {
+    "objectID": "sau_comparison.html#packages",
+    "href": "sau_comparison.html#packages",
+    "title": "6  SAU Validation",
+    "section": "6.2 Packages",
+    "text": "6.2 Packages\n\n{tidyverse}\n{janitor}"
+  },
+  {
+    "objectID": "sau_comparison.html#overall-comparisons",
+    "href": "sau_comparison.html#overall-comparisons",
+    "title": "6  SAU Validation",
+    "section": "8.1 Overall Comparisons",
+    "text": "8.1 Overall Comparisons\n\n\n[1] \"FAO emissions-per-unit-catch: 4.56.\"\n\n\n[1] \"SAU emissions-per-unit-catch: 3.76.\""
+  },
+  {
+    "objectID": "sau_comparison.html#comparisons-by-isscaap-group",
+    "href": "sau_comparison.html#comparisons-by-isscaap-group",
+    "title": "6  SAU Validation",
+    "section": "8.2 Comparisons by ISSCAAP Group",
+    "text": "8.2 Comparisons by ISSCAAP Group"
+  },
+  {
+    "objectID": "flag_id.html",
+    "href": "flag_id.html",
+    "title": "7  Flag ID",
+    "section": "",
+    "text": "8 About\nThe following analysis looks into the relationship between a vessel’s AIS-registered flag and its top-visited (home port) country using data from emLab and Global Fishing Watch."
+  },
+  {
+    "objectID": "flag_id.html#datasets",
+    "href": "flag_id.html#datasets",
+    "title": "7  Flag ID",
+    "section": "8.1 Datasets",
+    "text": "8.1 Datasets\nmeds_meds_capstone_annual_vessel_flag_country_emissions_v20241121.csv\n\nssvid: unique vessel ID\nflag: AIS-registered country\ntop_visited_country_iso3: country the vessel visited the most number of times; home port\nyear: year\nemissions_co2_mt: annual CO₂ emissions (MT)"
+  },
+  {
+    "objectID": "flag_id.html#packages",
+    "href": "flag_id.html#packages",
+    "title": "7  Flag ID",
+    "section": "8.2 Packages",
+    "text": "8.2 Packages\n\n{tidyverse}\n{kableExtra}"
+  },
+  {
+    "objectID": "flag_id.html#full-dataset-mismatch",
+    "href": "flag_id.html#full-dataset-mismatch",
+    "title": "7  Flag ID",
+    "section": "9.1 1. Full Dataset Mismatch",
+    "text": "9.1 1. Full Dataset Mismatch\nTo give a high level sense of just how much of an issue flags of convenience could be, we assessed AIS-registered flag and top-visited country mismatch for the dataset as a whole.\nTo do this, we created a match column, populated with the following values:\n\nTRUE: match\nFALSE: mismatch\nNA: no value in AIS-flag, cannot determine.\n\n\n\n\n\nFlag Mismatch\n \n  \n    match \n    percent \n  \n \n\n  \n    FALSE \n    21 \n  \n  \n    TRUE \n    75 \n  \n  \n    NA \n    4"
+  },
+  {
+    "objectID": "flag_id.html#full-dataset-emissions",
+    "href": "flag_id.html#full-dataset-emissions",
+    "title": "7  Flag ID",
+    "section": "9.2 2. Full Dataset Emissions",
+    "text": "9.2 2. Full Dataset Emissions\nNext, we looked at how much emissions (MT), on aggregate, could be affected by this flagging issue. We summarized emissions by match (TRUE), mismatch (FALSE), and NA for each year and overall.\n\n\n\n\nFlag Mismatch Emissions\n \n  \n    match \n    sum_emissions \n  \n \n\n  \n    FALSE \n    6835022045 \n  \n  \n    TRUE \n    2784977001 \n  \n  \n    NA \n    29475094"
+  },
+  {
+    "objectID": "flag_id.html#overestimating-emissions",
+    "href": "flag_id.html#overestimating-emissions",
+    "title": "7  Flag ID",
+    "section": "9.3 3. Overestimating Emissions",
+    "text": "9.3 3. Overestimating Emissions\nTo quantify overestimation, or emissions attributed to a AIS-flag that visit different top-country, we assessed the fraction of emissions that end up in a different country (mismatch/FALSE) for each flag by year.\nEx. If for the flag of Panama (PAN) 75% of emissions are from vessels that have a different home port country, this could mean that we are overestimating emissions for Panama by upwards of 75% due to flagging issues.\n\n\n\n\nOverestimation of Emissions\n \n  \n    flag \n    total_emissions \n    percent_emissions_leaving_by_flag \n  \n \n\n  \n    PAN \n    1206570122 \n    96.9 \n  \n  \n    LBR \n    864314868 \n    99.9 \n  \n  \n    MHL \n    804641557 \n    99.9 \n  \n  \n    HKG \n    624671969 \n    99.0 \n  \n  \n    SGP \n    563593064 \n    94.9 \n  \n  \n    MLT \n    424942851 \n    98.8 \n  \n  \n    DEU \n    398070016 \n    85.6 \n  \n  \n    BHS \n    307567222 \n    98.9 \n  \n  \n    GRC \n    193952596 \n    83.2 \n  \n  \n    CYP \n    136205494 \n    98.7"
+  },
+  {
+    "objectID": "flag_id.html#underestimating-emissions",
+    "href": "flag_id.html#underestimating-emissions",
+    "title": "7  Flag ID",
+    "section": "9.4 4. Underestimating Emissions",
+    "text": "9.4 4. Underestimating Emissions\nTo quantify underestimation, we assessed emissions for each top-visit country that come from a different AIS-flag.\nEx. If for the country of China 25% of emissions are from vessels that have a different AIS-flag, this could mean that we are underestimating emissions for China by upwards of 25% due to flagging issues.\n\n\n\n\nUnderestimation of Emissions\n \n  \n    flag \n    total_emissions \n    percent_emissions_coming_by_flag \n  \n \n\n  \n    CHN \n    2873213170 \n    75.0 \n  \n  \n    USA \n    1263414706 \n    79.1 \n  \n  \n    JPN \n    576401931 \n    55.3 \n  \n  \n    ARE \n    319120513 \n    97.2 \n  \n  \n    BRA \n    331487795 \n    91.7 \n  \n  \n    AUS \n    329806075 \n    83.2 \n  \n  \n    MYS \n    232364455 \n    87.3 \n  \n  \n    TUR \n    246145472 \n    68.5 \n  \n  \n    IND \n    194510391 \n    78.1 \n  \n  \n    KOR \n    248005266 \n    59.6"
+  },
+  {
+    "objectID": "flag_id.html#visualize",
+    "href": "flag_id.html#visualize",
+    "title": "7  Flag ID",
+    "section": "9.5 Visualize",
+    "text": "9.5 Visualize"
+  },
+  {
+    "objectID": "flag_id.html#assumptions",
+    "href": "flag_id.html#assumptions",
+    "title": "7  Flag ID",
+    "section": "9.6 Assumptions",
+    "text": "9.6 Assumptions\nWhere top-visited country is NA, it was filled with AIS-flag value (assumes proper registration).\nVessels are assumed to land catch in their top-visited country, and that catch gets reported to the FAO by that country."
+  },
+  {
+    "objectID": "comparison_report.html",
+    "href": "comparison_report.html",
+    "title": "8  Comparison Report",
+    "section": "",
+    "text": "This chapter details the results of our comparison report."
+  }
+]

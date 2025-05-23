@@ -1,0 +1,14 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+# About
+
+This analysis was conducted as a part of UC Santa Barbara's Bren School Master of Environmental Data Science Capstone project. 
+
+Quantifying Emissions Associated with Seafood Production
+
+
+This Quarto book documents the steps in the Emissions Pipeline. 

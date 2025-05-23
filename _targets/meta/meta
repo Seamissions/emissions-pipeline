@@ -1,0 +1,21 @@
+name|type|data|command|depend|seed|path|time|size|bytes|format|repository|iteration|parent|children|seconds|warnings|error
+emissions_files|stem|cbbdb32cb50d8f2f|7b2a8a4b59fb3fef|2c530c1562a7fbd1|610340379|/capstone/seamissions/data/meds_capstone_project/meds_capstone_ais_emissions_data_v20241121.csv*/capstone/seamissions/data/meds_capstone_project/meds_capstone_non_broadcasting_emissions_data_v20250116.csv|t20150.7191198168s|s4472174780b|4472174780|file|local|vector|||1.312||
+emissions|stem|1872dca0c6ac56a9|554712addb9bf31f|cb2e35865daef18f|1126423221||t20214.1483159175s|s1375909750b|1375909750|rds|local|vector|||73.053||
+emissions_zones|stem|193204f0ab072204|1d9e6b0aa1153e87|fb3f93c7ef02e23b|-527017523||t20214.621121961s|s177921447b|177921447|rds|local|vector|||4697.104|attribute variables are assumed to be spatially constant throughout all geometries|
+fao_files|stem|9cb47761c193b142|00e43b8858eeadc0|2c530c1562a7fbd1|1039337457|/capstone/seamissions/data/fao_seafood_production//Capture_Quantity.csv*/capstone/seamissions/data/fao_seafood_production//CL_FI_COUNTRY_GROUPS.csv*/capstone/seamissions/data/fao_seafood_production//CL_FI_SPECIES_GROUPS.csv*/capstone/seamissions/data/fao_seafood_production//CL_FI_SYMBOL_SDMX.csv*/capstone/seamissions/data/fao_seafood_production//CL_FI_WATERAREA_GROUPS.csv*/capstone/seamissions/data/fao_seafood_production//fao_catch.csv*/capstone/seamissions/data/fao_seafood_production//FSJ_UNIT.csv|t20147.9808114813s|s411844046b|411844046|file|local|vector|||1.333||
+fao_catch|stem|b09471b0b2592dc9|10568c6e3d2b9aea|74e8b3afdb4625ec|-1821612448||t20221.1314227314s|s353650b|353650|rds|local|vector|||3.319||
+merge_catch|function|036b260907c453b3|||||||||||||||
+sau_files|stem|d775b378bd44b694|f9c676f2ebe2b3bf|2c530c1562a7fbd1|199275836|/capstone/seamissions/data/sau//SAU FAO 18 v50-1.csv*/capstone/seamissions/data/sau//SAU FAO 21 v50-1.csv*/capstone/seamissions/data/sau//SAU FAO 27 v50-1.csv*/capstone/seamissions/data/sau//SAU FAO 31 v50-1.csv*/capstone/seamissions/data/sau//SAU FAO 34 v50-1.csv*/capstone/seamissions/data/sau//SAU FAO 47 v50-1.csv*/capstone/seamissions/data/sau//SAU FAO 48 v50-1.csv*/capstone/seamissions/data/sau//SAU FAO 51 v50-1.csv*/capstone/seamissions/data/sau//SAU FAO 57 v50-1.csv*/capstone/seamissions/data/sau//SAU FAO 58 v50-1.csv*/capstone/seamissions/data/sau//SAU FAO 61 v50-1.csv*/capstone/seamissions/data/sau//SAU FAO 67 v50-1.csv*/capstone/seamissions/data/sau//SAU FAO 71 v50-1.csv*/capstone/seamissions/data/sau//SAU FAO 77 v50-1.csv*/capstone/seamissions/data/sau//SAU FAO 81 v50-1.csv*/capstone/seamissions/data/sau//SAU FAO 87 v50-1.csv*/capstone/seamissions/data/sau//SAU FAO 88 v50-1.csv|t20159.8257656096s|s1678638313b|1678638313|file|local|vector|||1.269||
+sau_catch|stem|e300ac841a4a3f80|78e5118853563d83|518f5c63c082ac70|-2115036505||t20221.2064542606s|s1420275b|1420275|rds|local|vector|||52.257||
+emissions_partitioned_grouped|stem|93f29f738bebf79f|f5623e9ef0047c24|61f4bb258ff849e7|1569783626||t20222.6754622769s|s459533b|459533|rds|local|vector|||1054.811|Additional geometry types detected. Proceed with filter.. repeating attributes for all sub-geometries for which they may not be constant|
+full_emissions_sau_species|stem|16e6f7d928815c87|e70e26a4c56e3ced|a5a100b376aff253|-693238736||t20226.7848511997s|s6328552b|6328552|rds|local|vector|||166.781||
+full_emissions_fao_species|stem|55a9d66ff71541d1|6816d339cff95c2a|48832d50b12ba05b|1111384938||t20226.786569285s|s6587314b|6587314|rds|local|vector|||147.449||
+prep_fao|function|2559817543711d07
+partition_emissions|function|71c82c2dca7d6788
+merge_emissions|function|27596afb7a25896a
+merge_catch_fao|function|ac0b3faa500d2975
+.Random.seed|object|a5a04847266d0f8d
+prep_sau|function|efeaf1f1846064cd
+intersection|function|c38b831672563637
+merge_catch_sau|function|d1b099b51cb70032
+quarto_book|stem|33ecc57a3fb54ae0|f07c5797320957dc|2c530c1562a7fbd1|-1014629814|docs*qmd/_quarto.yml|t20228.7700019786s|s4821b|4821|file|local|vector|||138.838||

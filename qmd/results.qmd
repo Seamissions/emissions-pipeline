@@ -1,0 +1,146 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+# Results
+
+This chapter details the results from the primary analysis. 
+
+```{r, echo = FALSE, results = FALSE, message = FALSE, warning = FALSE}
+#| label: set-chunk-options
+knitr::opts_chunk$set(message = FALSE, warning = FALSE, echo = FALSE)
+
+library(tidyverse)
+
+targets::tar_load(full_emissions_fao_species)
+targets::tar_load(emissions_partitioned_grouped)
+
+source("R/functions.R")
+```
+
+## Trends in emissions-per-unit-catch by ISSCAAP species group
+
+```{r}
+#| code-summary: ISSCAAP Time
+#| fig-height: 10
+full_emissions_fao_species %>%
+  filter(year<=2022) %>%
+  filter(!isscaap_group %in% c("no_fao_species_catch_data", "unknown_species")) %>%
+  group_by(isscaap_group, isscaap, year) %>%
+  summarise(total_emissions_co2 = sum(total_co2_mt, na.rm = TRUE),
+            total_catch = sum(total_tons_by_species, na.rm = TRUE)) %>%
+  mutate(emissions_unit_catch = total_emissions_co2/total_catch) %>%
+  ggplot(aes(year, emissions_unit_catch, group = isscaap_group)) +
+  geom_line() +
+  scale_x_continuous(breaks = seq(2016, 2022, by = 3)) +
+  facet_wrap(~isscaap_group, labeller = label_wrap_gen(width = 20), scales = "free_y") +
+  labs(x = "",
+       y = "Emissions CO2 per Unit Catch") +
+  theme_minimal()
+```
+
+## Trends in emissions-per-unit-catch by FAO region
+
+```{r}
+#| code-summary: Region Emissions-Catch
+# Facet by region
+full_emissions_fao_species %>%
+  filter(year <= 2022) %>%
+  group_by(zone, year) %>%
+  summarise(total_emissions_co2 = sum(total_co2_mt, na.rm = TRUE),
+            total_catch = sum(total_tons_by_species, na.rm = TRUE)) %>%
+  mutate(emissions_unit_catch = total_emissions_co2/total_catch) %>%
+  ggplot(aes(year, emissions_unit_catch, group = as.factor(zone))) +
+  geom_line() +
+  scale_x_continuous(breaks = seq(2016, 2024, by = 4)) +
+  #scale_y_continuous(labels = scales::comma) +
+  facet_wrap(~zone, scales = "free_y") +
+  labs(x = "",
+       y = "Emissions CO2 per Unit Catch",
+       title = "Trends in Global Emissions per Unit Catch by FAO Region") +
+  theme_minimal()
+
+full_emissions_fao_species %>%
+  filter(year <= 2022) %>%
+  group_by(zone, year) %>%
+  summarise(total_emissions_co2 = sum(total_co2_mt, na.rm = TRUE),
+            total_catch = sum(total_tons_by_species, na.rm = TRUE)) %>%
+  mutate(emissions_unit_catch = total_emissions_co2/total_catch) %>%
+  filter(!zone == 18) %>%
+  ggplot(aes(year, emissions_unit_catch, group = as.factor(zone), color = as.factor(zone))) +
+  geom_line() +
+  scale_x_continuous(breaks = seq(2016, 2024, by = 4)) +
+  labs(x = "",
+       y = "Emissions CO2 per Unit Catch",
+       title = "Trends in Global Emissions per Unit Catch by FAO Region",
+       color = "Zone") +
+  gghighlight::gghighlight(as.factor(zone) %in% c(58, 88)) +
+  theme_minimal()
+```
+
+## Species Spotlight: Region 77 Salmons, Trouts, Smelts
+
+```{r}
+#| code-summary: Region 77 Salmon
+# Salmon fishery in zone 77
+salmon <- full_emissions_fao_species %>%
+  filter(zone == 77) %>%
+  filter(isscaap_group == "Salmons, trouts, smelts")
+
+# Calculate emissions and catch for each year
+salmon_plot_data <- salmon %>%
+  group_by(year) %>%
+  summarise(sum_emissions = sum(total_co2_mt, na.rm = TRUE),
+            total_catch = sum(total_tons_by_species, na.rm = TRUE))
+
+# Define breaks and labels for 0 to 10 range
+x_breaks <- seq(2016, 2022, by = 1)
+y_breaks <- seq(0, 6200, by = 1000)
+
+salmon_plot <- ggplot(data = salmon_plot_data, aes(x = year)) +
+  
+  # h-lines in the background
+   geom_hline(yintercept = y_breaks,
+             linetype = "dotted",
+             color = "#AAAAAA",
+             linewidth = 0.3) +
+  
+   geom_vline(xintercept = x_breaks,
+             linetype = "dotted",
+             color = "#AAAAAA",
+             linewidth = 0.3) +
+  
+  # Blue filled area for emissions
+  geom_area(aes(y = sum_emissions), fill = "#08C4E5") +
+
+  # Yellow line for total catch
+  geom_line(aes(y = total_catch), color = "white", size = 3) +
+  geom_line(aes(y = total_catch), color = "#f9b928", size = 1.5) +
+
+  geom_point(aes(y = total_catch), color = "white", size = 3.5) +
+  geom_point(aes(y = total_catch), color = "#f9b928", size = 2) +
+
+  labs(
+    x = NULL,
+    y = NULL) +
+  
+scale_y_continuous(
+  labels = function(x) paste0(scales::comma(x)))+
+  
+  scale_x_discrete(breaks = x_breaks) +
+
+  theme_minimal(base_size = 22) +
+  theme(
+    plot.background = element_blank(),
+    panel.background = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.text = element_text(color = "white", family = "sans"),
+    axis.title = element_text(color = "white", face = "bold", family = "sans"),
+    axis.line = element_line(color = "white"))
+
+#ggsave("output/salmon_plot.png", plot = salmon_plot, width = 6, height = 4, dpi = 300, bg = "transparent")
+```
+
