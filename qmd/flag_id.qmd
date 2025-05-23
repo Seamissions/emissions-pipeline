@@ -20,7 +20,7 @@ library(kableExtra)
 flag_data <- read_csv("/capstone/seamissions/data/meds_meds_capstone_annual_vessel_flag_country_emissions_v20241121.csv", show_col_types = FALSE)
 ```
 
-# About
+## About
 
 The following analysis looks into the relationship between a vessel's AIS-registered flag and its top-visited (home port) country using data from emLab and Global Fishing Watch.
 
@@ -39,9 +39,9 @@ The following analysis looks into the relationship between a vessel's AIS-regist
 - {tidyverse}
 - {kableExtra}
 
-# Methods
+## Methods
 
-## 1. Full Dataset Mismatch
+### 1. Full Dataset Mismatch
 
 To give a high level sense of just how much of an issue flags of convenience could be, we assessed AIS-registered flag and top-visited country mismatch for the dataset as a whole.
 
@@ -73,7 +73,7 @@ kbl(total_match, caption = "Flag Mismatch") %>%
                 full_width = F)
 ```
 
-## 2. Full Dataset Emissions
+### 2. Full Dataset Emissions
 
 Next, we looked at how much emissions (MT), on aggregate, could be affected by this flagging issue. We summarized emissions by match (TRUE), mismatch (FALSE), and NA for each year and overall.
 
@@ -102,7 +102,7 @@ kbl(year_emissions_avg, caption = "Flag Mismatch Emissions") %>%
                 full_width = F)
 ```
 
-## 3. Overestimating Emissions
+### 3. Overestimating Emissions
 
 To quantify overestimation, or emissions attributed to a AIS-flag that visit different top-country, we assessed the fraction of emissions that end up in a different country (mismatch/FALSE) for each flag by year.
 
@@ -131,7 +131,7 @@ kbl(overestimation_table, caption = "Overestimation of Emissions") %>%
                 full_width = F)
 ```
 
-## 4. Underestimating Emissions
+### 4. Underestimating Emissions
 
 To quantify underestimation, we assessed emissions for each top-visit country that come from a different AIS-flag.
 
@@ -165,7 +165,7 @@ kbl(underestimation_table, caption = "Underestimation of Emissions") %>%
                 full_width = F)
 ```
 
-## Visualize
+### Visualize
 
 ```{r}
 #| code-summary: Visualize
@@ -226,7 +226,7 @@ ggplot(aes(x = reorder(flag, emissions), y = emissions)) +
   )
 ```
 
-## Assumptions
+### Assumptions
 
 Where top-visited country is NA, it was filled with AIS-flag value (assumes proper registration).
 

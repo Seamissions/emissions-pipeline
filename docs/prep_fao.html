@@ -118,22 +118,27 @@ ul.task-list li input[type="checkbox"] {
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./results.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Results</span></a>
+  <a href="./emissions_allocation.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Emissions Allocation</span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./sau_comparison.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">SAU Validation</span></a>
+  <a href="./results.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">Results</span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./flag_id.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">Flag ID</span></a>
+  <a href="./sau_comparison.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">SAU Validation</span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./comparison_report.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">Comparison Report</span></a>
+  <a href="./flag_id.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">Flag ID</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./comparison_report.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">9</span>&nbsp; <span class="chapter-title">Comparison Report</span></a>
   </div>
 </li>
     </ul>
@@ -149,8 +154,8 @@ ul.task-list li input[type="checkbox"] {
   <li><a href="#packages" id="toc-packages" class="nav-link" data-scroll-target="#packages"><span class="toc-section-number">2.2</span>  Packages</a></li>
   <li><a href="#methods" id="toc-methods" class="nav-link" data-scroll-target="#methods"><span class="toc-section-number">3</span>  Methods</a>
   <ul class="collapse">
-  <li><a href="#remove-non-target-species" id="toc-remove-non-target-species" class="nav-link" data-scroll-target="#remove-non-target-species"><span class="toc-section-number">3.0.1</span>  Remove non-target species</a></li>
-  <li><a href="#add-species-information" id="toc-add-species-information" class="nav-link" data-scroll-target="#add-species-information"><span class="toc-section-number">3.0.2</span>  Add species information</a></li>
+  <li><a href="#remove-non-target-species" id="toc-remove-non-target-species" class="nav-link" data-scroll-target="#remove-non-target-species"><span class="toc-section-number">3.1</span>  Remove non-target species</a></li>
+  <li><a href="#add-species-information" id="toc-add-species-information" class="nav-link" data-scroll-target="#add-species-information"><span class="toc-section-number">3.2</span>  Add species information</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -198,13 +203,13 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="methods" class="level1" data-number="3">
 <h1 data-number="3"><span class="header-section-number">3</span> Methods</h1>
-<section id="remove-non-target-species" class="level3" data-number="3.0.1">
-<h3 data-number="3.0.1" class="anchored" data-anchor-id="remove-non-target-species"><span class="header-section-number">3.0.1</span> Remove non-target species</h3>
+<section id="remove-non-target-species" class="level2" data-number="3.1">
+<h2 data-number="3.1" class="anchored" data-anchor-id="remove-non-target-species"><span class="header-section-number">3.1</span> Remove non-target species</h2>
 <p>Prior to joining the .csv files, “PISCES”, “CRUSTACEA”, “MOLLUSCA”, and “INVERTEBRATA AQUATICA” were filtered out of the major groups represented in the <code>CL_FI_SPECIES_GROUPS.csv</code>. Additionally, <a href="https://www.fao.org/fishery/static/ASFIS/ISSCAAP.pdf">ISSCAAP group</a> 82 (Corals) was removed. These species were assumed not to be the target species of the fishing gear types (“fishing”, “squid_jigger”, “drifting_longlines”, “pole_and_line”, “other_fishing”, “trollers”, “fixed_gear”, “pots_and_traps”, “set_longlines”, “set_gillnets”, “trawlers”, “dredge_fishing”, “seiners”, “purse_seines”, “tuna_purse_seines”, “other_purse_seines”, “other_seines”, and “driftnets”) represented in the broadcasting emissions dataset. This, however, does have implications for the non-broadcasting dataset (<strong>see…</strong>).</p>
 <p>ISSCAAP groups 41 and 51, representing freshwater crustaceans and freshwater molluscs respectively, as well as the species “River eels”, were filtered out because any emissions associated with freshwater collection are eliminated during the intersection of the FAO regions shapefile and the emissions grid. Therefore, it is assumed that none of the resulting emissions can be attributed to fishing for freshwater species.</p>
 </section>
-<section id="add-species-information" class="level3" data-number="3.0.2">
-<h3 data-number="3.0.2" class="anchored" data-anchor-id="add-species-information"><span class="header-section-number">3.0.2</span> Add species information</h3>
+<section id="add-species-information" class="level2" data-number="3.2">
+<h2 data-number="3.2" class="anchored" data-anchor-id="add-species-information"><span class="header-section-number">3.2</span> Add species information</h2>
 <p>The analysis is conducted with species distinguished by a unique numeric code in the <code>identifier</code> column, and then additional species information is joined back to the final table. Species information was obtained from a modified version of the <code>data-keys/master_species_key.csv</code> created by Danielle Ferraro and Gordon Blasco and provided by emLab. Some species in the resulting FAO dataset were not represented in the master_species_key.csv, so the missing species were added from the <code>FAO CL_FI_SPECIES_GROUPS.csv</code>.</p>
 
 

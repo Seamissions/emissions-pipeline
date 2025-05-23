@@ -30,15 +30,15 @@ source("R/functions.R")
 - {tidyverse}
 - {janitor}
 
-# Methods
+## Methods
 
 Sea Around US (SAU) data was prepped using the same methods as FAO catch data (see "FAO Data Assembly").
 
 **check that SAU doesn't contain mammals, plants, etc.**
 
-# Results 
+## Results 
 
-## Overall Comparisons
+### Overall Comparisons
 
 ```{r}
 #| code-summary: Overall
@@ -72,7 +72,7 @@ print(paste0("FAO emissions-per-unit-catch: ", round(fao_total_emissions_catch, 
 print(paste0("SAU emissions-per-unit-catch: ", round(sau_total_emissions_catch, 2), "."))
 ```
 
-## Comparisons by ISSCAAP Group
+### Comparisons by ISSCAAP Group
 
 ```{r}
 #| code-summary: ISSCAAP Group

@@ -118,22 +118,27 @@ ul.task-list li input[type="checkbox"] {
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./results.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Results</span></a>
+  <a href="./emissions_allocation.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Emissions Allocation</span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./sau_comparison.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">SAU Validation</span></a>
+  <a href="./results.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">Results</span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./flag_id.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">Flag ID</span></a>
+  <a href="./sau_comparison.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">SAU Validation</span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./comparison_report.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">Comparison Report</span></a>
+  <a href="./flag_id.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">Flag ID</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./comparison_report.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">9</span>&nbsp; <span class="chapter-title">Comparison Report</span></a>
   </div>
 </li>
     </ul>
@@ -183,12 +188,8 @@ ul.task-list li input[type="checkbox"] {
 <h2 data-number="3.1" class="anchored" data-anchor-id="datasets"><span class="header-section-number">3.1</span> Datasets</h2>
 <p>Two emissions datasets, obtained from emLab, were used in this analysis:</p>
 <ul>
-<li><ol type="1">
-<li>Broadcasting emissions: <code>meds_capstone_ais_emissions_data_v20241121.csv</code></li>
-</ol></li>
-<li><ol start="2" type="1">
-<li>Non-broadcasting emissions: <code>meds_capstone_non_broadcasting_emissions_data_v20250116.csv</code></li>
-</ol></li>
+<li><p>Broadcasting emissions: <code>meds_capstone_ais_emissions_data_v20241121.csv</code></p></li>
+<li><p>Non-broadcasting emissions: <code>meds_capstone_non_broadcasting_emissions_data_v20250116.csv</code></p></li>
 </ul>
 <p>The data were pre-filtered by emLab from a <a href="https://emlab-ucsb.github.io/ocean-ghg/">larger emissions dataset</a> to select for fishing vessels.</p>
 <p>The following columns are required:</p>
@@ -225,7 +226,7 @@ ul.task-list li input[type="checkbox"] {
 </div>
 </div>
 <p>In the non-broadcasting dataset, emissions estimate columns for each of the 9 pollutants (CO2, CH4, N2O, NOX, SOX, CO, VOCS, PM2.5, PM10) are renamed to match the broadcasting dataset, and a <code>flag</code> column is created and populated with “DARK” to distinguish non-broadcasting emissions from the broadcasting emissions. Then, the datasets were concatenated.</p>
-<p>A <code>year</code> column was created, and the combined dataset was filtered to 2016-2024 to match the available data for the non-broadcasting dataset. Emissions estimates are then aggregated (summed) by year and flag for each one-by-one degree pixel (distinguished by <code>lat_bin</code> and <code>lon_bin</code>).</p>
+<p>A <code>year</code> column was created, and the combined dataset was filtered to 2016 and beyond to match the available data for the non-broadcasting dataset. Emissions estimates are then aggregated (summed) by year and flag for each one-by-one degree pixel (distinguished by <code>lat_bin</code> and <code>lon_bin</code>).</p>
 </section>
 <section id="assumptions" class="level2" data-number="4.2">
 <h2 data-number="4.2" class="anchored" data-anchor-id="assumptions"><span class="header-section-number">4.2</span> Assumptions</h2>

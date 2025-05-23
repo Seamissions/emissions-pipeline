@@ -6,9 +6,30 @@ editor_options:
 
 # About
 
-This analysis was conducted as a part of UC Santa Barbara's Bren School Master of Environmental Data Science Capstone project. 
+Global fisheries are heavily reliant on fossil fuels, contributing significantly to the rise in global greenhouse gas (GHG) emissions driving climate change. While satellite technology is commonly used to monitor land-based emissions (and ocean-based emissions of shipping vessels), studies primarily estimating ocean-based emissions remain limited in the fishing sector. In collaboration with the [Environmental Markets Lab (emLab)](https://emlab.ucsb.edu/) and [Global Fishing Watch (GFW)](https://globalfishingwatch.org/), this project leverages novel, high-resolution, satellite-based datasets to provide precise insights into the GHG emissions associated with global fisheries. We develop a reproducible, extensible, and open-source data processing pipeline to connect emissions data with seafood production data, along with an interactive dashboard to explore the resulting dataset. Our findings will enable novel research opportunities, offer actionable data to identify major GHG contributors, and facilitate new policy and market-based interventions to reduce fisheries-related emissions at scale.
 
-Quantifying Emissions Associated with Seafood Production
+This analysis was conducted as a part of UC Santa Barbara's [Bren School of Environmental Science & Management](https://bren.ucsb.edu/) [Master of Environmental Data Science Capstone project](https://bren.ucsb.edu/masters-programs/master-environmental-data-science/meds-capstone-projects). 
 
+# Objectives
 
-This Quarto book documents the steps in the Emissions Pipeline. 
+The primary objective of this project is to develop a reproducible pipeline to quantify GHG emissions associated with global seafood production, linking fishing vessel emissions data to species-specific FAO seafood production statistics. This dataset aims to provide emissions estimates for 9 GHG and non-GHG pollutants by FAO region, year, country, and species. Additionally, the project seeks to enhance the usability and accessibility of these data through an interactive dashboard, enabling targeted regulatory, policy, and market-based interventions to reduce the carbon footprint associated with global seafood production.
+
+**Products & Deliverables**
+
+- [Emissions Processing Pipeline](https://github.com/Seamissions/emissions-pipeline): Reproducible, extensible, and open-source data processing pipeline to estimate GHG emissions from global seafood production by harmonizing emLab’s high-resolution vessel emissions data, including both AIS-broadcasting and non-broadcasting vessels, with FAO catch records. 
+
+- [Seamissions Dashboard](https://github.com/Seamissions/emissions-dashboard): Interactive public dashboard to visualize the relationships between GHG emissions and fishing vessel type, flag, catch species, and FAO region.	
+
+- Results Report: Comprehensive written assessment comparing the project’s emissions estimates with existing published data. 	
+
+# Authors
+
+We are a team of environmental data scientists working to quantify and demystify the emissions contributed through commercial fishing fleets.
+
+Carmen Hoyt [Bren Profile](https://bren.ucsb.edu/people/carmen-hoyt) | [GitHub](https://github.com/ceh58) | [LinkedIn](https://www.linkedin.com/in/carmen-hoyt-952272153/) | [Website](https://ceh58.github.io/)
+
+Nicole Pepper [Bren Profile](https://bren.ucsb.edu/people/nicole-pepper) | [GitHub](https://github.com/nicolelpepper) | [LinkedIn](https://www.linkedin.com/in/nicole-pepper/) | [Website](https://nicolelpepper.github.io/)
+
+Stephen Carroll [Bren Profile](https://bren.ucsb.edu/people/stephen-carroll) | [GitHub](https://github.com/stephenccodes) | [LinkedIn](https://www.linkedin.com/in/stephen-carroll-754b5191/) | [Website](https://stephenccodes.github.io/)
+
+Josh Mull [Bren Profile](https://bren.ucsb.edu/people/joshua-mull) | [GitHub](https://github.com/llumj) | [LinkedIn](https://www.linkedin.com/in/joshua-mull-046a7832b/) | [Website](https://llumj.github.io/)

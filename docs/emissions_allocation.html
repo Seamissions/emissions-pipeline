@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Quantifying Greenhouse Gas (GHG) Emissions Associated with Global Seafood Production - 7&nbsp; SAU Validation</title>
+<title>Quantifying Greenhouse Gas (GHG) Emissions Associated with Global Seafood Production - 5&nbsp; Emissions Allocation</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -30,8 +30,8 @@ ul.task-list li input[type="checkbox"] {
 <script src="site_libs/quarto-search/fuse.min.js"></script>
 <script src="site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="./">
-<link href="./flag_id.html" rel="next">
-<link href="./results.html" rel="prev">
+<link href="./results.html" rel="next">
+<link href="./intersection.html" rel="prev">
 <script src="site_libs/quarto-html/quarto.js"></script>
 <script src="site_libs/quarto-html/popper.min.js"></script>
 <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
@@ -70,7 +70,7 @@ ul.task-list li input[type="checkbox"] {
   <header id="quarto-header" class="headroom fixed-top">
   <nav class="quarto-secondary-nav" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
     <div class="container-fluid d-flex justify-content-between">
-      <h1 class="quarto-secondary-nav-title"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">SAU Validation</span></h1>
+      <h1 class="quarto-secondary-nav-title"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Emissions Allocation</span></h1>
       <button type="button" class="quarto-btn-toggle btn" aria-label="Show secondary navigation">
         <i class="bi bi-chevron-right"></i>
       </button>
@@ -118,7 +118,7 @@ ul.task-list li input[type="checkbox"] {
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./emissions_allocation.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Emissions Allocation</span></a>
+  <a href="./emissions_allocation.html" class="sidebar-item-text sidebar-link active"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Emissions Allocation</span></a>
   </div>
 </li>
         <li class="sidebar-item">
@@ -128,7 +128,7 @@ ul.task-list li input[type="checkbox"] {
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./sau_comparison.html" class="sidebar-item-text sidebar-link active"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">SAU Validation</span></a>
+  <a href="./sau_comparison.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">SAU Validation</span></a>
   </div>
 </li>
         <li class="sidebar-item">
@@ -150,13 +150,11 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">Table of contents</h2>
    
   <ul>
-  <li><a href="#datasets" id="toc-datasets" class="nav-link active" data-scroll-target="#datasets"><span class="toc-section-number">7.1</span>  Datasets</a></li>
-  <li><a href="#packages" id="toc-packages" class="nav-link" data-scroll-target="#packages"><span class="toc-section-number">7.2</span>  Packages</a></li>
-  <li><a href="#methods" id="toc-methods" class="nav-link" data-scroll-target="#methods"><span class="toc-section-number">8</span>  Methods</a></li>
-  <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results"><span class="toc-section-number">9</span>  Results</a>
+  <li><a href="#datasets" id="toc-datasets" class="nav-link active" data-scroll-target="#datasets"><span class="toc-section-number">5.1</span>  Datasets</a></li>
+  <li><a href="#packages" id="toc-packages" class="nav-link" data-scroll-target="#packages"><span class="toc-section-number">5.2</span>  Packages</a></li>
+  <li><a href="#methods" id="toc-methods" class="nav-link" data-scroll-target="#methods"><span class="toc-section-number">6</span>  Methods</a>
   <ul class="collapse">
-  <li><a href="#overall-comparisons" id="toc-overall-comparisons" class="nav-link" data-scroll-target="#overall-comparisons"><span class="toc-section-number">9.1</span>  Overall Comparisons</a></li>
-  <li><a href="#comparisons-by-isscaap-group" id="toc-comparisons-by-isscaap-group" class="nav-link" data-scroll-target="#comparisons-by-isscaap-group"><span class="toc-section-number">9.2</span>  Comparisons by ISSCAAP Group</a></li>
+  <li><a href="#assumptions" id="toc-assumptions" class="nav-link" data-scroll-target="#assumptions"><span class="toc-section-number">6.1</span>  Assumptions:</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -166,7 +164,7 @@ ul.task-list li input[type="checkbox"] {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title d-none d-lg-block"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">SAU Validation</span></h1>
+<h1 class="title d-none d-lg-block"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Emissions Allocation</span></h1>
 </div>
 
 
@@ -181,46 +179,22 @@ ul.task-list li input[type="checkbox"] {
 
 </header>
 
-<p>This chapter describes how we validated our findings by comparison with Sea Around Us catch data.</p>
+<p>This chapter describes the method used to allocate non-broadcasting emissions in order to link the emissions and seafood catch datasets.</p>
 <div class="cell">
 
 </div>
-<section id="datasets" class="level2" data-number="7.1">
-<h2 data-number="7.1" class="anchored" data-anchor-id="datasets"><span class="header-section-number">7.1</span> Datasets</h2>
-<p><a href="https://www.seaaroundus.org/data/#/fao">Sea Around Us</a> data was downloaded for each FAO Region (18, 21, 27, 31, 34, 37, 41, 47, 48, 51, 57, 58, 61, 67, 71, 77, 81, 87, and 88).</p>
+<section id="datasets" class="level2" data-number="5.1">
+<h2 data-number="5.1" class="anchored" data-anchor-id="datasets"><span class="header-section-number">5.1</span> Datasets</h2>
 </section>
-<section id="packages" class="level2" data-number="7.2">
-<h2 data-number="7.2" class="anchored" data-anchor-id="packages"><span class="header-section-number">7.2</span> Packages</h2>
-<ul>
-<li>{tidyverse}</li>
-<li>{janitor}</li>
-</ul>
+<section id="packages" class="level2" data-number="5.2">
+<h2 data-number="5.2" class="anchored" data-anchor-id="packages"><span class="header-section-number">5.2</span> Packages</h2>
 </section>
-<section id="methods" class="level1" data-number="8">
-<h1 data-number="8"><span class="header-section-number">8</span> Methods</h1>
-<p>Sea Around US (SAU) data was prepped using the same methods as FAO catch data (see “FAO Data Assembly”).</p>
-<p><strong>check that SAU doesn’t contain mammals, plants, etc.</strong></p>
-</section>
-<section id="results" class="level1" data-number="9">
-<h1 data-number="9"><span class="header-section-number">9</span> Results</h1>
-<section id="overall-comparisons" class="level2" data-number="9.1">
-<h2 data-number="9.1" class="anchored" data-anchor-id="overall-comparisons"><span class="header-section-number">9.1</span> Overall Comparisons</h2>
-<div class="cell">
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] "FAO emissions-per-unit-catch: 4.56."</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] "SAU emissions-per-unit-catch: 3.76."</code></pre>
-</div>
-</div>
-</section>
-<section id="comparisons-by-isscaap-group" class="level2" data-number="9.2">
-<h2 data-number="9.2" class="anchored" data-anchor-id="comparisons-by-isscaap-group"><span class="header-section-number">9.2</span> Comparisons by ISSCAAP Group</h2>
-<div class="cell">
-<div class="cell-output-display">
-<p><img src="sau_comparison_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
+<section id="methods" class="level1" data-number="6">
+<h1 data-number="6"><span class="header-section-number">6</span> Methods</h1>
+<p>For each year, total <strong>non-broadcasting</strong> emissions were calculated for each FAO region and divided among <em>all</em> fisheries that reported catch in that region (proportionally by the weight of catch in each fishery). These partitioned non-broadcasting emissions were then join with the assigned broadcasting emissions.</p>
+<section id="assumptions" class="level2" data-number="6.1">
+<h2 data-number="6.1" class="anchored" data-anchor-id="assumptions"><span class="header-section-number">6.1</span> Assumptions:</h2>
+<p>Non-broadcasting emissions are partitioned out to FAO reporting fisheries (flag-species combinations) under the assumption that they are actively emitting in the region since they are reporting catch, but that they may not necessarily be using AIS on all (or any) of their fishing vessels. Additionally, this assumes that non-broadcasting emissions are directly proportional to the proportion of catch weight (in tons) by fishery (species-flag combo) and that the different gear types used to target the various fisheries have the same rate of emissions-per-unit-catch. For broadcasting emissions that are divided out proportionally among reported catch (by weight), we assume that all of a country’s catch is reported and that emissions rates are the same for each species (when in reality, emissions estimates may vary the different gear types used to target individual fisheries).</p>
 
 
 </section>
@@ -362,13 +336,13 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 </script>
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
-      <a href="./results.html" class="pagination-link">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">Results</span></span>
+      <a href="./intersection.html" class="pagination-link">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Intersection by FAO Region</span></span>
       </a>          
   </div>
   <div class="nav-page nav-page-next">
-      <a href="./flag_id.html" class="pagination-link">
-        <span class="nav-page-text"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">Flag ID</span></span> <i class="bi bi-arrow-right-short"></i>
+      <a href="./results.html" class="pagination-link">
+        <span class="nav-page-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">Results</span></span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav>

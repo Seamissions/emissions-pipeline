@@ -12,6 +12,7 @@ book:
     - prep_fao.qmd
     - merge_emissions.qmd
     - intersection.qmd
+    - emissions_allocation.qmd
     - results.qmd
     - sau_comparison.qmd
     - flag_id.qmd

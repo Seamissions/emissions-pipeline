@@ -34,7 +34,7 @@ At the time of this analysis (Spring 2025), FAO data was only avaialable through
 - {tidyverse}
 - {janitor}
 
-# Methods
+## Methods
 
 ### Remove non-target species
 
