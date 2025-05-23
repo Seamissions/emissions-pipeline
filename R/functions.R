@@ -234,7 +234,7 @@ partition_emissions <- function(emissions_zones) {
   
   # # Save for dashboard after filtering out points
   # dashboard <- emissions_zones_filtered %>%
-  #   group_by(grid_id, lat_bin, lon_bin, flag, year, zone, geometry) %>% # geometry?
+  #   group_by(grid_id, lat_bin, lon_bin, flag, year, zone, geometry) %>% 
   #   summarize(emissions_co2_mt = sum(emissions_co2_mt, na.rm = TRUE))
 
   # Break MULTIPOLYGONS down into POLYGONS
@@ -246,6 +246,7 @@ partition_emissions <- function(emissions_zones) {
     group_by(grid_id, lat_bin, lon_bin, flag, year, zone, geometry) %>% # geometry?
     summarize(emissions_co2_mt = sum(emissions_co2_mt, na.rm = TRUE))
   
+  # Save for dashboard as RDS file
   saveRDS(dashboard, file = "/capstone/seamissions/checkpoint/dashboard.rds")
   
   # Generate areas by grid_id for sub polygons
@@ -366,18 +367,7 @@ merge_catch_fao <- function(emissions_partitioned_grouped, fao_catch) {
   for (i in seq_along(regions)){
     
     # -------- TABLE 1 --------
-    # 1.1 All flags reporting FAO catch in Region #
-    # total_region_catch <- fao_catch %>%
-    #   filter(zone == regions[i]) %>%
-    #   group_by(zone, year, flag, species_identifier) %>%
-    #   summarise(country_total_tons_by_species = sum(fao_catch_tons, na.rm = TRUE), .groups = "drop") %>%
-    #   ungroup() %>%
-    #   group_by(zone, year) %>%
-    #   mutate(region_total_tons = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
-    #   mutate(prop_fao_catch = country_total_tons_by_species/region_total_tons) %>%
-    #   select(-region_total_tons) %>%
-    #   filter(country_total_tons_by_species > 0)
-    
+    # 1.1 All flags reporting FAO catch in Region
     total_region_catch <- fao_catch %>%
       filter(zone == regions[i]) %>%
       group_by(zone, year, flag, species_identifier) %>%
@@ -389,7 +379,7 @@ merge_catch_fao <- function(emissions_partitioned_grouped, fao_catch) {
       select(-region_total_tons) %>%
       filter(total_tons_by_species > 0)
     
-    # 1.2 Summarise non-broadcasting emissions by Region #
+    # 1.2 Summarise non-broadcasting emissions by Region
     fao_summary_non_broadcasting <- emissions_partitioned_grouped %>%
       # Filter for Region # (to account for emissions later)
       filter(zone == regions[i]) %>%
@@ -441,9 +431,9 @@ merge_catch_fao <- function(emissions_partitioned_grouped, fao_catch) {
     }
     
     # -------- TABLE 2 --------
-    # 2.1: All flags with broadcasting emissions by Region #
+    # 2.1: All flags with broadcasting emissions by Region
     emissions_partitioned <- emissions_partitioned_grouped %>%
-      # Filter for Region #
+      # Filter for Region
       filter(zone == regions[i]) %>%
       # Remove non-broadcasting emissions
       filter(!flag == "DARK") %>%
@@ -487,7 +477,6 @@ merge_catch_fao <- function(emissions_partitioned_grouped, fao_catch) {
     # -------- TABLE 3 --------
     # TABLE 3: Full join Tables 1 and 2 (to not lose flags with non-broad emissions but no broad emissions)
     total_region_emissions <- full_join(total_region_broad_allocation, total_region_non_broad_allocation, by = c("zone", "year", "flag", "species_identifier")) %>%
-      #filter(zone == 18) %>%
       # Sum broadcasting and non-broadcasting emissions
       mutate(total_co2_mt = rowSums(across(c(dist_broad_co2_mt, dist_non_broad_co2_mt)), na.rm = TRUE),
              total_ch4_mt = rowSums(across(c(dist_broad_ch4_mt, dist_non_broad_ch4_mt)), na.rm = TRUE),
@@ -548,6 +537,7 @@ merge_catch_fao <- function(emissions_partitioned_grouped, fao_catch) {
   full_emissions_fao_species <- left_join(full_emissions_fao, full_species_key, by = c("species_identifier" = "identifier")) %>%
     relocate(c(name_en, scientific_name, major_group, isscaap_group, isscaap), .after = flag)
   
+  # Save final dataset
   write_csv(full_emissions_fao_species, file.path("/capstone/seamissions/checkpoint/full_emissions_fao_species.csv"))
 
   return(full_emissions_fao_species)
@@ -599,18 +589,7 @@ merge_catch_sau <- function(emissions_partitioned_grouped, sau_catch){
   for (i in seq_along(regions)){
     
     # -------- TABLE 1 --------
-    # 1.1 All flags reporting FAO catch in Region #
-    # total_region_catch <- sau_catch %>%
-    #   filter(zone == regions[i]) %>%
-    #   group_by(zone, year, flag, species) %>%
-    #   summarise(country_total_tons_by_species = sum(sau_catch_tons, na.rm = TRUE), .groups = "drop") %>%
-    #   ungroup() %>%
-    #   group_by(zone, year) %>%
-    #   mutate(region_total_tons = sum(country_total_tons_by_species, na.rm = TRUE)) %>%
-    #   mutate(prop_sau_catch = country_total_tons_by_species/region_total_tons) %>%
-    #   select(-region_total_tons) %>%
-    #   filter(country_total_tons_by_species > 0)
-    
+    # 1.1 All flags reporting FAO catch in Region 
     total_region_catch <- sau_catch %>%
       filter(zone == regions[i]) %>%
       group_by(zone, year, flag, species) %>%
@@ -622,7 +601,7 @@ merge_catch_sau <- function(emissions_partitioned_grouped, sau_catch){
       select(-region_total_tons) %>%
       filter(total_tons_by_species > 0)
     
-    # 1.2 Summarise non-broadcasting emissions by Region #
+    # 1.2 Summarise non-broadcasting emissions by Region 
     sau_summary_non_broadcasting <- emissions_partitioned_grouped %>%
       # Filter for Region # (to account for emissions later)
       filter(zone == regions[i]) %>%
@@ -674,9 +653,9 @@ merge_catch_sau <- function(emissions_partitioned_grouped, sau_catch){
     }
     
     # -------- TABLE 2 --------
-    # 2.1: All flags with broadcasting emissions by Region #
+    # 2.1: All flags with broadcasting emissions by Region
     emissions_partitioned <- emissions_partitioned_grouped %>%
-      # Filter for Region #
+      # Filter for Region
       filter(zone == regions[i]) %>%
       # Remove non-broadcasting emissions
       filter(!flag == "DARK") %>%
@@ -690,8 +669,7 @@ merge_catch_sau <- function(emissions_partitioned_grouped, sau_catch){
              broad_pm2_5_mt = emissions_pm2_5_mt,
              broad_pm10_mt = emissions_pm10_mt) %>%
       select(-c(contains("emissions_")))
-       # emissions_co2_mt, emissions_ch4_mt, emissions_n2o_mt, emissions_nox_mt, emissions_sox_mt, emissions_co_mt, emissions_vocs_mt, emissions_pm2_5_mt, emissions_pm10_mt))
-    
+      
     # 2.2 Distribute broadcasting for countries with catch ASSUMPTION: 1 ton = same emissions for all species
     total_flag_catch <- sau_catch %>%
       filter(zone == regions[i]) %>%
@@ -722,7 +700,6 @@ merge_catch_sau <- function(emissions_partitioned_grouped, sau_catch){
     # -------- TABLE 3 --------
     # TABLE 3: Full join Tables 1 and 2 (to not lose flags with non-broad emissions but no broad emissions)
     total_region_emissions <- full_join(total_region_broad_allocation, total_region_non_broad_allocation, by = c("zone", "year", "flag", "species")) %>%
-      #filter(zone == 18) %>%
       # Sum broadcasting and non-broadcasting emissions
       mutate(total_co2_mt = rowSums(across(c(dist_broad_co2_mt, dist_non_broad_co2_mt)), na.rm = TRUE),
              total_ch4_mt = rowSums(across(c(dist_broad_ch4_mt, dist_non_broad_ch4_mt)), na.rm = TRUE),
@@ -742,15 +719,6 @@ merge_catch_sau <- function(emissions_partitioned_grouped, sau_catch){
              species,
              #total_tons_by_species,
              contains("total_"))
-             # total_co2_mt,
-             # total_ch4_mt,
-             # total_n2o_mt,
-             # total_nox_mt,
-             # total_sox_mt,
-             # total_co_mt,
-             # total_vocs_mt,
-             # total_pm2_5_mt,
-             # total_pm10_mt
     
     # Account for emissions after full join
     before <- sum(emissions_partitioned$broad_co2_mt, na.rm = TRUE) + sum(sau_summary_non_broadcasting$non_broad_co2_mt, na.rm = TRUE)

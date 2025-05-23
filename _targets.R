@@ -51,7 +51,7 @@ tar_option_set(
 tar_source("R/functions.R")
 # tar_source("other_functions.R") # Source other scripts as needed.
 
-# Replace the target list below with your own:
+# Target list:
 list(
   tar_target(fao_files,
              list.files("/capstone/seamissions/data/fao_seafood_production/", pattern="*.csv", full.names = TRUE),
