@@ -565,7 +565,9 @@ prep_sau <- function(sau_files) {
   }
   
   # Bind all regions
-  sau_catch_data <- bind_rows(sau_regions)
+  sau_catch_data <- bind_rows(sau_regions) %>%
+    filter(fishing_sector == "Industrial") %>%
+    filter(end_use_type == "Direct human consumption")
   
   # Summarise SAU catch
   sau_catch <- sau_catch_data %>%

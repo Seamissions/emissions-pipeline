@@ -68,7 +68,7 @@ total_match <- flag_match %>%
   mutate(percent = round((counts/sum(counts))*100)) %>%
   select(-counts)
 
-kbl(total_match, caption = "Flag Mismatch") %>%
+kbl(total_match, caption = "Flag Mismatch by Vessel") %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"),
                 full_width = F)
 ```
@@ -95,9 +95,12 @@ year_emissions_avg <- year_emissions %>%
   summarise(avg_prop = mean(prop),
             #check
             sum_emissions = sum(emissions)) %>%
-  select(-avg_prop)
+  rename("Match" = match,
+         "Percentage" = avg_prop,
+         "Total" = sum_emissions)
+  #select(-avg_prop)
 
-kbl(year_emissions_avg, caption = "Flag Mismatch Emissions") %>%
+kbl(year_emissions_avg, caption = "Flag Mismatch by Emissions") %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"),
                 full_width = F)
 ```

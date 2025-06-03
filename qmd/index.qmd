@@ -10,7 +10,7 @@ Global fisheries are heavily reliant on fossil fuels, contributing significantly
 
 This analysis was conducted as a part of UC Santa Barbara's [Bren School of Environmental Science & Management](https://bren.ucsb.edu/) [Master of Environmental Data Science Capstone project](https://bren.ucsb.edu/masters-programs/master-environmental-data-science/meds-capstone-projects). 
 
-# Objectives
+## Objectives
 
 The primary objective of this project is to develop a reproducible pipeline to quantify GHG emissions associated with global seafood production, linking fishing vessel emissions data to species-specific FAO seafood production statistics. This dataset aims to provide emissions estimates for 9 GHG and non-GHG pollutants by FAO region, year, country, and species. Additionally, the project seeks to enhance the usability and accessibility of these data through an interactive dashboard, enabling targeted regulatory, policy, and market-based interventions to reduce the carbon footprint associated with global seafood production.
 
@@ -22,7 +22,7 @@ The primary objective of this project is to develop a reproducible pipeline to q
 
 - Results Report: Comprehensive written assessment comparing the project’s emissions estimates with existing published data. 	
 
-# Authors
+## Authors
 
 We are a team of environmental data scientists working to quantify and demystify the emissions contributed through commercial fishing fleets.
 

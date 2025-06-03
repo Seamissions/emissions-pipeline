@@ -149,9 +149,11 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">Table of contents</h2>
    
   <ul>
-  <li><a href="#about" id="toc-about" class="nav-link active" data-scroll-target="#about"><span class="toc-section-number">1</span>  About</a></li>
-  <li><a href="#objectives" id="toc-objectives" class="nav-link" data-scroll-target="#objectives"><span class="toc-section-number">2</span>  Objectives</a></li>
-  <li><a href="#authors" id="toc-authors" class="nav-link" data-scroll-target="#authors"><span class="toc-section-number">3</span>  Authors</a></li>
+  <li><a href="#about" id="toc-about" class="nav-link active" data-scroll-target="#about"><span class="toc-section-number">1</span>  About</a>
+  <ul class="collapse">
+  <li><a href="#objectives" id="toc-objectives" class="nav-link" data-scroll-target="#objectives"><span class="toc-section-number">1.1</span>  Objectives</a></li>
+  <li><a href="#authors" id="toc-authors" class="nav-link" data-scroll-target="#authors"><span class="toc-section-number">1.2</span>  Authors</a></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -171,7 +173,7 @@ ul.task-list li input[type="checkbox"] {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">Last Updated on May 23, 2025</p>
+      <p class="date">Last Updated on June 03, 2025</p>
     </div>
   </div>
   
@@ -185,9 +187,8 @@ ul.task-list li input[type="checkbox"] {
 <h1 data-number="1"><span class="header-section-number">1</span> About</h1>
 <p>Global fisheries are heavily reliant on fossil fuels, contributing significantly to the rise in global greenhouse gas (GHG) emissions driving climate change. While satellite technology is commonly used to monitor land-based emissions (and ocean-based emissions of shipping vessels), studies primarily estimating ocean-based emissions remain limited in the fishing sector. In collaboration with the <a href="https://emlab.ucsb.edu/">Environmental Markets Lab (emLab)</a> and <a href="https://globalfishingwatch.org/">Global Fishing Watch (GFW)</a>, this project leverages novel, high-resolution, satellite-based datasets to provide precise insights into the GHG emissions associated with global fisheries. We develop a reproducible, extensible, and open-source data processing pipeline to connect emissions data with seafood production data, along with an interactive dashboard to explore the resulting dataset. Our findings will enable novel research opportunities, offer actionable data to identify major GHG contributors, and facilitate new policy and market-based interventions to reduce fisheries-related emissions at scale.</p>
 <p>This analysis was conducted as a part of UC Santa Barbara’s <a href="https://bren.ucsb.edu/">Bren School of Environmental Science &amp; Management</a> <a href="https://bren.ucsb.edu/masters-programs/master-environmental-data-science/meds-capstone-projects">Master of Environmental Data Science Capstone project</a>.</p>
-</section>
-<section id="objectives" class="level1" data-number="2">
-<h1 data-number="2"><span class="header-section-number">2</span> Objectives</h1>
+<section id="objectives" class="level2" data-number="1.1">
+<h2 data-number="1.1" class="anchored" data-anchor-id="objectives"><span class="header-section-number">1.1</span> Objectives</h2>
 <p>The primary objective of this project is to develop a reproducible pipeline to quantify GHG emissions associated with global seafood production, linking fishing vessel emissions data to species-specific FAO seafood production statistics. This dataset aims to provide emissions estimates for 9 GHG and non-GHG pollutants by FAO region, year, country, and species. Additionally, the project seeks to enhance the usability and accessibility of these data through an interactive dashboard, enabling targeted regulatory, policy, and market-based interventions to reduce the carbon footprint associated with global seafood production.</p>
 <p><strong>Products &amp; Deliverables</strong></p>
 <ul>
@@ -196,8 +197,8 @@ ul.task-list li input[type="checkbox"] {
 <li><p>Results Report: Comprehensive written assessment comparing the project’s emissions estimates with existing published data.</p></li>
 </ul>
 </section>
-<section id="authors" class="level1" data-number="3">
-<h1 data-number="3"><span class="header-section-number">3</span> Authors</h1>
+<section id="authors" class="level2" data-number="1.2">
+<h2 data-number="1.2" class="anchored" data-anchor-id="authors"><span class="header-section-number">1.2</span> Authors</h2>
 <p>We are a team of environmental data scientists working to quantify and demystify the emissions contributed through commercial fishing fleets.</p>
 <p>Carmen Hoyt <a href="https://bren.ucsb.edu/people/carmen-hoyt">Bren Profile</a> | <a href="https://github.com/ceh58">GitHub</a> | <a href="https://www.linkedin.com/in/carmen-hoyt-952272153/">LinkedIn</a> | <a href="https://ceh58.github.io/">Website</a></p>
 <p>Nicole Pepper <a href="https://bren.ucsb.edu/people/nicole-pepper">Bren Profile</a> | <a href="https://github.com/nicolelpepper">GitHub</a> | <a href="https://www.linkedin.com/in/nicole-pepper/">LinkedIn</a> | <a href="https://nicolelpepper.github.io/">Website</a></p>
@@ -205,6 +206,7 @@ ul.task-list li input[type="checkbox"] {
 <p>Josh Mull <a href="https://bren.ucsb.edu/people/joshua-mull">Bren Profile</a> | <a href="https://github.com/llumj">GitHub</a> | <a href="https://www.linkedin.com/in/joshua-mull-046a7832b/">LinkedIn</a> | <a href="https://llumj.github.io/">Website</a></p>
 
 
+</section>
 </section>
 
 </main> <!-- /main -->
