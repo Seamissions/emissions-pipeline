@@ -118,22 +118,27 @@ ul.task-list li input[type="checkbox"] {
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./results.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Results</span></a>
+  <a href="./emissions_allocation.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Emissions Allocation</span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./sau_comparison.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">SAU Validation</span></a>
+  <a href="./results.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">Results</span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./flag_id.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">Flag ID</span></a>
+  <a href="./sau_comparison.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">SAU Validation</span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./comparison_report.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">Comparison Report</span></a>
+  <a href="./flag_id.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">Flag ID</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./comparison_report.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">9</span>&nbsp; <span class="chapter-title">Comparison Report</span></a>
   </div>
 </li>
     </ul>
@@ -147,10 +152,10 @@ ul.task-list li input[type="checkbox"] {
   <ul>
   <li><a href="#datasets" id="toc-datasets" class="nav-link active" data-scroll-target="#datasets"><span class="toc-section-number">3.1</span>  Datasets</a></li>
   <li><a href="#packages" id="toc-packages" class="nav-link" data-scroll-target="#packages"><span class="toc-section-number">3.2</span>  Packages</a></li>
-  <li><a href="#methods" id="toc-methods" class="nav-link" data-scroll-target="#methods"><span class="toc-section-number">4</span>  Methods</a>
+  <li><a href="#methods" id="toc-methods" class="nav-link" data-scroll-target="#methods"><span class="toc-section-number">3.3</span>  Methods</a>
   <ul class="collapse">
-  <li><a href="#join-emissions-data" id="toc-join-emissions-data" class="nav-link" data-scroll-target="#join-emissions-data"><span class="toc-section-number">4.1</span>  Join Emissions Data</a></li>
-  <li><a href="#assumptions" id="toc-assumptions" class="nav-link" data-scroll-target="#assumptions"><span class="toc-section-number">4.2</span>  Assumptions</a></li>
+  <li><a href="#join-emissions-data" id="toc-join-emissions-data" class="nav-link" data-scroll-target="#join-emissions-data"><span class="toc-section-number">3.3.1</span>  Join Emissions Data</a></li>
+  <li><a href="#assumptions" id="toc-assumptions" class="nav-link" data-scroll-target="#assumptions"><span class="toc-section-number">3.3.2</span>  Assumptions</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -183,12 +188,8 @@ ul.task-list li input[type="checkbox"] {
 <h2 data-number="3.1" class="anchored" data-anchor-id="datasets"><span class="header-section-number">3.1</span> Datasets</h2>
 <p>Two emissions datasets, obtained from emLab, were used in this analysis:</p>
 <ul>
-<li><ol type="1">
-<li>Broadcasting emissions: <code>meds_capstone_ais_emissions_data_v20241121.csv</code></li>
-</ol></li>
-<li><ol start="2" type="1">
-<li>Non-broadcasting emissions: <code>meds_capstone_non_broadcasting_emissions_data_v20250116.csv</code></li>
-</ol></li>
+<li><p>Broadcasting emissions: <code>meds_capstone_ais_emissions_data_v20241121.csv</code></p></li>
+<li><p>Non-broadcasting emissions: <code>meds_capstone_non_broadcasting_emissions_data_v20250116.csv</code></p></li>
 </ul>
 <p>The data were pre-filtered by emLab from a <a href="https://emlab-ucsb.github.io/ocean-ghg/">larger emissions dataset</a> to select for fishing vessels.</p>
 <p>The following columns are required:</p>
@@ -210,10 +211,10 @@ ul.task-list li input[type="checkbox"] {
 <li>{lubridate}</li>
 </ul>
 </section>
-<section id="methods" class="level1" data-number="4">
-<h1 data-number="4"><span class="header-section-number">4</span> Methods</h1>
-<section id="join-emissions-data" class="level2" data-number="4.1">
-<h2 data-number="4.1" class="anchored" data-anchor-id="join-emissions-data"><span class="header-section-number">4.1</span> Join Emissions Data</h2>
+<section id="methods" class="level2" data-number="3.3">
+<h2 data-number="3.3" class="anchored" data-anchor-id="methods"><span class="header-section-number">3.3</span> Methods</h2>
+<section id="join-emissions-data" class="level3" data-number="3.3.1">
+<h3 data-number="3.3.1" class="anchored" data-anchor-id="join-emissions-data"><span class="header-section-number">3.3.1</span> Join Emissions Data</h3>
 <p>Emissions datasets (datasets 1 and 2 above) were read into the pipeline, the column names were converted to snake case, and a new <code>year-month</code> column was created for both datasets. In the broadcasting dataset, NA values in the <code>flag</code> column were filled with “UNK” to represent flag unknown, and <code>vessel_class</code> was filtered for gear types identified with a high degree of confidence (i.e.&nbsp;“squid_jigger”, “drifting_longlines”, “pole_and_line”, “trollers”, “pots_and_traps”, “set_longlines”, “set_gillnets”, “trawlers”, “dredge_fishing”, “tuna_purse_seines”, “other_purse_seines”, “other_seines”). This eliminated gear types such as “passenger” that were likely mis-identified as “fishing” or as “passenger” by GFW’s machine learning algorithm.</p>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
@@ -225,10 +226,10 @@ ul.task-list li input[type="checkbox"] {
 </div>
 </div>
 <p>In the non-broadcasting dataset, emissions estimate columns for each of the 9 pollutants (CO2, CH4, N2O, NOX, SOX, CO, VOCS, PM2.5, PM10) are renamed to match the broadcasting dataset, and a <code>flag</code> column is created and populated with “DARK” to distinguish non-broadcasting emissions from the broadcasting emissions. Then, the datasets were concatenated.</p>
-<p>A <code>year</code> column was created, and the combined dataset was filtered to 2016-2024 to match the available data for the non-broadcasting dataset. Emissions estimates are then aggregated (summed) by year and flag for each one-by-one degree pixel (distinguished by <code>lat_bin</code> and <code>lon_bin</code>).</p>
+<p>A <code>year</code> column was created, and the combined dataset was filtered to 2016 and beyond to match the available data for the non-broadcasting dataset. Emissions estimates are then aggregated (summed) by year and flag for each one-by-one degree pixel (distinguished by <code>lat_bin</code> and <code>lon_bin</code>).</p>
 </section>
-<section id="assumptions" class="level2" data-number="4.2">
-<h2 data-number="4.2" class="anchored" data-anchor-id="assumptions"><span class="header-section-number">4.2</span> Assumptions</h2>
+<section id="assumptions" class="level3" data-number="3.3.2">
+<h3 data-number="3.3.2" class="anchored" data-anchor-id="assumptions"><span class="header-section-number">3.3.2</span> Assumptions</h3>
 <p><strong>By filtering out certain gear types,… implications for non-broadcasting</strong></p>
 
 

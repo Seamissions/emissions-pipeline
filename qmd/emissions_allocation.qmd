@@ -4,7 +4,9 @@ editor_options:
   chunk_output_type: console
 ---
 
-# Emissions Allocation {#sec-methods}
+# Emissions Allocation
+
+This chapter describes the method used to allocate non-broadcasting emissions in order to link the emissions and seafood catch datasets.
 
 ```{r, echo = FALSE, results = FALSE, message = FALSE, warning = FALSE}
 #| label: set-chunk-options
@@ -20,32 +22,16 @@ source("R/functions.R")
 
 ## Datasets
 
+
+
 ## Packages
 
-# Methods
-
--   For each year, calculate total **non-broadcasting** emissions for each FAO region:
-
-`fao_summary_non_broadcasting`
-
--   Then divy that up to *all* fisheries that report catch in that region (proportionally by the weight of catch in each fishery).
-
-TABLE 1: `total_region_non_broad_allocation`
-
--   For each year, calculate total **broadcasting** emissions, by country, for each FAO region.
-
-TABLE 2: `emissions_partitioned`
-
--   Full join the allocated non-broadcasting emissions with the broadcasting emissions.
-
-TABLE 3: `total_region_emissions`
-
-Assumptions:
-
--   Within an FAO region, the non-broadcasting emissions are spread proportionally across *all* fisheries and countries within that region *by catch*.
 
 
+## Methods
 
-st_transform(wdpa_poly_object, 
-        crs = '+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs')
-  
+For each year, total **non-broadcasting** emissions were calculated for each FAO region and divided among *all* fisheries that reported catch in that region (proportionally by the weight of catch in each fishery). These partitioned non-broadcasting emissions were then join with the assigned broadcasting emissions.
+
+### Assumptions:
+
+Non-broadcasting emissions are partitioned out to FAO reporting fisheries (flag-species combinations) under the assumption that they are actively emitting in the region since they are reporting catch, but that they may not necessarily be using AIS on all (or any) of their fishing vessels. Additionally, this assumes that non-broadcasting emissions are directly proportional to the proportion of catch weight (in tons) by fishery (species-flag combo) and that the different gear types used to target the various fisheries have the same rate of emissions-per-unit-catch. For broadcasting emissions that are divided out proportionally among reported catch (by weight), we assume that all of a country’s catch is reported and that emissions rates are the same for each species (when in reality, emissions estimates may vary the different gear types used to target individual fisheries).  

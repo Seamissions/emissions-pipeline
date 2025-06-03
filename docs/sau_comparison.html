@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Quantifying Greenhouse Gas (GHG) Emissions Associated with Global Seafood Production - 6&nbsp; SAU Validation</title>
+<title>Quantifying Greenhouse Gas (GHG) Emissions Associated with Global Seafood Production - 7&nbsp; SAU Validation</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -70,7 +70,7 @@ ul.task-list li input[type="checkbox"] {
   <header id="quarto-header" class="headroom fixed-top">
   <nav class="quarto-secondary-nav" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
     <div class="container-fluid d-flex justify-content-between">
-      <h1 class="quarto-secondary-nav-title"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">SAU Validation</span></h1>
+      <h1 class="quarto-secondary-nav-title"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">SAU Validation</span></h1>
       <button type="button" class="quarto-btn-toggle btn" aria-label="Show secondary navigation">
         <i class="bi bi-chevron-right"></i>
       </button>
@@ -118,22 +118,27 @@ ul.task-list li input[type="checkbox"] {
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./results.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Results</span></a>
+  <a href="./emissions_allocation.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Emissions Allocation</span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./sau_comparison.html" class="sidebar-item-text sidebar-link active"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">SAU Validation</span></a>
+  <a href="./results.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">Results</span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./flag_id.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">Flag ID</span></a>
+  <a href="./sau_comparison.html" class="sidebar-item-text sidebar-link active"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">SAU Validation</span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./comparison_report.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">Comparison Report</span></a>
+  <a href="./flag_id.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">Flag ID</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./comparison_report.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">9</span>&nbsp; <span class="chapter-title">Comparison Report</span></a>
   </div>
 </li>
     </ul>
@@ -145,13 +150,13 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">Table of contents</h2>
    
   <ul>
-  <li><a href="#datasets" id="toc-datasets" class="nav-link active" data-scroll-target="#datasets"><span class="toc-section-number">6.1</span>  Datasets</a></li>
-  <li><a href="#packages" id="toc-packages" class="nav-link" data-scroll-target="#packages"><span class="toc-section-number">6.2</span>  Packages</a></li>
-  <li><a href="#methods" id="toc-methods" class="nav-link" data-scroll-target="#methods"><span class="toc-section-number">7</span>  Methods</a></li>
-  <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results"><span class="toc-section-number">8</span>  Results</a>
+  <li><a href="#datasets" id="toc-datasets" class="nav-link active" data-scroll-target="#datasets"><span class="toc-section-number">7.1</span>  Datasets</a></li>
+  <li><a href="#packages" id="toc-packages" class="nav-link" data-scroll-target="#packages"><span class="toc-section-number">7.2</span>  Packages</a></li>
+  <li><a href="#methods" id="toc-methods" class="nav-link" data-scroll-target="#methods"><span class="toc-section-number">7.3</span>  Methods</a></li>
+  <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results"><span class="toc-section-number">7.4</span>  Results</a>
   <ul class="collapse">
-  <li><a href="#overall-comparisons" id="toc-overall-comparisons" class="nav-link" data-scroll-target="#overall-comparisons"><span class="toc-section-number">8.1</span>  Overall Comparisons</a></li>
-  <li><a href="#comparisons-by-isscaap-group" id="toc-comparisons-by-isscaap-group" class="nav-link" data-scroll-target="#comparisons-by-isscaap-group"><span class="toc-section-number">8.2</span>  Comparisons by ISSCAAP Group</a></li>
+  <li><a href="#overall-comparisons" id="toc-overall-comparisons" class="nav-link" data-scroll-target="#overall-comparisons"><span class="toc-section-number">7.4.1</span>  Overall Comparisons</a></li>
+  <li><a href="#comparisons-by-isscaap-group" id="toc-comparisons-by-isscaap-group" class="nav-link" data-scroll-target="#comparisons-by-isscaap-group"><span class="toc-section-number">7.4.2</span>  Comparisons by ISSCAAP Group</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -161,7 +166,7 @@ ul.task-list li input[type="checkbox"] {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title d-none d-lg-block"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">SAU Validation</span></h1>
+<h1 class="title d-none d-lg-block"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">SAU Validation</span></h1>
 </div>
 
 
@@ -180,27 +185,36 @@ ul.task-list li input[type="checkbox"] {
 <div class="cell">
 
 </div>
-<section id="datasets" class="level2" data-number="6.1">
-<h2 data-number="6.1" class="anchored" data-anchor-id="datasets"><span class="header-section-number">6.1</span> Datasets</h2>
+<section id="datasets" class="level2" data-number="7.1">
+<h2 data-number="7.1" class="anchored" data-anchor-id="datasets"><span class="header-section-number">7.1</span> Datasets</h2>
 <p><a href="https://www.seaaroundus.org/data/#/fao">Sea Around Us</a> data was downloaded for each FAO Region (18, 21, 27, 31, 34, 37, 41, 47, 48, 51, 57, 58, 61, 67, 71, 77, 81, 87, and 88).</p>
 </section>
-<section id="packages" class="level2" data-number="6.2">
-<h2 data-number="6.2" class="anchored" data-anchor-id="packages"><span class="header-section-number">6.2</span> Packages</h2>
+<section id="packages" class="level2" data-number="7.2">
+<h2 data-number="7.2" class="anchored" data-anchor-id="packages"><span class="header-section-number">7.2</span> Packages</h2>
 <ul>
 <li>{tidyverse}</li>
 <li>{janitor}</li>
 </ul>
 </section>
-<section id="methods" class="level1" data-number="7">
-<h1 data-number="7"><span class="header-section-number">7</span> Methods</h1>
+<section id="methods" class="level2" data-number="7.3">
+<h2 data-number="7.3" class="anchored" data-anchor-id="methods"><span class="header-section-number">7.3</span> Methods</h2>
 <p>Sea Around US (SAU) data was prepped using the same methods as FAO catch data (see “FAO Data Assembly”).</p>
-<p><strong>check that SAU doesn’t contain mammals, plants, etc.</strong></p>
+<p><strong>check that SAU doesn’t contain mammals, plants, etc.</strong> <em>need to filter for human consumption and industrial</em></p>
 </section>
-<section id="results" class="level1" data-number="8">
-<h1 data-number="8"><span class="header-section-number">8</span> Results</h1>
-<section id="overall-comparisons" class="level2" data-number="8.1">
-<h2 data-number="8.1" class="anchored" data-anchor-id="overall-comparisons"><span class="header-section-number">8.1</span> Overall Comparisons</h2>
+<section id="results" class="level2" data-number="7.4">
+<h2 data-number="7.4" class="anchored" data-anchor-id="results"><span class="header-section-number">7.4</span> Results</h2>
+<section id="overall-comparisons" class="level3" data-number="7.4.1">
+<h3 data-number="7.4.1" class="anchored" data-anchor-id="overall-comparisons"><span class="header-section-number">7.4.1</span> Overall Comparisons</h3>
 <div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "FAO Catch Total: 329363271 MT."</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "SAU Catch Total: 399836011 MT."</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "SAU reports 70472740 more MT of catch."</code></pre>
+</div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] "FAO emissions-per-unit-catch: 4.56."</code></pre>
 </div>
@@ -209,8 +223,8 @@ ul.task-list li input[type="checkbox"] {
 </div>
 </div>
 </section>
-<section id="comparisons-by-isscaap-group" class="level2" data-number="8.2">
-<h2 data-number="8.2" class="anchored" data-anchor-id="comparisons-by-isscaap-group"><span class="header-section-number">8.2</span> Comparisons by ISSCAAP Group</h2>
+<section id="comparisons-by-isscaap-group" class="level3" data-number="7.4.2">
+<h3 data-number="7.4.2" class="anchored" data-anchor-id="comparisons-by-isscaap-group"><span class="header-section-number">7.4.2</span> Comparisons by ISSCAAP Group</h3>
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="sau_comparison_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid" width="672"></p>
@@ -358,12 +372,12 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
       <a href="./results.html" class="pagination-link">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Results</span></span>
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">Results</span></span>
       </a>          
   </div>
   <div class="nav-page nav-page-next">
       <a href="./flag_id.html" class="pagination-link">
-        <span class="nav-page-text"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">Flag ID</span></span> <i class="bi bi-arrow-right-short"></i>
+        <span class="nav-page-text"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">Flag ID</span></span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav>

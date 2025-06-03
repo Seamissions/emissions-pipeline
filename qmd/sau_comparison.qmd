@@ -16,6 +16,7 @@ library(tidyverse)
 
 targets::tar_load(full_emissions_fao_species)
 targets::tar_load(full_emissions_sau_species)
+targets::tar_load(sau_catch)
 targets::tar_load(emissions_partitioned_grouped)
 
 source("R/functions.R")
@@ -30,15 +31,16 @@ source("R/functions.R")
 - {tidyverse}
 - {janitor}
 
-# Methods
+## Methods
 
 Sea Around US (SAU) data was prepped using the same methods as FAO catch data (see "FAO Data Assembly").
 
 **check that SAU doesn't contain mammals, plants, etc.**
+*need to filter for human consumption and industrial*
 
-# Results 
+## Results 
 
-## Overall Comparisons
+### Overall Comparisons
 
 ```{r}
 #| code-summary: Overall
@@ -64,6 +66,10 @@ full_emissions_sau_filtered <- full_emissions_sau_species %>%
 fao_total_catch <- sum(full_emissions_fao_filtered$total_tons_by_species, na.rm = TRUE)
 sau_total_catch <- sum(full_emissions_sau_filtered$total_tons_by_species, na.rm = TRUE)
 
+print(paste0("FAO Catch Total: ", round(fao_total_catch, 0), " MT."))
+print(paste0("SAU Catch Total: ", round(sau_total_catch, 0), " MT."))
+print(paste0("SAU reports ", round(sau_total_catch-fao_total_catch, 0), " more MT of catch."))
+
 # -------- Compare Emissions/Unit Catch --------
 fao_total_emissions_catch <- total_co2_fao/fao_total_catch
 sau_total_emissions_catch <- total_co2_sau/sau_total_catch
@@ -72,7 +78,7 @@ print(paste0("FAO emissions-per-unit-catch: ", round(fao_total_emissions_catch, 
 print(paste0("SAU emissions-per-unit-catch: ", round(sau_total_emissions_catch, 2), "."))
 ```
 
-## Comparisons by ISSCAAP Group
+### Comparisons by ISSCAAP Group
 
 ```{r}
 #| code-summary: ISSCAAP Group
@@ -124,3 +130,4 @@ ggplot(comp, aes(reorder(isscaap_group, emissions_unit_catch), emissions_unit_ca
        fill = "Reporting\nAgency") +
   theme_minimal()
 ```
+
