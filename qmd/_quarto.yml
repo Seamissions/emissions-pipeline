@@ -18,7 +18,7 @@ book:
     - flag_id.qmd
     - comparison_report.qmd
     #- eda.qmd
-    #- references.qmd
+    - references.qmd
   downloads: [pdf]
 
 #bibliography: references.bib

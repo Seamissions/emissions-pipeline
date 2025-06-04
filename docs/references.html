@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Quantifying Greenhouse Gas (GHG) Emissions Associated with Global Seafood Production - 3&nbsp; Merge Emissions Datasets</title>
+<title>Quantifying Greenhouse Gas (GHG) Emissions Associated with Global Seafood Production - 10&nbsp; References</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -30,8 +30,7 @@ ul.task-list li input[type="checkbox"] {
 <script src="site_libs/quarto-search/fuse.min.js"></script>
 <script src="site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="./">
-<link href="./intersection.html" rel="next">
-<link href="./prep_fao.html" rel="prev">
+<link href="./comparison_report.html" rel="prev">
 <script src="site_libs/quarto-html/quarto.js"></script>
 <script src="site_libs/quarto-html/popper.min.js"></script>
 <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
@@ -70,7 +69,7 @@ ul.task-list li input[type="checkbox"] {
   <header id="quarto-header" class="headroom fixed-top">
   <nav class="quarto-secondary-nav" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
     <div class="container-fluid d-flex justify-content-between">
-      <h1 class="quarto-secondary-nav-title"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Merge Emissions Datasets</span></h1>
+      <h1 class="quarto-secondary-nav-title"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">References</span></h1>
       <button type="button" class="quarto-btn-toggle btn" aria-label="Show secondary navigation">
         <i class="bi bi-chevron-right"></i>
       </button>
@@ -108,7 +107,7 @@ ul.task-list li input[type="checkbox"] {
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./merge_emissions.html" class="sidebar-item-text sidebar-link active"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Merge Emissions Datasets</span></a>
+  <a href="./merge_emissions.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Merge Emissions Datasets</span></a>
   </div>
 </li>
         <li class="sidebar-item">
@@ -143,7 +142,7 @@ ul.task-list li input[type="checkbox"] {
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./references.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">References</span></a>
+  <a href="./references.html" class="sidebar-item-text sidebar-link active"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">References</span></a>
   </div>
 </li>
     </ul>
@@ -155,13 +154,9 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">Table of contents</h2>
    
   <ul>
-  <li><a href="#datasets" id="toc-datasets" class="nav-link active" data-scroll-target="#datasets"><span class="toc-section-number">3.1</span>  Datasets</a></li>
-  <li><a href="#packages" id="toc-packages" class="nav-link" data-scroll-target="#packages"><span class="toc-section-number">3.2</span>  Packages</a></li>
-  <li><a href="#methods" id="toc-methods" class="nav-link" data-scroll-target="#methods"><span class="toc-section-number">3.3</span>  Methods</a>
-  <ul class="collapse">
-  <li><a href="#join-emissions-data" id="toc-join-emissions-data" class="nav-link" data-scroll-target="#join-emissions-data"><span class="toc-section-number">3.3.1</span>  Join Emissions Data</a></li>
-  <li><a href="#assumptions" id="toc-assumptions" class="nav-link" data-scroll-target="#assumptions"><span class="toc-section-number">3.3.2</span>  Assumptions</a></li>
-  </ul></li>
+  <li><a href="#government-and-organizational-reports" id="toc-government-and-organizational-reports" class="nav-link active" data-scroll-target="#government-and-organizational-reports"><span class="toc-section-number">10.1</span>  Government and Organizational Reports</a></li>
+  <li><a href="#journal-articles" id="toc-journal-articles" class="nav-link" data-scroll-target="#journal-articles"><span class="toc-section-number">10.2</span>  Journal Articles</a></li>
+  <li><a href="#online-sources-research-tools" id="toc-online-sources-research-tools" class="nav-link" data-scroll-target="#online-sources-research-tools"><span class="toc-section-number">10.3</span>  Online Sources &amp; Research Tools</a></li>
   </ul>
 </nav>
     </div>
@@ -170,7 +165,7 @@ ul.task-list li input[type="checkbox"] {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title d-none d-lg-block"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Merge Emissions Datasets</span></h1>
+<h1 class="title d-none d-lg-block"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">References</span></h1>
 </div>
 
 
@@ -185,60 +180,30 @@ ul.task-list li input[type="checkbox"] {
 
 </header>
 
-<p>This chapter describes the process used to merge emissions datasets.</p>
-<div class="cell">
-
-</div>
-<section id="datasets" class="level2" data-number="3.1">
-<h2 data-number="3.1" class="anchored" data-anchor-id="datasets"><span class="header-section-number">3.1</span> Datasets</h2>
-<p>Two emissions datasets, obtained from emLab, were used in this analysis:</p>
-<ul>
-<li><p>Broadcasting emissions: <code>meds_capstone_ais_emissions_data_v20241121.csv</code></p></li>
-<li><p>Non-broadcasting emissions: <code>meds_capstone_non_broadcasting_emissions_data_v20250116.csv</code></p></li>
-</ul>
-<p>The data were pre-filtered by emLab from a <a href="https://emlab-ucsb.github.io/ocean-ghg/">larger emissions dataset</a> to select for fishing vessels.</p>
-<p>The following columns are required:</p>
-<ul>
-<li><code>month</code></li>
-<li><code>flag</code></li>
-<li><code>vessel_class</code></li>
-<li><code>lon_bin</code></li>
-<li><code>lat_bin</code></li>
-<li><code>emissions_{pollutant}_mt</code></li>
-</ul>
-<p><strong>define broadcasting vs.&nbsp;non-broadcasting?</strong></p>
+<section id="government-and-organizational-reports" class="level2" data-number="10.1">
+<h2 data-number="10.1" class="anchored" data-anchor-id="government-and-organizational-reports"><span class="header-section-number">10.1</span> Government and Organizational Reports</h2>
+<p>Environmental Protection Agency (EPA), 2024. Inventory of U.S. Greenhouse Gas Emissions and Sinks: 1990-2000. EPA 430-R-24-004.</p>
+<p>Intergovernmental Panel on Climate Change (IPCC), 2023. Summary for Policymakers. In: Climate Change 2023: Synthesis Report. Contribution of Working Groups I, II and III to the Sixth Assessment Report of the Intergovernmental Panel on Climate Change. IPCC, Geneva, Switzerland, pp.&nbsp;1-34.</p>
+<p>International Maritime Organization. (2020). Fourth IMO GHG Study 2020: Full report and annexes. https://www.imo.org/en/OurWork/Environment/Pages/Fourth-IMO-Greenhouse-Gas-Study-2020.aspx</p>
+<p>Food and Agriculture Organization of the United Nations (FAO). FAOSTAT. Retrieved from https://www.fao.org/faostat/en/#home.</p>
 </section>
-<section id="packages" class="level2" data-number="3.2">
-<h2 data-number="3.2" class="anchored" data-anchor-id="packages"><span class="header-section-number">3.2</span> Packages</h2>
-<ul>
-<li>{tidyverse}</li>
-<li>{janitor}</li>
-<li>{lubridate}</li>
-</ul>
+<section id="journal-articles" class="level2" data-number="10.2">
+<h2 data-number="10.2" class="anchored" data-anchor-id="journal-articles"><span class="header-section-number">10.2</span> Journal Articles</h2>
+<p>Greer, K., Zeller, D., Woroniak, J., Coulter, A., Winchester, M., Deng Palomares, M.L., and Pauly, D., 2019. Global trends in carbon dioxide (CO2) emissions from fuel combustion in marine fisheries from 1950 to 2016. Marine Policy, 107(103382), pp.&nbsp;1-9.</p>
+<p>Kroodsma, D.A., Mayorga, J., Hochberg, T., Miller, N.A., Boerder, K., Ferretti, F., Wilson, A., Bergman, B., White, T.D., Block, B.A. and Woods, P., 2018. Tracking the global footprint of fisheries. Science, 359(6378), pp.904-908.</p>
+<p>Parker, R.W.R., Blanchard, J.L., Gardner, C., Green, B.S., Hartmann, K., Tyedmers, P.H., and Watson, R.A., 2018. Fuel use and greenhouse gas emissions of world fisheries. Nature Climate Change, 8, pp.&nbsp;333–337.</p>
+<p>Halpern, B.S., Frazier, M., Verstaen, J., Rayner, P., Clawson, G., Blanchard, J.L., Cottrell, R.S., Froehlich, H.E., Gephart, J.A., Jacobsen, N.S., Kuempel, C.D., McIntyre, P.B., Metain, M., Moran, D., Nash, K.L., Tobben, J., and Williams, D.R., 2022. The environmental footprint of global food production. Nature Sustainability 5, pp.&nbsp;1027–1039.</p>
+<p>Paolo, F.S., Kroodsma, D., Raynor, J., Hochberg, T., Davis, P., Cleary, J., Marsaglia, L., Orofino, S., Thomas, C., and Halpin, P., 2024. Satellite mapping reveals extensive industrial activity at sea. Nature 625, pp.&nbsp;85–9.</p>
+<p>ICES Journal of Marine Science. “Bias in Global Fishing Watch AIS Data Analyses Results in Overestimate of Northeast Atlantic Pelagic Fishing Impact.” Oxford Academic, Retrieved from https://academic.oup.com/icesjms/article//82/3/fsaf033/8090016</p>
 </section>
-<section id="methods" class="level2" data-number="3.3">
-<h2 data-number="3.3" class="anchored" data-anchor-id="methods"><span class="header-section-number">3.3</span> Methods</h2>
-<section id="join-emissions-data" class="level3" data-number="3.3.1">
-<h3 data-number="3.3.1" class="anchored" data-anchor-id="join-emissions-data"><span class="header-section-number">3.3.1</span> Join Emissions Data</h3>
-<p>Emissions datasets (datasets 1 and 2 above) were read into the pipeline, the column names were converted to snake case, and a new <code>year-month</code> column was created for both datasets. In the broadcasting dataset, NA values in the <code>flag</code> column were filled with “UNK” to represent flag unknown, and <code>vessel_class</code> was filtered for gear types identified with a high degree of confidence (i.e.&nbsp;“squid_jigger”, “drifting_longlines”, “pole_and_line”, “trollers”, “pots_and_traps”, “set_longlines”, “set_gillnets”, “trawlers”, “dredge_fishing”, “tuna_purse_seines”, “other_purse_seines”, “other_seines”). This eliminated gear types such as “passenger” that were likely mis-identified as “fishing” or as “passenger” by GFW’s machine learning algorithm.</p>
-<div class="cell">
-<div class="cell-output cell-output-stdout">
-<pre><code> [1] "trawlers"           "set_longlines"      "drifting_longlines"
- [4] "trollers"           "squid_jigger"       "pots_and_traps"    
- [7] "other_seines"       "pole_and_line"      "other_purse_seines"
-[10] "tuna_purse_seines"  "set_gillnets"       "dredge_fishing"    
-[13] NA                  </code></pre>
-</div>
-</div>
-<p>In the non-broadcasting dataset, emissions estimate columns for each of the 9 pollutants (CO2, CH4, N2O, NOX, SOX, CO, VOCS, PM2.5, PM10) are renamed to match the broadcasting dataset, and a <code>flag</code> column is created and populated with “DARK” to distinguish non-broadcasting emissions from the broadcasting emissions. Then, the datasets were concatenated.</p>
-<p>A <code>year</code> column was created, and the combined dataset was filtered to 2016 and beyond to match the available data for the non-broadcasting dataset. Emissions estimates are then aggregated (summed) by year and flag for each one-by-one degree pixel (distinguished by <code>lat_bin</code> and <code>lon_bin</code>).</p>
-</section>
-<section id="assumptions" class="level3" data-number="3.3.2">
-<h3 data-number="3.3.2" class="anchored" data-anchor-id="assumptions"><span class="header-section-number">3.3.2</span> Assumptions</h3>
-<p><strong>By filtering out certain gear types,… implications for non-broadcasting</strong></p>
+<section id="online-sources-research-tools" class="level2" data-number="10.3">
+<h2 data-number="10.3" class="anchored" data-anchor-id="online-sources-research-tools"><span class="header-section-number">10.3</span> Online Sources &amp; Research Tools</h2>
+<p>Global Fishing Watch (GFW), 2024. What is AIS?. https://globalfishingwatch.org/faqs/what-is-ais/</p>
+<p>GFW and Environmental Markets Lab, 2024. Quantifying Ocean-based Greenhouse Gas Emissions. https://emlab-ucsb.github.io/ocean-ghg/</p>
+<p>Max, L., Parker, R., Tyedmers, P., nd. Seafood Carbon Emissions Tool. http://seafoodco2.dal.ca/</p>
+<p>Sea Around Us. “Catch Reconstruction and Allocation Methods.” Sea Around Us. Retrieved from https://www.seaaroundus.org/catch-reconstruction-and-allocation-methods/#_Toc421534360.</p>
 
 
-</section>
 </section>
 
 </main> <!-- /main -->
@@ -377,14 +342,11 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 </script>
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
-      <a href="./prep_fao.html" class="pagination-link">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">FAO Data Assembly</span></span>
+      <a href="./comparison_report.html" class="pagination-link">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">9</span>&nbsp; <span class="chapter-title">About</span></span>
       </a>          
   </div>
   <div class="nav-page nav-page-next">
-      <a href="./intersection.html" class="pagination-link">
-        <span class="nav-page-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Intersection by FAO Region</span></span> <i class="bi bi-arrow-right-short"></i>
-      </a>
   </div>
 </nav>
 </div> <!-- /content -->
