@@ -1,0 +1,9 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+# Dashboard
+
+This chapter describes how we built the Seamissions-Explorer dashboard.
