@@ -11,7 +11,7 @@ Josh Mull [@llumj](https://github.com/llumj)
 
 ### About
 
-This repository hosts the code for assigning *broadcasting* and *non-broadcasting* emissions estimates (in metric tons) for 9 pollutants (CO2, CH4, N2O, NOX, SOX, CO, VOCs, PM2.5, PM10) to FAO catch (in metric tons). 
+This repository hosts the code for assigning *broadcasting* and *non-broadcasting* emissions estimates (in metric tons) for 9 pollutants (CO2, CH4, N2O, NOX, SOX, CO, VOCs, PM2.5, PM10) to FAO catch (in metric tons). More about the analysis can be found [here](https://seamissions.github.io/emissions-pipeline/).
 
 ### Data
 
