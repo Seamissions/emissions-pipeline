@@ -6,6 +6,23 @@ editor_options:
 
 # Comparison Report
 
+```{r, echo = FALSE, results = FALSE, message = FALSE, warning = FALSE}
+#| label: set-chunk-options
+knitr::opts_chunk$set(message = FALSE, warning = FALSE, echo = FALSE)
+
+library(tidyverse)
+library(here)
+library(gghighlight)
+library(lubridate)
+library(knitr)
+library(kableExtra)
+library(scales)
+
+targets::tar_load(full_emissions_fao_species)
+
+source("R/functions.R")
+```
+
 This chapter is a comparison between historical estimates of global fishing emissions to those discovered by Global Fishing Watch (GFW) and emLab. There are two sections. The first is a report detailing what our team found during our project and comparing that to historic estimates, particularly the year 2016. The second works as living report that will automatically update as new data is uploading to the pipeline.
 
 ## Report
@@ -59,16 +76,6 @@ Furthermore, emissions per tonne of landed fish in our study increased from 1.86
 ### What do emissions look like now?
 
 ```{r}
-library(tidyverse)
-library(here)
-library(gghighlight)
-library(lubridate)
-library(knitr)
-library(kableExtra)
-library(scales)
-
-targets::tar_load(full_emissions_fao_species)
-
 FAO_total_catch_table.html <- full_emissions_fao_species %>%
   group_by(year) %>%
   summarise(total_co2_emissions_mt = sum(total_co2_mt),

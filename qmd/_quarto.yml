@@ -17,7 +17,7 @@ book:
     - sau_comparison.qmd
     - flag_id.qmd
     - comparison_report.qmd
-    #- eda.qmd
+    - dashboard.qmd
     - references.qmd
   downloads: [pdf]
 
