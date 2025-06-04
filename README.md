@@ -11,7 +11,7 @@ Josh Mull [@llumj](https://github.com/llumj)
 
 ### About
 
-This repository hosts the code for assigning *broadcasting* and *non-broadcasting* emissions estimates (in metric tons) for 9 pollutants (CO2, CH4, N2O, NOX, SOX, CO, VOCs, PM2.5, PM10) to FAO catch (in metric tons). More about the analysis can be found [here](https://seamissions.github.io/emissions-pipeline/).
+This repository hosts the code for assigning *broadcasting* and *non-broadcasting* emissions estimates (in metric tons) for 9 pollutants (CO2, CH4, N2O, NOX, SOX, CO, VOCs, PM2.5, PM10) to FAO catch (in metric tons). More about the analysis can be found [here](https://seamissions.github.io/emissions-pipeline/). Information about package versions can be found in the session_info.txt file.
 
 ### Data
 
@@ -31,22 +31,33 @@ Data must be downloaded separately and be locally accessible in the correspondin
 
 ### Repository Structure
 ```
-├── data/
-│   ├── raw/ # download data separately
-│   │    ├── emissions/ 
-│   │    ├── fao-seafood-produciton/ 
-│   │    ├── fao-region-shapefile/ 
-│   │    └── sea-around-us/ 
-│   └── processed/
-│        ├── full_emissions_fao.csv 
-│        └── full_emissions_sau.csv
+├── R/
+│   └──  functions.R
+├── _targets/
+│   ├── meta/
+│   │    └── meta
+│   └── .gitignore
+├── archive
 ├── data-keys/
-│        ├── full_species_key
-│        └── flag_key
-├── notebooks/
-│   ├── data-assembly.qmd
-│   ├── data-pipeline.qmd
-│   ├── fao-sau-comparison.qmd
-│   └── visualizations.qmd
+│   ├── full_species_key.csv
+│   └── flag_key.csv
+├── docs/
+├── qmd/
+│   ├── .gitignore
+│   ├── quarto.yml
+│   ├── comparison_report.qmd
+│   ├── emissions_allocation.qmd
+│   ├── flag_id.qmd
+│   ├── index.qmd
+│   ├── intersection.qmd
+│   ├── merge_emissions.qmd
+│   ├── prep_fao.qmd
+│   ├── results.qmd
+│   └── sau_comparison.qmd
+├── .gitignore
+├── LICENSE
+├── _targets.R
+├── emissions-pipeline.Rproj
+├── session_info.txt
 └── README.md
 ```
