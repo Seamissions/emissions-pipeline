@@ -34,41 +34,15 @@ Data must be downloaded separately and be locally accessible in the correspondin
 ├── data/
 │   ├── raw/ # download data separately
 │   │    ├── emissions/ 
-│   │    │   ├── broadcasting.csv 
-│   │    │   └── non-broadcasting.csv 
 │   │    ├── fao-seafood-produciton/ 
-│   │    │   ├── Capture_Quantity.csv 
-│   │    │   ├── CL_FI_SPECIES_GROUPS.csv
-│   │    │   └── CL_FI_COUNTRY_GROUPS.csv
 │   │    ├── fao-region-shapefile/ 
-│   │    │   ├── World_Fao_Zones.shp
-│   │    │   ├── World_Fao_Zones.shx
-│   │    │   ├── World_Fao_Zones.sbn
-│   │    │   ├── World_Fao_Zones.prj
-│   │    │   └── World_Fao_Zones.dbf
-│   │    ├── sea-around-us/ 
-│   │    │   ├── SAU FAO 27 v50-1.csv
-│   │    │   ├── SAU FAO 88 v50-1.csv
-│   │    │   ├── SAU FAO 71 v50-1.csv
-│   │    │   ├── SAU FAO 48 v50-1.csv
-│   │    │   ├── SAU FAO 67 v50-1.csv
-│   │    │   ├── SAU FAO 51 v50-1.csv
-│   │    │   ├── SAU FAO 61 v50-1.csv
-│   │    │   ├── SAU FAO 57 v50-1.csv
-│   │    │   ├── SAU FAO 27 v50-1.csv
-│   │    │   ├── SAU FAO 58 v50-1.csv
-│   │    │   ├── SAU FAO 34 v50-1.csv
-│   │    │   ├── SAU FAO 47 v50-1.csv
-│   │    │   ├── SAU FAO 18 v50-1.csv
-│   │    │   ├── SAU FAO 21 v50-1.csv
-│   │    │   ├── SAU FAO 87 v50-1.csv
-│   │    │   ├── SAU FAO 31 v50-1.csv
-│   │    │   ├── SAU FAO 81 v50-1.csv
-│   │    │   └── SAU FAO 77 v50-1.csv
-│   │    └── master_species_key.csv
+│   │    └── sea-around-us/ 
 │   └── processed/
 │        ├── full_emissions_fao.csv 
-│        └── full_emissions_sau.csv 
+│        └── full_emissions_sau.csv
+├── data-keys/
+│        ├── full_species_key
+│        └── flag_key
 ├── notebooks/
 │   ├── data-assembly.qmd
 │   ├── data-pipeline.qmd
