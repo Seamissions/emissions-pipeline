@@ -1,0 +1,41 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+# References
+
+## Government and Organizational Reports
+
+Environmental Protection Agency (EPA), 2024. Inventory of U.S. Greenhouse Gas Emissions and Sinks: 1990-2000. EPA 430-R-24-004. 
+
+Intergovernmental Panel on Climate Change (IPCC), 2023. Summary for Policymakers. In: Climate Change 2023: Synthesis Report. Contribution of Working Groups I, II and III to the Sixth Assessment Report of the Intergovernmental Panel on Climate Change. IPCC, Geneva, Switzerland, pp. 1-34. 
+
+International Maritime Organization. (2020). Fourth IMO GHG Study 2020: Full report and annexes. https://www.imo.org/en/OurWork/Environment/Pages/Fourth-IMO-Greenhouse-Gas-Study-2020.aspx
+
+Food and Agriculture Organization of the United Nations (FAO). FAOSTAT. Retrieved from https://www.fao.org/faostat/en/#home.
+
+## Journal Articles
+Greer, K., Zeller, D., Woroniak, J., Coulter, A., Winchester, M., Deng Palomares, M.L., and Pauly, D., 2019. Global trends in carbon dioxide (CO2) emissions from fuel combustion in marine fisheries from 1950 to 2016. Marine Policy, 107(103382), pp. 1-9.
+
+Kroodsma, D.A., Mayorga, J., Hochberg, T., Miller, N.A., Boerder, K., Ferretti, F., Wilson, A., Bergman, B., White, T.D., Block, B.A. and Woods, P., 2018. Tracking the global footprint of fisheries. Science, 359(6378), pp.904-908. 
+
+Parker, R.W.R., Blanchard, J.L., Gardner, C., Green, B.S., Hartmann, K., Tyedmers, P.H., and Watson, R.A., 2018. Fuel use and greenhouse gas emissions of world fisheries. Nature Climate Change, 8, pp. 333–337. 
+
+Halpern, B.S., Frazier, M., Verstaen, J., Rayner, P., Clawson, G., Blanchard, J.L., Cottrell, R.S., Froehlich, H.E., Gephart, J.A., Jacobsen, N.S., Kuempel, C.D., McIntyre, P.B., Metain, M., Moran, D., Nash, K.L., Tobben, J., and Williams, D.R., 2022. The environmental footprint of global food production. Nature Sustainability 5, pp. 1027–1039. 
+
+Paolo, F.S., Kroodsma, D., Raynor, J., Hochberg, T., Davis, P., Cleary, J., Marsaglia, L., Orofino, S., Thomas, C., and Halpin, P., 2024. Satellite mapping reveals extensive industrial activity at sea. Nature 625, pp. 85–9. 
+ 
+ICES Journal of Marine Science. “Bias in Global Fishing Watch AIS Data Analyses Results in Overestimate of Northeast Atlantic Pelagic Fishing Impact.” Oxford Academic, Retrieved from https://academic.oup.com/icesjms/article//82/3/fsaf033/8090016 
+
+## Online Sources & Research Tools 
+
+Global Fishing Watch (GFW), 2024. What is AIS?. 
+https://globalfishingwatch.org/faqs/what-is-ais/ 
+
+GFW and Environmental Markets Lab, 2024. Quantifying Ocean-based Greenhouse Gas Emissions. https://emlab-ucsb.github.io/ocean-ghg/ 
+
+Max, L., Parker, R., Tyedmers, P., nd. Seafood Carbon Emissions Tool. http://seafoodco2.dal.ca/
+
+Sea Around Us. “Catch Reconstruction and Allocation Methods.” Sea Around Us. Retrieved from https://www.seaaroundus.org/catch-reconstruction-and-allocation-methods/#_Toc421534360.
