@@ -9,7 +9,6 @@ library(tarchetypes)
 library(quarto)
 
 # library(tarchetypes) # Load other packages as needed.
-
 # Set target options:
 tar_option_set(
   packages = c("tidyverse", "janitor", "here", "lubridate", "sf") # Packages that your targets need for their tasks.
@@ -53,19 +52,20 @@ tar_source("R/functions.R")
 
 # Target list:
 list(
+  tar_target(data_directory_project, set_directory()),
   tar_target(fao_files,
-             list.files("/capstone/seamissions/data/fao_seafood_production/", pattern="*.csv", full.names = TRUE),
+             list.files(file.path(data_directory_project, "raw/fao_seafood_production"), pattern="*.csv", full.names = TRUE),
              format = "file"),
   tar_target(fao_catch, prep_fao(fao_files)),
-  tar_target(emissions_files, 
-             list.files("/capstone/seamissions/data/meds_capstone_project", pattern="*.csv", full.names=TRUE),
+  tar_target(emissions_files,
+             list.files(file.path(data_directory_project, "raw/emissions"), pattern="*.csv", full.names=TRUE),
              format = "file"),
   tar_target(emissions, merge_emissions(emissions_files)),
   tar_target(emissions_zones, intersection(emissions)),
   tar_target(emissions_partitioned_grouped, partition_emissions(emissions_zones)),
   tar_target(full_emissions_fao_species, merge_catch_fao(emissions_partitioned_grouped, fao_catch)),
   tar_target(sau_files,
-             list.files("/capstone/seamissions/data/sau/", pattern="*.csv", full.names = TRUE),
+             list.files(file.path(data_directory_project, "raw/sau"), pattern="*.csv", full.names = TRUE),
              format = "file"),
   tar_target(sau_catch, prep_sau(sau_files)),
   tar_target(full_emissions_sau_species, merge_catch_sau(emissions_partitioned_grouped, sau_catch)),
@@ -74,4 +74,4 @@ list(
     name = quarto_book,
     path = "qmd",
     quiet = FALSE)
-)
+  )

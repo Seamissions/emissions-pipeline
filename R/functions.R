@@ -1,5 +1,26 @@
 #R/functions.R
 
+# Set directory
+set_directory <- function() {
+  # First determine if system is quebracho or sequoia, our GRIT servers. If so, set directory appropriately
+  data_directory_base <-  ifelse(Sys.info()["nodename"] == "quebracho" | Sys.info()["nodename"] == "sequoia",
+                                 "/home/emlab",
+                                 # Otherwise, set the directory for local machines based on the OS
+                                 # If using Mac OS, the directory will be automatically set as follows
+                                 ifelse(Sys.info()["sysname"]=="Darwin",
+                                        "/Users/Shared/nextcloud/emLab",
+                                        # If using Windows, the directory will be automatically set as follows
+                                        ifelse(Sys.info()["sysname"]=="Windows",
+                                               "G:/Shared\ drives/nextcloud/emLab",
+                                               # If using Linux, will need to manually modify the following directory path based on their user name
+                                               # Replace your_username with your local machine user name
+                                               "/home/your_username/Nextcloud")))
+  
+  data_directory_project <- file.path(data_directory_base, "projects/current-projects/ocean-ghg-fisheries/data")
+  
+  return(data_directory_project)
+}
+
 # Prep FAO data
 prep_fao <- function(fao_files) {
   
@@ -191,7 +212,7 @@ intersection <- function(emissions) {
   
   # -------- FAO REGIONS --------
   # Import regions data (set same crs) from workbench-2
-  fao_regions <- st_read(file.path("/capstone/seamissions/data/fao_region_shapefile")) %>%
+  fao_regions <- st_read(file.path(data_directory_project, "raw/fao_region_shapefile")) %>%
     # Transform to same crs as grid
     st_transform(st_crs(emissions_grid_sf)) %>%
     # Fix geometries
@@ -247,7 +268,7 @@ partition_emissions <- function(emissions_zones) {
     summarize(emissions_co2_mt = sum(emissions_co2_mt, na.rm = TRUE))
   
   # Save for dashboard as RDS file
-  saveRDS(dashboard, file = "/capstone/seamissions/checkpoint/dashboard.rds")
+  saveRDS(dashboard, file = file.path(data_directory_project, "processed/dashboard.rds"))
   
   # Generate areas by grid_id for sub polygons
   emissions_zones_summary_1 <- emissions_zones_exploded %>%
@@ -538,7 +559,7 @@ merge_catch_fao <- function(emissions_partitioned_grouped, fao_catch) {
     relocate(c(name_en, scientific_name, major_group, isscaap_group, isscaap), .after = flag)
   
   # Save final dataset
-  write_csv(full_emissions_fao_species, file.path("/capstone/seamissions/checkpoint/full_emissions_fao_species.csv"))
+  write_csv(full_emissions_fao_species, file.path(data_directory_project, "processed/full_emissions_fao_species.csv"))
 
   return(full_emissions_fao_species)
   
@@ -741,7 +762,7 @@ merge_catch_sau <- function(emissions_partitioned_grouped, sau_catch){
   full_emissions_sau <- bind_rows(option_1)
   
   # Save SAU emissions dataset to workbench-2
-  write_csv(full_emissions_sau, file.path("/capstone/seamissions/checkpoint/full_emissions_sau.csv"))
+  write_csv(full_emissions_sau, file.path(data_directory_project, "processed/full_emissions_sau_species.csv"))
   
   return(full_emissions_sau)
   
