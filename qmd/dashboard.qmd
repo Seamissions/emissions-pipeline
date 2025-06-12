@@ -2,8 +2,184 @@
 output: html_document
 editor_options: 
   chunk_output_type: console
+editor: 
+  markdown: 
+    wrap: sentence
 ---
 
 # Dashboard
 
 This chapter describes how we built the Seamissions-Explorer dashboard.
+
+**Link to the dashboard:** <https://emlab-ucsb.shinyapps.io/seamissions-explorer/>
+
+## Overview
+
+The Seamissions Explorer dashboard is a public-facing, interactive and reactive dashboard built in R using the Shiny web application framework.
+It enables users to explore greenhouse gas emissions from industrial fishing vessels alongside catch estimates through a global map and a collection of graphs.
+Users can filter results by location, year, flag (country), species group, among other dimensions.
+The application is hosted on emLab's shinyapps.io account to enable public access.
+
+The dashboard is intended as an educational and exploratory tool, not an official regulatory product.
+All results should be interpreted to care due to several key limitations:
+
+1.  Uncertainty in emissions estimates -- particularly from the re-attribution of emissions from non-broadcasting vessels to broadcasting vessels, a necessary step to assign emissions to flag states and align with FAO-reported catch data.
+2.  Ambiguity in catch location and reporting -- stemming from under-reporting and inconsistencies between where fish were actually, the vessel's flag state, and the country where landings were reported to the FAO.
+3.  Dependence on harmonized data sets with different formats and assumptions -- including the integration of FAO catch records and GFW's fishing vessel emissions data set, which originate from distinct sources with differing scopes, structures, and assumptions.
+
+## Datasets
+
+This table describes the data used in our dashboard.
+Shiny apps require data to be stored directly within the app; to run and deploy the app locally, you will need to download and upload the dashboard data folder.
+*See Section 10.5 Maintenance Notes for more details.*
+
+#### Primary Data
+
+| **File Name**              | **Description**                                                                             | **Source**                                | **Use**               |
+|-----------------|--------------------|-----------------|-----------------|
+| broadcasting_emissions.rds | 1°×1° CO₂ emissions polygons for all broadcasting vessels, aggregated annually by country.  | emLab and GFW, processed by Seamissions   | Emissions Map Tab     |
+| nb_emissions.rds           | 1°×1° CO₂ emissions polygons for all non-broadcasting vessels, aggregated annually.         | emLab and GFW, processed by Seamissions   | Emissions Map Tab     |
+| World_FAO_Zones.shp        | Polygon boundaries for FAO Major Fishing Regions.                                           | UN FAO, provided by emLab                 | Emissions Map Tab     |
+| species_data.rds           | Annual CO₂ emissions by ISSCAAP species group, year, and country (tabular format).          | emLab, GFW, FAO; processed by Seamissions | Compare Emissions Tab |
+| top_flags.rds              | Annual CO₂ emissions by flag, filtered to top 10 emitting countries (tabular format).       | emLab, GFW, FAO; processed by Seamissions | Compare Emissions Tab |
+| top_isscaap.rds            | Annual CO₂ emissions by species group, filtered to top 10 emitting groups (tabular format). | emLab, GFW, FAO; processed by Seamissions | Compare Emissions Tab |
+
+#### Supporting Files
+
+| **File Name** | **Description**                                                                                                                                   | **Source**                          | **Use**             |
+|------------------|-------------------|------------------|------------------|
+| config.R      | App-wide configuration settings, this contains private information, including the {mapbox} and {shiny} tokens that are not visible to the public. | Seamissions                         | Emissions Dashboard |
+| theme.R       | Custom visual theme (e.g., colors, fonts, spacing) used throughout the app.                                                                       | Seamissions                         | Emissions Dashboard |
+| infoPopup.R   | A function that contains a reusable UI component for the custom info tooltip style that is used throughout the app.                               | Seamissions                         | Emissions Dashboard |
+| www/images    | This is where all of the images for the app are stored.                                                                                           | Seamissions & various other sources | Emissions Dashboard |
+| rsconnect     | Used by **shinyapps.io** to store metadata about how the Shiny app is deployed, including the app name and version.                               | Shiny                               | Emissions Dashboard |
+
+## Packages
+
+| **R Package(s)**                                                      | **Citation(s)**             | **Use**                           |
+|-------------------|---------------------------|---------------------------|
+| [here](https://CRAN.R-project.org/package=here)                       | Müller, K., 2020            | Reproducible filepaths            |
+| [readr](https://CRAN.R-project.org/package=readr)                     | Wickham et al., 2023        | Reproducible filepaths            |
+| [dplyr](https://CRAN.R-project.org/package=dplyr)                     | Wickham et al., 2023        | Reproducible filepaths            |
+| [rsconnect](https://CRAN.R-project.org/package=rsconnect)             | Atkins et al., 2025         | Dashboard design and layout       |
+| [shiny](https://CRAN.R-project.org/package=shiny)                     | Chang et al., 2024          | Dashboard design and layout       |
+| [shinydashboard](https://CRAN.R-project.org/package=shinydashboard)   | Chang et al., 2021          | Dashboard design and layout       |
+| [shinyWidgets](https://CRAN.R-project.org/package=shinyWidgets)       | Perrier et al., 2025        | Dashboard design and layout       |
+| [shinyjs](https://CRAN.R-project.org/package=shinyjs)                 | Attali, D., 2021            | Dashboard design and layout       |
+| [shinyBS](https://cran.r-project.org/package=shinyBS)                 | Bailey, E., 2022            | Dashboard design and layout       |
+| [shinycssloaders](https://CRAN.R-project.org/package=shinycssloaders) | Attali, D., 2024            | Dashboard design and layout       |
+| [bs4Dash](https://CRAN.R-project.org/package=bs4Dash)                 | Granjun, D., 2024           | Dashboard design and layout       |
+| [later](https://CRAN.R-project.org/package=later)                     | Chang et al., 2025          | Dashboard design and layout       |
+| [bslib](https://CRAN.R-project.org/package=bslib)                     | Sievert et al., 2025        | Dashboard design and layout       |
+| [tidyverse](https://CRAN.R-project.org/package=tidyverse)             | Wickham et al., 2019        | Plots                             |
+| [ggflags](https://CRAN.R-project.org/package=ggflags)                 | Auguie et al., 2025         | Plots                             |
+| [ggimage](https://CRAN.R-project.org/package=ggimage)                 | Yu, G., 2023                | Plots                             |
+| [mapdeck](https://CRAN.R-project.org/package=mapdeck)                 | Cooley, D., 2024            | Mapping                           |
+| [sf](https://CRAN.R-project.org/package=sf)                           | Pebesma E., Bivand R., 2023 | Mapping                           |
+| [RColorBrewer](https://CRAN.R-project.org/package=RColorBrewer)       | Neuwirth, E., 2022          | Color palettes & label formatting |
+| [scales](https://CRAN.R-project.org/package=scales)                   | Wickham et al., 2025        | Color palettes & label formatting |
+
+*More details on the dashboard project environment, including package versions, see the projects [GitHub repository](https://github.com/Seamissions/emissions-dashboard/blob/main/renv.lock).*
+
+## Methods:
+
+### Dashboard Data Preparation
+
+The data for map was prepared in \[INSERT\].
+
+### Dashboard Design
+
+The dashboard is organized as a navbarPage using {Shiny} and consists of four primary tabs:
+
+-   **Home:** This is the landing page for the application.
+    It provides an overview of the application and quick links and a short description of the two main tools and a link to the learn more page.
+
+-   **Fishing Vessel Emissions Map:** The Fishing Vessel Emissions Map contains an interactive global map.
+    It displays annually aggregated fishing vessel emissions on a one-by-one degree pixel from 2016 - 2024.
+    Users can visualize AIS-broadcasting data and have the option to filter to a specific year, flag.
+    And also can visualize non-broadcasting data.
+    They can also overlay FAO major fishing regions.
+    It was created using 'mapdeck', an R package which lets you plot large datasets using Mapbox GL. The map consists of two primary datasets: 'broadcasting_emissions' and 'non-broadcasting_emissions", these datasets were prepared by grouping by `lat_bin`, `lon_bin`, `year`, and `flag`to calculate the total emissions per country (flag) and year combination per pixel. It also incorporates other background layers including FAO region boundaries. All spatial layers were projected to EPSG:4326 Geodetic coordinate system, which is required by Mapbox.
+
+-   **Compare Seafood Emissions:** The second tab of the dashboard, Compare Seafood Emissions, contains a compilation of plots displaying fishing vessel emissions associated with catch using the dataset that we generated in the Emissions Pipeline.
+    The plots were created using the 'ggplot' package, a component of the popular 'tidyverse' collection of packages, in R that is used for visualizing data.
+    The plots also integrated 'ggimage' and 'ggflags' packages to visualize images next to each of the plot elements.
+
+-   **Learn more:** This tab provides an overview of the purpose of the dashboard and its intended use.
+    It provides key details regarding the data, the data sources, and a high-level overview of how the datasets were produced.
+    The tab will also include a disclaimer that outlines important assumptions and limitations to keep in mind while interacting with the tool.
+    More information regarding the structure of the application, including a full list of packages used and details on how to run, update, and maintain the application are located in the GitHub repo.
+
+### Shiny App Structure
+
+The Shiny application is made of three primary files:
+
+#### `global.R`
+
+**Overview:**
+
+This is the global setup file for the Seamissions Explorer Shiny app.
+This file loads essential libraries, initializes shared resources, and prepares spatial and emissions datasets used throughout the app.
+It centralizes code that does not need to be re-run for each user session to improve performance and maintainability.
+
+**File Inputs:**
+
+-   `config.R`
+-   `infoPopup.R`
+-   `broadcasting_emissions.rds`
+-   `World_Fao_Zones.shp`
+-   `species_data.rds`
+-   `top_flags.rds`
+
+#### `server.R`
+
+**Overview:**
+
+Server-side logic for the Seamissions Explorer Shiny app.
+This handles all reactive expressions, data filtering, map and plot rendering, dynamic UI responses, and custom JavaScript-based UI toggles.
+
+**File Inputs:**
+
+-   `nb_emissions.rds` *This dataset is loaded using a "lazy loading" strategy in the server script to optimize performance and reduce processing time during map initialization.*
+
+#### `ui.R` 
+
+This file organizes the user interface definition for the Seamissions Explorer Shiny app.
+It constructs the layout, panels, and visual elements for navigation, map exploration, data visualization, and interpretive content.
+It integrates custom styling, component inputs, and responsive design to guide user interaction across desktop and mobile devices.
+This file defines the layout structure and all visible elements seen by users.It uses Shiny modules, `navbarPage`, `fluidRow`, `absolutePanel`, and custom JavaScript/CSS for interactive behavior.
+
+**File Inputs:**
+
+-   `theme.R`
+-   `global.R`
+-   `infoPopup.R`
+-   `www/images`
+
+## Maintenance Notes:
+
+-   All app files (`ui.R`, `server.R`, `global.R` etc.) are extensively commented to Code is commented to support readability, modification, and maintenance for the app.
+
+-   The app is deployed to the emLab account on [shinyapps.io](shinyapps.io ) using the `rsconnect::deployApp()` function
+
+-   **Accessing data**:
+
+    -   **Shiny apps require data to be stored direcly within the project folder.**
+
+    -   **Data is not stored on GitHub**.
+        All datasets and files that are not pushed to GitHub and that are required to run the app are stored on emLab's internal Nextcloud server"
+
+    -   For local development and maintenance you will need to download and transfer the following three folders from emLab's internal Nextcloud server (at our project folder under `/data/dashboard-data/app-files/` to your local directory.
+
+        -   `/data/` \**all project data*
+
+        -   `/R/` \**functions*
+
+        -   `/rsconnect/` \**deployment metadata*
+
+    -   Deployment metadata is stored in the `rsconnect/` folder and includes the app name and version history.
+
+    -   You just need the folders from the `/data/` folder after the dashboard data - since the app is looking for a folder called "data" not "dashboard-data".
+        For local development, ensure that all the files are downloaded to the appropriate data directory.
+
+
